@@ -41,7 +41,7 @@ export const revalidate = 3600;
 
 export default async function PropertyPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const property = await getListingBySlug(slug);
+  const property = await getListingBySlug(slug, { requireApproved: false });
   if (!property) notFound();
   // MH-20 — fan out independent queries; agent lookup depends on property.agentId
   // but does not depend on `similar`, so both can run in parallel.
