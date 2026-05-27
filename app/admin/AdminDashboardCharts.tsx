@@ -35,15 +35,15 @@ export function AdminDashboardCharts({ revTrend, signupsTrend, revenueTotal, tot
               <AreaChart data={revTrend}>
                 <defs>
                   <linearGradient id="rev" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#f97316" stopOpacity={0.5} />
-                    <stop offset="100%" stopColor="#f97316" stopOpacity={0} />
+                    <stop offset="0%" stopColor="#CAAE99" stopOpacity={0.5} />
+                    <stop offset="100%" stopColor="#CAAE99" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" />
                 <XAxis dataKey="d" stroke="var(--fg-muted)" fontSize={11} />
                 <YAxis stroke="var(--fg-muted)" fontSize={11} />
                 <Tooltip contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8 }} />
-                <Area type="monotone" dataKey="v" stroke="#f97316" fill="url(#rev)" strokeWidth={2} />
+                <Area type="monotone" dataKey="v" stroke="#CAAE99" fill="url(#rev)" strokeWidth={2} />
               </AreaChart>
             </ResponsiveContainer>
           </div>

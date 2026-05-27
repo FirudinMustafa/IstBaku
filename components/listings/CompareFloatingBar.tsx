@@ -47,7 +47,7 @@ export function CompareFloatingBar() {
           className={cn(
             'h-11 px-3 rounded-xl inline-flex items-center gap-1.5 font-semibold text-sm transition-all touch-target',
             compare.count >= 2
-              ? 'bg-gradient-to-br from-gold-300 to-gold-500 text-navy-900 active:scale-95 shadow-[0_4px_12px_-2px_rgba(249,115,22,0.5)]'
+              ? 'bg-gradient-to-br from-gold-300 to-gold-500 text-navy-900 active:scale-95 shadow-[0_4px_12px_-2px_rgba(202,174,153,0.5)]'
               : 'bg-[color:var(--bg-elev)] text-[color:var(--fg-muted)] cursor-not-allowed pointer-events-none',
           )}
         >

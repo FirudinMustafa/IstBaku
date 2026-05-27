@@ -1160,10 +1160,10 @@ function RegionStep({ value, onChange }: { value: RegionShape; onChange: (v: Reg
   }
 
   const rows: { key: RegionKey; label: string; icon: typeof Users; color: string }[] = [
-    { key: 'aile', label: 'Aile', icon: Users, color: '#f97316' },
+    { key: 'aile', label: 'Aile', icon: Users, color: '#CAAE99' },
     { key: 'memur', label: 'Memur', icon: Briefcase, color: '#6366f1' },
     { key: 'ogrenci', label: 'Öğrenci', icon: GraduationCap, color: '#10b981' },
-    { key: 'yabanci', label: 'Yabancı Uyruklu', icon: Globe, color: '#fbbf24' },
+    { key: 'yabanci', label: 'Yabancı Uyruklu', icon: Globe, color: '#e3d6c8' },
   ];
 
   return (

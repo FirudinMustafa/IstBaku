@@ -111,7 +111,7 @@ export function MapView({ properties, activeId, onSelect }: Props) {
     ps.forEach((p) => {
       const existing = markersRef.current.get(p.id);
       const active = aid === p.id;
-      const html = `<div style="background:${active ? '#f97316' : '#0f223a'};color:${active ? '#07142a' : '#fff'};padding:4px 9px;border-radius:999px;border:1px solid #f97316;font-size:11px;font-weight:600;white-space:nowrap;box-shadow:0 4px 12px rgba(0,0,0,0.4);">${formatPrice(p.price, p.currency)}</div>`;
+      const html = `<div style="background:${active ? '#CAAE99' : '#1e3148'};color:${active ? '#07142a' : '#fff'};padding:4px 9px;border-radius:999px;border:1px solid #CAAE99;font-size:11px;font-weight:600;white-space:nowrap;box-shadow:0 4px 12px rgba(0,0,0,0.4);">${formatPrice(p.price, p.currency)}</div>`;
       const icon = L.divIcon({ html, className: 'leaflet-price-pin', iconSize: [70, 24], iconAnchor: [35, 12] });
 
       if (existing) {
@@ -122,7 +122,7 @@ export function MapView({ properties, activeId, onSelect }: Props) {
 
       const marker = L.marker([p.coords.lat, p.coords.lng], { icon }).addTo(map);
       marker.bindPopup(
-        `<div style="min-width:200px"><strong>${p.title}</strong><br/><span style="opacity:.7">${p.city} · ${p.district}</span><br/><a href="/property/${p.slug}" style="color:#f97316">Detay →</a></div>`,
+        `<div style="min-width:200px"><strong>${p.title}</strong><br/><span style="opacity:.7">${p.city} · ${p.district}</span><br/><a href="/property/${p.slug}" style="color:#CAAE99">Detay →</a></div>`,
       );
       marker.on('click', () => onSelectRef.current?.(p.id));
       markersRef.current.set(p.id, marker);

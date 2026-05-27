@@ -28,7 +28,7 @@ export function AnalyticsCharts({ visits, engagement, queries }: Props) {
                   <YAxis stroke="var(--fg-muted)" fontSize={11} />
                   <Tooltip contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8 }} />
                   <Legend />
-                  <Line type="monotone" dataKey="dau" stroke="#f97316" strokeWidth={2} dot={false} name="Yeni Kullanıcı" />
+                  <Line type="monotone" dataKey="dau" stroke="#CAAE99" strokeWidth={2} dot={false} name="Yeni Kullanıcı" />
                   <Line type="monotone" dataKey="sessions" stroke="#34619a" strokeWidth={2} dot={false} name="Oturum (tahmini)" />
                 </LineChart>
               </ResponsiveContainer>
@@ -45,7 +45,7 @@ export function AnalyticsCharts({ visits, engagement, queries }: Props) {
                   <PolarGrid stroke="var(--border)" />
                   <PolarAngleAxis dataKey="topic" tick={{ fontSize: 10, fill: 'var(--fg-muted)' }} />
                   <PolarRadiusAxis stroke="var(--border)" tick={{ fontSize: 9 }} />
-                  <Radar dataKey="a" stroke="#f97316" fill="#f97316" fillOpacity={0.3} />
+                  <Radar dataKey="a" stroke="#CAAE99" fill="#CAAE99" fillOpacity={0.3} />
                 </RadarChart>
               </ResponsiveContainer>
             </div>
@@ -63,7 +63,7 @@ export function AnalyticsCharts({ visits, engagement, queries }: Props) {
                 <XAxis type="number" stroke="var(--fg-muted)" fontSize={11} />
                 <YAxis type="category" dataKey="q" stroke="var(--fg-muted)" fontSize={11} width={120} />
                 <Tooltip contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8 }} />
-                <Bar dataKey="c" fill="#f97316" radius={[0, 6, 6, 0]} />
+                <Bar dataKey="c" fill="#CAAE99" radius={[0, 6, 6, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>

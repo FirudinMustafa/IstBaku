@@ -92,19 +92,19 @@ export async function sendEmail(args: SendArgs): Promise<{ ok: boolean; id?: str
 // ============================================================
 
 const C = {
-  orange:      '#f97316',
-  orangeDark:  '#ea580c',
-  orangeLight: '#fdba74',
-  amber:       '#f59e0b',
-  navy900:     '#050f1f',
-  navy800:     '#0a1b2e',
-  navy700:     '#0f223a',
-  navy600:     '#1B3A5C',
-  navy500:     '#244a7c',
+  orange:      '#CAAE99',
+  orangeDark:  '#b8977d',
+  orangeLight: '#e3d6c8',
+  amber:       '#b8977d',
+  navy900:     '#0a1320',
+  navy800:     '#121F30',
+  navy700:     '#1e3148',
+  navy600:     '#2a4360',
+  navy500:     '#365578',
   text:        '#e8eef7',
   textMuted:   '#93a4bf',
   textFaint:   '#5b6b80',
-  border:      '#1d3858',
+  border:      '#1e3148',
   borderSoft:  '#142d4a',
   success:     '#10b981',
   danger:      '#ef4444',
@@ -221,7 +221,7 @@ export function emailShell({
               ${ctaUrl && ctaLabel ? `
                 <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:28px 0 4px;">
                   <tr>
-                    <td style="border-radius:10px;background:${C.orange};background-image:linear-gradient(180deg, ${C.orange} 0%, ${C.orangeDark} 100%);box-shadow:0 6px 16px -6px rgba(249,115,22,0.55);" bgcolor="${C.orange}">
+                    <td style="border-radius:10px;background:${C.orange};background-image:linear-gradient(180deg, ${C.orange} 0%, ${C.orangeDark} 100%);box-shadow:0 6px 16px -6px rgba(202,174,153,0.55);" bgcolor="${C.orange}">
                       <a href="${escapeHtml(ctaUrl)}" class="cta-btn" style="display:inline-block;font-family:'Inter','Segoe UI',Arial,sans-serif;color:${C.navy900};font-weight:800;text-decoration:none;padding:15px 32px;border-radius:10px;font-size:15px;letter-spacing:0.01em;">
                         ${escapeHtml(ctaLabel)} &nbsp;›
                       </a>
@@ -715,8 +715,8 @@ export function tplAbuseResolved({ name, reportId, status, reason }: {
     bodyHtml: `
       <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
         <tr>
-          <td style="background:#0f223a;border-left:4px solid ${isResolved ? '#10b981' : '#f59e0b'};border-radius:10px;padding:16px 18px;">
-            <div style="font-size:11px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:${isResolved ? '#10b981' : '#f59e0b'};margin-bottom:6px;">${isResolved ? 'Sonuç: İşlem Yapıldı' : 'Sonuç: Şikayet Reddedildi'}</div>
+          <td style="background:#1e3148;border-left:4px solid ${isResolved ? '#10b981' : '#b8977d'};border-radius:10px;padding:16px 18px;">
+            <div style="font-size:11px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:${isResolved ? '#10b981' : '#b8977d'};margin-bottom:6px;">${isResolved ? 'Sonuç: İşlem Yapıldı' : 'Sonuç: Şikayet Reddedildi'}</div>
             <div style="color:#e8eef7;font-size:14px;line-height:1.6;">${
               isResolved
                 ? 'Bildirimin değerlendirildi ve ilgili içerik/kullanıcı hakkında gerekli işlem uygulandı. Platformun güvenliğine katkın için teşekkürler.'
@@ -729,7 +729,7 @@ export function tplAbuseResolved({ name, reportId, status, reason }: {
       </table>`,
     ctaLabel: 'Ana Sayfaya Dön',
     ctaUrl: appUrl,
-    footerNote: 'Şikayetlerle ilgili sorularını <a href="mailto:destek@istbaku.com" style="color:#fdba74;text-decoration:none;">destek@istbaku.com</a> üzerinden iletebilirsin.',
+    footerNote: 'Şikayetlerle ilgili sorularını <a href="mailto:destek@istbaku.com" style="color:#e3d6c8;text-decoration:none;">destek@istbaku.com</a> üzerinden iletebilirsin.',
   });
 }
 

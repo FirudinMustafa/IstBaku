@@ -13,10 +13,10 @@ const TYPE_LABEL: Record<string, string> = {
 };
 
 const TYPE_COLOR: Record<string, string> = {
-  tier_upgrade: '#f97316',
+  tier_upgrade: '#CAAE99',
   premium_membership: '#6366f1',
   report_purchase: '#10b981',
-  partner_commission: '#fbbf24',
+  partner_commission: '#CAAE99',
 };
 
 interface P { id: string; amount: number; type: string; status: string; createdAt: string }
@@ -54,7 +54,7 @@ export function PaymentsCharts({ payments }: { payments: P[] }) {
                 <XAxis dataKey="d" stroke="var(--fg-muted)" fontSize={10} angle={-20} textAnchor="end" height={50} />
                 <YAxis stroke="var(--fg-muted)" fontSize={11} />
                 <Tooltip contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8 }} />
-                <Bar dataKey="v" fill="#f97316" radius={[6, 6, 0, 0]} />
+                <Bar dataKey="v" fill="#CAAE99" radius={[6, 6, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>

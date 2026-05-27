@@ -16,7 +16,7 @@ export function ScoreRing({ value, size = 48, stroke = 4, label, outOf = 100 }: 
   const r = (size - stroke) / 2;
   const c = 2 * Math.PI * r;
   const dash = (clamped / 100) * c;
-  const color = clamped >= 85 ? 'var(--success)' : clamped >= 70 ? '#f97316' : '#f59e0b';
+  const color = clamped >= 85 ? 'var(--success)' : clamped >= 70 ? '#CAAE99' : '#b8977d';
   const cx = size / 2;
   const cy = size / 2;
   return (

@@ -6,7 +6,7 @@ import { Card, CardBody } from '@/components/ui/Card';
 import { DEMOGRAPHIC_LABELS } from '@/lib/labels';
 
 const ROWS = [
-  { k: 'aile' as const, icon: Users, color: '#f97316' },
+  { k: 'aile' as const, icon: Users, color: '#CAAE99' },
   { k: 'memur' as const, icon: Briefcase, color: '#6366f1' },
   { k: 'ogrenci' as const, icon: GraduationCap, color: '#10b981' },
   { k: 'yabanci' as const, icon: Globe, color: '#7e9fcb' },

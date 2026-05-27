@@ -48,7 +48,7 @@ export function LocationPicker({ lat, lng, onChange, center }: Props) {
           markerRef.current.setLatLng([newLat, newLng]);
         } else {
           const icon = L.divIcon({
-            html: `<div style="width:32px;height:32px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:#f97316;border:3px solid #fff;box-shadow:0 4px 14px rgba(0,0,0,0.4);"></div>`,
+            html: `<div style="width:32px;height:32px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:#CAAE99;border:3px solid #fff;box-shadow:0 4px 14px rgba(0,0,0,0.4);"></div>`,
             className: 'leaflet-loc-pin',
             iconSize: [32, 32],
             iconAnchor: [16, 32],

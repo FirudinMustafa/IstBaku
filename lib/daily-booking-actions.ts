@@ -175,7 +175,7 @@ export async function createDailyBookingAction(
           title: 'Yeni günlük kira talebi',
           intro: `<strong style="color:#e8eef7;">${listingTitle}</strong> ilanın için yeni bir günlük kira talebi geldi.`,
           bodyHtml: `
-            <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#0f223a;border:1px solid #1d3858;border-radius:10px;">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#1e3148;border:1px solid #1e3148;border-radius:10px;">
               <tr><td style="padding:8px 16px;">
                 <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
                   <tr>
@@ -192,11 +192,11 @@ export async function createDailyBookingAction(
                   </tr>
                   <tr>
                     <td style="padding:9px 0;color:#93a4bf;font-size:13px;width:130px;">Gece</td>
-                    <td style="padding:9px 0;color:#f97316;font-size:14px;font-weight:600;">${nights} gece</td>
+                    <td style="padding:9px 0;color:#CAAE99;font-size:14px;font-weight:600;">${nights} gece</td>
                   </tr>
                   <tr>
                     <td style="padding:9px 0;color:#93a4bf;font-size:13px;width:130px;">Toplam</td>
-                    <td style="padding:9px 0;color:#f97316;font-size:14px;font-weight:600;">${totalPrice} ${currency}</td>
+                    <td style="padding:9px 0;color:#CAAE99;font-size:14px;font-weight:600;">${totalPrice} ${currency}</td>
                   </tr>
                 </table>
               </td></tr>
@@ -314,7 +314,7 @@ export async function approveDailyBookingAction(
         title: 'Rezervasyonun onaylandı!',
         intro: `<strong style="color:#e8eef7;">${listingTitle}</strong> için yaptığın rezervasyon talebi onaylandı.`,
         bodyHtml: `
-          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#0f223a;border:1px solid #1d3858;border-radius:10px;">
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#1e3148;border:1px solid #1e3148;border-radius:10px;">
             <tr><td style="padding:8px 16px;">
               <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
                 <tr>
@@ -327,11 +327,11 @@ export async function approveDailyBookingAction(
                 </tr>
                 <tr>
                   <td style="padding:9px 0;color:#93a4bf;font-size:13px;width:130px;">Gece</td>
-                  <td style="padding:9px 0;color:#f97316;font-size:14px;font-weight:600;">${nights} gece</td>
+                  <td style="padding:9px 0;color:#CAAE99;font-size:14px;font-weight:600;">${nights} gece</td>
                 </tr>
                 <tr>
                   <td style="padding:9px 0;color:#93a4bf;font-size:13px;width:130px;">Toplam</td>
-                  <td style="padding:9px 0;color:#f97316;font-size:14px;font-weight:600;">${booking.totalPrice} ${booking.currency}</td>
+                  <td style="padding:9px 0;color:#CAAE99;font-size:14px;font-weight:600;">${booking.totalPrice} ${booking.currency}</td>
                 </tr>
               </table>
             </td></tr>
@@ -403,7 +403,7 @@ export async function rejectDailyBookingAction(
         title: 'Talebin reddedildi',
         intro: `<strong style="color:#e8eef7;">${listingTitle}</strong> için yaptığın rezervasyon talebi ev sahibi tarafından reddedildi.`,
         bodyHtml: `
-          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#0f223a;border:1px solid #1d3858;border-radius:10px;">
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#1e3148;border:1px solid #1e3148;border-radius:10px;">
             <tr><td style="padding:8px 16px;">
               <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
                 <tr>
@@ -419,7 +419,7 @@ export async function rejectDailyBookingAction(
           </table>
           <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-top:16px;">
             <tr>
-              <td style="background:#0f223a;border-left:4px solid #ef4444;border-radius:10px;padding:16px 18px;">
+              <td style="background:#1e3148;border-left:4px solid #ef4444;border-radius:10px;padding:16px 18px;">
                 <div style="font-size:11px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#ef4444;margin-bottom:6px;">Red Sebebi</div>
                 <div style="color:#e8eef7;font-size:14px;line-height:1.6;">${reason}</div>
               </td>

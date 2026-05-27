@@ -90,8 +90,8 @@ export default function ReportsPage() {
                 <AreaChart data={TREND}>
                   <defs>
                     <linearGradient id="grad-tr" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#f97316" stopOpacity={0.6} />
-                      <stop offset="100%" stopColor="#f97316" stopOpacity={0} />
+                      <stop offset="0%" stopColor="#CAAE99" stopOpacity={0.6} />
+                      <stop offset="100%" stopColor="#CAAE99" stopOpacity={0} />
                     </linearGradient>
                     <linearGradient id="grad-az" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="0%" stopColor="#6366f1" stopOpacity={0.6} />
@@ -103,7 +103,7 @@ export default function ReportsPage() {
                   <YAxis stroke="var(--fg-muted)" fontSize={11} />
                   <Tooltip contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8 }} />
                   <Legend />
-                  <Area type="monotone" name="🇹🇷 TR" dataKey="tr" stroke="#f97316" fill="url(#grad-tr)" strokeWidth={2} />
+                  <Area type="monotone" name="🇹🇷 TR" dataKey="tr" stroke="#CAAE99" fill="url(#grad-tr)" strokeWidth={2} />
                   <Area type="monotone" name="🇦🇿 AZ" dataKey="az" stroke="#6366f1" fill="url(#grad-az)" strokeWidth={2} />
                 </AreaChart>
               </ResponsiveContainer>
@@ -121,7 +121,7 @@ export default function ReportsPage() {
                   <XAxis type="number" stroke="var(--fg-muted)" fontSize={11} />
                   <YAxis type="category" dataKey="country" stroke="var(--fg-muted)" fontSize={11} />
                   <Tooltip contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8 }} />
-                  <Bar dataKey="value" fill="#f97316" radius={[0, 6, 6, 0]} />
+                  <Bar dataKey="value" fill="#CAAE99" radius={[0, 6, 6, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -155,7 +155,7 @@ export default function ReportsPage() {
                   <XAxis dataKey="seg" stroke="var(--fg-muted)" fontSize={11} />
                   <YAxis stroke="var(--fg-muted)" fontSize={11} />
                   <Tooltip contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8 }} />
-                  <Bar dataKey="value" fill="#f97316" radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="value" fill="#CAAE99" radius={[6, 6, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
