@@ -310,6 +310,29 @@ export function NewListingClient({ paymentEnabled = false, countries: countryLis
       return;
     }
     setPublishing(true);
+
+    // Fotoğrafları önce client-side'dan Blob'a upload et (büyük payload'ları önler)
+    let uploadedPhotoUrls: string[];
+    try {
+      uploadedPhotoUrls = await Promise.all(
+        photos.map(async (dataUrl) => {
+          if (dataUrl.startsWith('http')) return dataUrl;
+          const res = await fetch(dataUrl);
+          const blob = await res.blob();
+          const fd = new FormData();
+          fd.append('file', blob, 'photo.jpg');
+          const uploadRes = await fetch('/api/listings/upload', { method: 'POST', body: fd });
+          const json = await uploadRes.json();
+          if (!uploadRes.ok) throw new Error(json.error || 'Fotoğraf yüklenemedi');
+          return json.url as string;
+        }),
+      );
+    } catch (err) {
+      setPublishing(false);
+      toast({ variant: 'error', title: 'Fotoğraf yükleme hatası', description: err instanceof Error ? err.message : 'Lütfen tekrar dene.' });
+      return;
+    }
+
     const res = await createListingAction({
       type: parsed.data.type,
       purpose: parsed.data.purpose,
@@ -335,7 +358,7 @@ export function NewListingClient({ paymentEnabled = false, countries: countryLis
       tier: parsed.data.tier,
       coverKind: parsed.data.coverKind,
       coverPhotoIndex: parsed.data.coverPhotoIndex,
-      photoDataUrls: parsed.data.photoDataUrls,
+      photoDataUrls: uploadedPhotoUrls,
       coverVideoDataUrl: parsed.data.coverVideoDataUrl,
       region: parsed.data.region,
       nearby: parsed.data.nearby,

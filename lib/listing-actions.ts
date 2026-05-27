@@ -35,7 +35,7 @@ export interface CreateListingInput {
   tier: 'standart' | 'guclu' | 'premium';
   coverKind: 'photo' | 'video';
   coverPhotoIndex: number;
-  /** Data URL'ler — server'da Blob/file system'e yüklenir */
+  /** Fotoğraf URL'leri (önceden upload edilmiş) veya data URL'ler (eski uyumluluk) */
   photoDataUrls: string[];
   coverVideoDataUrl?: string;
   region: { aile: number; memur: number; ogrenci: number; yabanci: number };
@@ -124,9 +124,11 @@ export async function createListingAction(
   if (!safeCity || !safeDistrict) return { ok: false, error: 'Şehir/ilçe gerekli.' };
 
   try {
-    // 1) Foto'ları upload et
+    // 1) Foto'ları işle — URL ise olduğu gibi al, data URL ise upload et
     const uploadedPhotos = await Promise.all(
-      input.photoDataUrls.map((d, i) => uploadDataUrl(d, 'listings', `photo-${i + 1}.jpg`)),
+      input.photoDataUrls.map((d, i) =>
+        d.startsWith('http') ? d : uploadDataUrl(d, 'listings', `photo-${i + 1}.jpg`),
+      ),
     );
 
     // 2) Video varsa upload et
