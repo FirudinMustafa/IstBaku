@@ -315,12 +315,17 @@ export function NewListingClient({ paymentEnabled = false, countries: countryLis
     let uploadedPhotoUrls: string[];
     try {
       uploadedPhotoUrls = await Promise.all(
-        photos.map(async (dataUrl) => {
+        photos.map(async (dataUrl, idx) => {
           if (dataUrl.startsWith('http')) return dataUrl;
-          const res = await fetch(dataUrl);
-          const blob = await res.blob();
+          // data URL → Blob conversion
+          const [header, b64] = dataUrl.split(',');
+          const mime = header.match(/:(.*?);/)?.[1] ?? 'image/jpeg';
+          const binary = atob(b64);
+          const bytes = new Uint8Array(binary.length);
+          for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+          const blob = new Blob([bytes], { type: mime });
           const fd = new FormData();
-          fd.append('file', blob, 'photo.jpg');
+          fd.append('file', blob, `photo-${idx + 1}.jpg`);
           const uploadRes = await fetch('/api/listings/upload', { method: 'POST', body: fd });
           const json = await uploadRes.json();
           if (!uploadRes.ok) throw new Error(json.error || 'Fotoğraf yüklenemedi');
