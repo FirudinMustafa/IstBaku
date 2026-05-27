@@ -1,5 +1,7 @@
 /* eslint-disable no-console */
-import 'dotenv/config';
+import { config } from 'dotenv';
+config({ path: '.env.local' });
+config();
 import bcrypt from 'bcryptjs';
 import { db } from './client';
 import * as s from './schema';
