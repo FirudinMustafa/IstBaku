@@ -1,0 +1,321 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: 'Comfortaa', ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-display: 'Playfair Display', ui-serif, Georgia, serif;
+
+  /* ---- Navy → #121F30 bazlı palet ---- */
+  --color-navy-50: #eef3fa;
+  --color-navy-100: #d4e0ee;
+  --color-navy-200: #a9c0dd;
+  --color-navy-300: #7e9fcb;
+  --color-navy-400: #5380b8;
+  --color-navy-500: #4a6d96;
+  --color-navy-600: #365578;
+  --color-navy-700: #2a4360;
+  --color-navy-800: #1e3148;
+  --color-navy-900: #121F30;
+  --color-navy-950: #0a1320;
+
+  /* ---- Gold → #CAAE99 bazlı palet ---- */
+  --color-gold-50:  #faf6f2;
+  --color-gold-100: #f0e9e0;
+  --color-gold-200: #e3d6c8;
+  --color-gold-300: #CAAE99;
+  --color-gold-400: #b8977d;
+  --color-gold-500: #a07e63;
+  --color-gold-600: #866750;
+  --color-gold-700: #6b5040;
+
+  /* ---- Amber: SADECE Premium tier + ISTBAKU Onaylı sıcak rozetler ---- */
+  --color-amber-50:  #fffbeb;
+  --color-amber-100: #fef3c7;
+  --color-amber-200: #fde68a;
+  --color-amber-300: #fcd34d;
+  --color-amber-400: #fbbf24;
+  --color-amber-500: #f59e0b;
+  --color-amber-600: #d97706;
+  --color-amber-700: #b45309;
+
+  /* ---- Semantik ---- */
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-danger:  #ef4444;
+}
+
+/* Theme tokens — varsayılan: light (beyaz arka plan) */
+:root {
+  color-scheme: light;
+  --bg: #ffffff;
+  --bg-elev: #f8f9fb;
+  --bg-card: #ffffff;
+  --bg-card-hover: #f0f2f5;
+  --bg-overlay: rgba(255, 255, 255, 0.85);
+  --fg: #121F30;
+  --fg-muted: #475569;
+  --fg-faint: #64748b;
+  --border: #e2e8f0;
+  --border-strong: #cbd5e1;
+  --accent: #CAAE99;
+  --accent-soft: rgba(202, 174, 153, 0.14);
+  --ring: rgba(202, 174, 153, 0.45);
+  --amber: #d97706;
+  --amber-soft: rgba(217, 119, 6, 0.10);
+  --success: #10b981;
+  --danger: #ef4444;
+}
+
+:root.dark {
+  color-scheme: dark;
+  --bg: #0a1320;
+  --bg-elev: #121F30;
+  --bg-card: #1e3148;
+  --bg-card-hover: #2a4360;
+  --bg-overlay: rgba(10, 19, 32, 0.78);
+  --fg: #e8eef7;
+  --fg-muted: #b6c4d9;
+  --fg-faint: #8a9ab4;
+  --border: #1e3148;
+  --border-strong: #2a4360;
+  --accent: #CAAE99;
+  --accent-soft: rgba(202, 174, 153, 0.14);
+  --ring: rgba(202, 174, 153, 0.45);
+  --amber: #f59e0b;
+  --amber-soft: rgba(245, 158, 11, 0.14);
+  --success: #10b981;
+  --danger: #ef4444;
+}
+
+* {
+  border-color: var(--border);
+}
+
+html, body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  /* Mobil tap highlight'ını kaldır */
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* iOS notch / Android navigation bar safe area destekleri */
+.safe-top { padding-top: env(safe-area-inset-top); }
+.safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+.safe-x { padding-left: env(safe-area-inset-left); padding-right: env(safe-area-inset-right); }
+.mb-safe { margin-bottom: env(safe-area-inset-bottom); }
+.pb-safe { padding-bottom: max(env(safe-area-inset-bottom), 0.75rem); }
+
+/* Mobilde gizle / göster */
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Yatay scroll engelle — SADECE body'de, html serbest kalsın yoksa dikey scroll bozulur */
+body {
+  overflow-x: clip;
+}
+
+/* Mobil bottom-bar varlığında footer/içerik için boşluk */
+@media (max-width: 767px) {
+  body.has-bottom-nav main {
+    padding-bottom: calc(4.5rem + env(safe-area-inset-bottom));
+  }
+}
+
+/* iOS input zoom önle (font-size: 16px+) */
+@media (max-width: 767px) {
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* Pull-to-refresh tarzı overscroll davranışı (sadece overflow scroll containerlarda) */
+body {
+  overscroll-behavior-y: contain;
+}
+
+/* Scrollbar gizle - mobil carousel için */
+.scrollbar-none::-webkit-scrollbar { display: none; }
+.scrollbar-none { scrollbar-width: none; -ms-overflow-style: none; }
+
+::selection {
+  background: var(--accent);
+  color: #ffffff;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+/* Hero gradient — #CAAE99 aksan + #121F30 zemin */
+.ai-hero-bg {
+  background:
+    radial-gradient(ellipse 60% 40% at 20% 0%, rgba(202, 174, 153, 0.18), transparent 60%),
+    radial-gradient(ellipse 50% 50% at 80% 30%, rgba(18, 31, 48, 0.35), transparent 60%),
+    radial-gradient(ellipse 80% 60% at 50% 100%, rgba(202, 174, 153, 0.08), transparent 60%),
+    linear-gradient(180deg, var(--bg) 0%, var(--bg-elev) 100%);
+}
+
+.aurora {
+  background:
+    conic-gradient(from 180deg at 50% 50%, rgba(202,174,153,0.14) 0deg, rgba(18,31,48,0.18) 120deg, transparent 240deg, rgba(202,174,153,0.10) 360deg);
+  filter: blur(60px);
+}
+
+.grid-bg {
+  background-image:
+    linear-gradient(to right, var(--border) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--border) 1px, transparent 1px);
+  background-size: 40px 40px;
+  mask-image: radial-gradient(ellipse 60% 50% at 50% 0%, black 30%, transparent 70%);
+}
+
+.glass {
+  background: color-mix(in oklab, var(--bg-card) 70%, transparent);
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  border: 1px solid color-mix(in oklab, var(--border) 70%, transparent);
+}
+
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in oklab, var(--accent) 22%, transparent) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2.4s linear infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@keyframes floaty {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+.animate-floaty { animation: floaty 4s ease-in-out infinite; }
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(202,174,153,0.55); }
+  50% { box-shadow: 0 0 0 10px rgba(202,174,153,0); }
+}
+.animate-pulse-glow { animation: pulse-glow 2s ease-in-out infinite; }
+
+.text-balance { text-wrap: balance; }
+.text-pretty  { text-wrap: pretty; }
+
+/* Focus ring — sadece keyboard navigation için; input/select/textarea kendi focus:ring stilini kullanır */
+:where(button, a, [tabindex]):focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+/* Form elementlerinde browser default outline'ını kapat; bileşenler kendi focus-ring sınıfını kullanıyor.
+   NOT: focus:ring sınıfı uygulanmayan inputlarda da focus görünür olması için fallback outline ekliyoruz. */
+input:focus, input:focus-visible,
+select:focus, select:focus-visible,
+textarea:focus, textarea:focus-visible {
+  outline: none;
+}
+/* Fallback: tarayıcı default'unu kaybeden ama hiçbir focus:ring sınıfı taşımayan inputlar
+   için (Hero search, ChatBot composer gibi) bir focus-visible outline garanti et. */
+:where(input, select, textarea):focus-visible:not(.focus\:ring-2):not([data-focus-styled]) {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+/* MH-35: prefers-reduced-motion — kullanıcının hareket tercihine saygı duy.
+   Tüm transition/animation sürelerini neredeyse anında tamamla, sürekli pulse/floaty/shimmer'ı durdur. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .animate-pulse-glow,
+  .animate-floaty,
+  .shimmer {
+    animation: none !important;
+  }
+}
+
+/* @media print — temel print stylesheet (M5/H31). */
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  header,
+  footer,
+  nav,
+  .animate-pulse-glow,
+  [aria-label="Bildirimler"] {
+    display: none !important;
+  }
+  a, a:visited {
+    color: black !important;
+    text-decoration: underline;
+  }
+  .glass {
+    background: white !important;
+    border: 1px solid #ccc !important;
+    backdrop-filter: none !important;
+  }
+}
+
+/* Anchor scroll padding so #section deeplinks don't hide behind sticky header (H24). */
+html {
+  scroll-padding-top: 5rem;
+}
+
+/* Native select dropdown — tema renkleriyle açılması için color-scheme + option styling */
+select, input[list] {
+  color-scheme: inherit;
+}
+select option, datalist option {
+  background-color: var(--bg-card);
+  color: var(--fg);
+  padding: 6px 8px;
+}
+select option:checked {
+  background-color: var(--accent-soft);
+  color: var(--fg);
+}
+
+/* Native date/time picker — dark mode'da pencere de koyu olsun */
+input[type="date"], input[type="time"], input[type="datetime-local"] {
+  color-scheme: inherit;
+}
+
+/* Leaflet override for dark mode */
+.leaflet-container {
+  background: var(--bg-elev) !important;
+  font-family: inherit;
+}
+.dark .leaflet-tile {
+  filter: brightness(0.85) invert(0.92) hue-rotate(180deg) saturate(0.4);
+}
+.leaflet-popup-content-wrapper, .leaflet-popup-tip {
+  background: var(--bg-card) !important;
+  color: var(--fg) !important;
+}

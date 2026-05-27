@@ -1,0 +1,10 @@
+import { chromium } from 'playwright';
+const browser = await chromium.launch({ channel: 'chromium' });
+const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+const page = await ctx.newPage();
+page.on('response', (r) => { if (r.status() >= 400) console.log('STATUS', r.status(), r.url()); });
+page.on('requestfailed', (r) => console.log('FAILED', r.url(), r.failure()?.errorText));
+page.on('console', (m) => { if (m.type() === 'error') console.log('CONSOLE', m.text().slice(0, 200)); });
+await page.goto('http://localhost:3000/', { waitUntil: 'networkidle' });
+await new Promise((r) => setTimeout(r, 1500));
+await browser.close();

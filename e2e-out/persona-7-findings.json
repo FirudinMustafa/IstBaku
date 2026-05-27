@@ -1,0 +1,10 @@
+{
+  "S1 double-submit signup": "clicks fired in 101ms; POST /sign-up responses=1 (2xx=1, 4xx/5xx=0); 500s=0",
+  "S2 appointment race": "DEFERRED — public booking UI not reachable without preconditions (UI matches: A=0, B=0). Will instead hit /api/dev/book-appointment unauthenticated to verify guard.",
+  "S2 appointment race (API probe)": "A=401 B=401 — both 2xx=false (concurrent same-slot accepted=NO — guarded)",
+  "S3 favorite spam": "50 toggles in 3765ms; dashboard favorite items=0; 5xx=0. Expected 0 (even count -> off) or 1 (odd count -> on); observed=0.",
+  "S4 filter spam": "20 rapid filter changes complete; 5xx=0; consoleErrors=0.",
+  "S5 logout mid-message": "after clearCookies + reload: url=http://localhost:3000/auth/sign-in?next=%2Fmessages, onSignIn=true, guardText=true",
+  "S6 wizard back-state": "step1 markers set=2; after goBack, step2 markers preserved=0. Preservation=LOST.",
+  "S7 token expiry": "before=http://localhost:3000/auth/sign-in?next=%2Fdashboard; after clearCookies+reload=http://localhost:3000/auth/sign-in?next=%2Fdashboard; redirected-to-sign-in=true"
+}

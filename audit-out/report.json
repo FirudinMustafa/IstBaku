@@ -1,0 +1,383 @@
+{
+  "reports": [
+    {
+      "label": "01-home",
+      "url": "/",
+      "title": "ISTBAKU — Türkiye & Azerbaycan AI Destekli Emlak Platformu",
+      "file": "C:\\Users\\DELL\\OneDrive\\Desktop\\work\\IstBaku\\audit-out\\01-home.png",
+      "consoleErrors": 0,
+      "pageErrors": 0,
+      "networkFails": 0,
+      "overflow": {
+        "scrollWidth": 1440,
+        "clientWidth": 1440,
+        "hasOverflow": false
+      }
+    },
+    {
+      "label": "02-listings",
+      "url": "/listings",
+      "title": "ISTBAKU — Türkiye & Azerbaycan AI Destekli Emlak Platformu",
+      "file": "C:\\Users\\DELL\\OneDrive\\Desktop\\work\\IstBaku\\audit-out\\02-listings.png",
+      "consoleErrors": 0,
+      "pageErrors": 0,
+      "networkFails": 0,
+      "overflow": {
+        "scrollWidth": 1440,
+        "clientWidth": 1440,
+        "hasOverflow": false
+      }
+    },
+    {
+      "label": "03-listings-filter",
+      "url": "/listings?city=İstanbul&purpose=sale",
+      "title": "ISTBAKU — Türkiye & Azerbaycan AI Destekli Emlak Platformu",
+      "file": "C:\\Users\\DELL\\OneDrive\\Desktop\\work\\IstBaku\\audit-out\\03-listings-filter.png",
+      "consoleErrors": 0,
+      "pageErrors": 0,
+      "networkFails": 0,
+      "overflow": {
+        "scrollWidth": 1440,
+        "clientWidth": 1440,
+        "hasOverflow": false
+      }
+    },
+    {
+      "label": "04-property-detail",
+      "url": "/property/besiktas-bogaz-manzarali-luks-konut",
+      "title": "ISTBAKU — Türkiye & Azerbaycan AI Destekli Emlak Platformu",
+      "file": "C:\\Users\\DELL\\OneDrive\\Desktop\\work\\IstBaku\\audit-out\\04-property-detail.png",
+      "consoleErrors": 0,
+      "pageErrors": 0,
+      "networkFails": 0,
+      "overflow": {
+        "scrollWidth": 1440,
+        "clientWidth": 1440,
+        "hasOverflow": false
+      }
+    },
+    {
+      "label": "05-ai-match",
+      "url": "/ai-match",
+      "title": "ISTBAKU — Türkiye & Azerbaycan AI Destekli Emlak Platformu",
+      "file": "C:\\Users\\DELL\\OneDrive\\Desktop\\work\\IstBaku\\audit-out\\05-ai-match.png",
+      "consoleErrors": 0,
+      "pageErrors": 0,
+      "networkFails": 0,
+      "overflow": {
+        "scrollWidth": 1440,
+        "clientWidth": 1440,
+        "hasOverflow": false
+      }
+    },
+    {
+      "label": "06-private-portfolio",
+      "url": "/private-portfolio",
+      "title": "ISTBAKU — Türkiye & Azerbaycan AI Destekli Emlak Platformu",
+      "file": "C:\\Users\\DELL\\OneDrive\\Desktop\\work\\IstBaku\\audit-out\\06-private-portfolio.png",
+      "consoleErrors": 0,
+      "pageErrors": 0,
+      "networkFails": 0,
+      "overflow": {
+        "scrollWidth": 1440,
+        "clientWidth": 1440,
+        "hasOverflow": false
+      }
+    },
+    {
+      "label": "07-reports",
+      "url": "/reports",
+      "title": "ISTBAKU — Türkiye & Azerbaycan AI Destekli Emlak Platformu",
+      "file": "C:\\Users\\DELL\\OneDrive\\Desktop\\work\\IstBaku\\audit-out\\07-reports.png",
+      "consoleErrors": 0,
+      "pageErrors": 0,
+      "networkFails": 0,
+      "overflow": {
+        "scrollWidth": 1440,
+        "clientWidth": 1440,
+        "hasOverflow": false
+      }
+    },
+    {
+      "label": "08-legal-guide",
+      "url": "/legal-guide",
+      "title": "ISTBAKU — Türkiye & Azerbaycan AI Destekli Emlak Platformu",
+      "file": "C:\\Users\\DELL\\OneDrive\\Desktop\\work\\IstBaku\\audit-out\\08-legal-guide.png",
+      "consoleErrors": 0,
+      "pageErrors": 0,
+      "networkFails": 0,
+      "overflow": {
+        "scrollWidth": 1440,
+        "clientWidth": 1440,
+        "hasOverflow": false
+      }
+    },
+    {
+      "label": "09-compare-empty",
+      "url": "/compare",
+      "title": "ISTBAKU — Türkiye & Azerbaycan AI Destekli Emlak Platformu",
+      "file": "C:\\Users\\DELL\\OneDrive\\Desktop\\work\\IstBaku\\audit-out\\09-compare-empty.png",
+      "consoleErrors": 0,
+      "pageErrors": 0,
+      "networkFails": 0,
+      "overflow": {
+        "scrollWidth": 1440,
+        "clientWidth": 1440,
+        "hasOverflow": false
+      }
+    },
+    {
+      "label": "10-sign-in",
+      "url": "/auth/sign-in",
+      "title": "ISTBAKU — Türkiye & Azerbaycan AI Destekli Emlak Platformu",
+      "file": "C:\\Users\\DELL\\OneDrive\\Desktop\\work\\IstBaku\\audit-out\\10-sign-in.png",
+      "consoleErrors": 0,
+      "pageErrors": 0,
+      "networkFails": 0,
+      "overflow": {
+        "scrollWidth": 1440,
+        "clientWidth": 1440,
+        "hasOverflow": false
+      }
+    },
+    {
+      "label": "11-sign-up",
+      "url": "/auth/sign-up",
+      "title": "ISTBAKU — Türkiye & Azerbaycan AI Destekli Emlak Platformu",
+      "file": "C:\\Users\\DELL\\OneDrive\\Desktop\\work\\IstBaku\\audit-out\\11-sign-up.png",
+      "consoleErrors": 0,
+      "pageErrors": 0,
+      "networkFails": 0,
+      "overflow": {
+        "scrollWidth": 1440,
+        "clientWidth": 1440,
+        "hasOverflow": false
+      }
+    },
+    {
+      "label": "12-forgot-password",
+      "url": "/auth/forgot-password",
+      "title": "ISTBAKU — Türkiye & Azerbaycan AI Destekli Emlak Platformu",
+      "file": "C:\\Users\\DELL\\OneDrive\\Desktop\\work\\IstBaku\\audit-out\\12-forgot-password.png",
+      "consoleErrors": 0,
+      "pageErrors": 0,
+      "networkFails": 0,
+      "overflow": {
+        "scrollWidth": 1440,
+        "clientWidth": 1440,
+        "hasOverflow": false
+      }
+    },
+    {
+      "label": "13-admin-login",
+      "url": "/admin/login",
+      "title": "ISTBAKU — Türkiye & Azerbaycan AI Destekli Emlak Platformu",
+      "file": "C:\\Users\\DELL\\OneDrive\\Desktop\\work\\IstBaku\\audit-out\\13-admin-login.png",
+      "consoleErrors": 0,
+      "pageErrors": 0,
+      "networkFails": 0,
+      "overflow": {
+        "scrollWidth": 1440,
+        "clientWidth": 1440,
+        "hasOverflow": false
+      }
+    },
+    {
+      "label": "30-admin-overview",
+      "url": "/admin",
+      "title": "ISTBAKU — Türkiye & Azerbaycan AI Destekli Emlak Platformu",
+      "file": "C:\\Users\\DELL\\OneDrive\\Desktop\\work\\IstBaku\\audit-out\\30-admin-overview.png",
+      "consoleErrors": 0,
+      "pageErrors": 0,
+      "networkFails": 0,
+      "overflow": {
+        "scrollWidth": 1440,
+        "clientWidth": 1440,
+        "hasOverflow": false
+      }
+    },
+    {
+      "label": "31-admin-approvals",
+      "url": "/admin/approvals",
+      "title": "ISTBAKU — Türkiye & Azerbaycan AI Destekli Emlak Platformu",
+      "file": "C:\\Users\\DELL\\OneDrive\\Desktop\\work\\IstBaku\\audit-out\\31-admin-approvals.png",
+      "consoleErrors": 0,
+      "pageErrors": 0,
+      "networkFails": 0,
+      "overflow": {
+        "scrollWidth": 1440,
+        "clientWidth": 1440,
+        "hasOverflow": false
+      }
+    },
+    {
+      "label": "32-admin-users",
+      "url": "/admin/users",
+      "title": "ISTBAKU — Türkiye & Azerbaycan AI Destekli Emlak Platformu",
+      "file": "C:\\Users\\DELL\\OneDrive\\Desktop\\work\\IstBaku\\audit-out\\32-admin-users.png",
+      "consoleErrors": 0,
+      "pageErrors": 0,
+      "networkFails": 0,
+      "overflow": {
+        "scrollWidth": 1440,
+        "clientWidth": 1440,
+        "hasOverflow": false
+      }
+    },
+    {
+      "label": "33-admin-agents",
+      "url": "/admin/agents",
+      "title": "ISTBAKU — Türkiye & Azerbaycan AI Destekli Emlak Platformu",
+      "file": "C:\\Users\\DELL\\OneDrive\\Desktop\\work\\IstBaku\\audit-out\\33-admin-agents.png",
+      "consoleErrors": 0,
+      "pageErrors": 0,
+      "networkFails": 0,
+      "overflow": {
+        "scrollWidth": 1440,
+        "clientWidth": 1440,
+        "hasOverflow": false
+      }
+    },
+    {
+      "label": "34-admin-kyc",
+      "url": "/admin/kyc",
+      "title": "ISTBAKU — Türkiye & Azerbaycan AI Destekli Emlak Platformu",
+      "file": "C:\\Users\\DELL\\OneDrive\\Desktop\\work\\IstBaku\\audit-out\\34-admin-kyc.png",
+      "consoleErrors": 0,
+      "pageErrors": 0,
+      "networkFails": 0,
+      "overflow": {
+        "scrollWidth": 1440,
+        "clientWidth": 1440,
+        "hasOverflow": false
+      }
+    },
+    {
+      "label": "35-admin-payments",
+      "url": "/admin/payments",
+      "title": "ISTBAKU — Türkiye & Azerbaycan AI Destekli Emlak Platformu",
+      "file": "C:\\Users\\DELL\\OneDrive\\Desktop\\work\\IstBaku\\audit-out\\35-admin-payments.png",
+      "consoleErrors": 0,
+      "pageErrors": 0,
+      "networkFails": 0,
+      "overflow": {
+        "scrollWidth": 1440,
+        "clientWidth": 1440,
+        "hasOverflow": false
+      }
+    },
+    {
+      "label": "36-admin-analytics",
+      "url": "/admin/analytics",
+      "title": "ISTBAKU — Türkiye & Azerbaycan AI Destekli Emlak Platformu",
+      "file": "C:\\Users\\DELL\\OneDrive\\Desktop\\work\\IstBaku\\audit-out\\36-admin-analytics.png",
+      "consoleErrors": 0,
+      "pageErrors": 0,
+      "networkFails": 0,
+      "overflow": {
+        "scrollWidth": 1440,
+        "clientWidth": 1440,
+        "hasOverflow": false
+      }
+    },
+    {
+      "label": "37-admin-reports",
+      "url": "/admin/reports",
+      "title": "ISTBAKU — Türkiye & Azerbaycan AI Destekli Emlak Platformu",
+      "file": "C:\\Users\\DELL\\OneDrive\\Desktop\\work\\IstBaku\\audit-out\\37-admin-reports.png",
+      "consoleErrors": 0,
+      "pageErrors": 0,
+      "networkFails": 0,
+      "overflow": {
+        "scrollWidth": 1440,
+        "clientWidth": 1440,
+        "hasOverflow": false
+      }
+    },
+    {
+      "label": "38-admin-audit",
+      "url": "/admin/audit",
+      "title": "ISTBAKU — Türkiye & Azerbaycan AI Destekli Emlak Platformu",
+      "file": "C:\\Users\\DELL\\OneDrive\\Desktop\\work\\IstBaku\\audit-out\\38-admin-audit.png",
+      "consoleErrors": 0,
+      "pageErrors": 0,
+      "networkFails": 0,
+      "overflow": {
+        "scrollWidth": 1440,
+        "clientWidth": 1440,
+        "hasOverflow": false
+      }
+    },
+    {
+      "label": "39-admin-country-guides",
+      "url": "/admin/country-guides",
+      "title": "ISTBAKU — Türkiye & Azerbaycan AI Destekli Emlak Platformu",
+      "file": "C:\\Users\\DELL\\OneDrive\\Desktop\\work\\IstBaku\\audit-out\\39-admin-country-guides.png",
+      "consoleErrors": 0,
+      "pageErrors": 0,
+      "networkFails": 0,
+      "overflow": {
+        "scrollWidth": 1440,
+        "clientWidth": 1440,
+        "hasOverflow": false
+      }
+    },
+    {
+      "label": "50-agent-dashboard",
+      "url": "/dashboard",
+      "title": "ISTBAKU — Türkiye & Azerbaycan AI Destekli Emlak Platformu",
+      "file": "C:\\Users\\DELL\\OneDrive\\Desktop\\work\\IstBaku\\audit-out\\50-agent-dashboard.png",
+      "consoleErrors": 0,
+      "pageErrors": 0,
+      "networkFails": 0,
+      "overflow": {
+        "scrollWidth": 1440,
+        "clientWidth": 1440,
+        "hasOverflow": false
+      }
+    },
+    {
+      "label": "51-agent-messages",
+      "url": "/messages",
+      "title": "ISTBAKU — Türkiye & Azerbaycan AI Destekli Emlak Platformu",
+      "file": "C:\\Users\\DELL\\OneDrive\\Desktop\\work\\IstBaku\\audit-out\\51-agent-messages.png",
+      "consoleErrors": 0,
+      "pageErrors": 0,
+      "networkFails": 0,
+      "overflow": {
+        "scrollWidth": 1440,
+        "clientWidth": 1440,
+        "hasOverflow": false
+      }
+    },
+    {
+      "label": "52-agent-crm",
+      "url": "/agent",
+      "title": "ISTBAKU — Türkiye & Azerbaycan AI Destekli Emlak Platformu",
+      "file": "C:\\Users\\DELL\\OneDrive\\Desktop\\work\\IstBaku\\audit-out\\52-agent-crm.png",
+      "consoleErrors": 0,
+      "pageErrors": 0,
+      "networkFails": 0,
+      "overflow": {
+        "scrollWidth": 1440,
+        "clientWidth": 1440,
+        "hasOverflow": false
+      }
+    },
+    {
+      "label": "53-agent-new-listing",
+      "url": "/new-listing",
+      "title": "ISTBAKU — Türkiye & Azerbaycan AI Destekli Emlak Platformu",
+      "file": "C:\\Users\\DELL\\OneDrive\\Desktop\\work\\IstBaku\\audit-out\\53-agent-new-listing.png",
+      "consoleErrors": 0,
+      "pageErrors": 0,
+      "networkFails": 0,
+      "overflow": {
+        "scrollWidth": 1440,
+        "clientWidth": 1440,
+        "hasOverflow": false
+      }
+    }
+  ],
+  "issues": []
+}
