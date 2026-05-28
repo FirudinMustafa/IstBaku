@@ -67,8 +67,15 @@
   --danger: #ef4444;
 }
 
-:root.dark {
+/* Dark tokens: hem global tema (:root.dark) hem de yerel "koyu ada" scope'u (.dark)
+   için. Böylece zorla koyu zeminli bölümler (Hero gibi) `class="dark"` ile kendi
+   içinde açık yazı token'larını kullanır — site light temada bile. */
+:root.dark, .dark {
   color-scheme: dark;
+  /* Yerel koyu ada: açık `color` bildirimi olmayan (yalnızca miras alan) yazılar
+     da açık renk olsun diye scope'a color uygula — yoksa h1 gibi elemanlar
+     body'den hesaplanmış koyu rengi miras alır. */
+  color: var(--fg);
   --bg: #0a1320;
   --bg-elev: #121F30;
   --bg-card: #1e3148;

@@ -13,7 +13,7 @@ export function Hero() {
   const [q, setQ] = React.useState('');
   return (
     <section
-      className="relative overflow-hidden"
+      className="dark relative overflow-hidden"
       style={{
         backgroundImage:
           'linear-gradient(180deg, rgba(18,31,48,0.55) 0%, rgba(18,31,48,0.35) 45%, rgba(18,31,48,0.7) 100%), url(/hero-bg.jpg)',
