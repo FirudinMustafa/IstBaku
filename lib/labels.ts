@@ -50,6 +50,38 @@ export function formatFloor(n: number): string {
 export const PURPOSE_LABEL: Record<string, string> = {
   sale: 'Satılık',
   rent: 'Kiralık',
+  daily_rent: 'Günlük Kiralık',
+};
+
+export const HOUSING_TYPE_LABEL: Record<string, string> = {
+  belirtilmemis: 'Belirtilmemiş',
+  dubleks: 'Dubleks',
+  tribleks: 'Tribleks',
+  en_ust_kat: 'En Üst Kat',
+  ara_kat: 'Ara Kat',
+  ara_kat_dubleks: 'Ara Kat Dubleks',
+  bahce_dubleksi: 'Bahçe Dubleksi',
+  cati_dubleksi: 'Çatı Dubleksi',
+  forleks: 'Forleks',
+  ters_dubleks: 'Ters Dubleks',
+};
+
+export const ENERGY_CLASS_LABEL: Record<string, string> = {
+  A: 'A', B: 'B', C: 'C', D: 'D', E: 'E', F: 'F', G: 'G',
+  muaf: 'Muaf', belirsiz: 'Belirsiz',
+};
+
+export const FACADE_LABEL: Record<string, string> = {
+  belirtilmemis: 'Belirtilmemiş', kuzey: 'Kuzey', guney: 'Güney', dogu: 'Doğu', bati: 'Batı',
+  kuzeydogu: 'Kuzeydoğu', kuzeybati: 'Kuzeybatı', guneydogu: 'Güneydoğu', guneybati: 'Güneybatı',
+};
+
+export const BUILDING_STATUS_LABEL: Record<string, string> = {
+  belirtilmemis: 'Belirtilmemiş', sifir: 'Sıfır', ikinci_el: 'İkinci El', yapim_asamasinda: 'Yapım Aşamasında',
+};
+
+export const STRUCTURE_TYPE_LABEL: Record<string, string> = {
+  belirtilmemis: 'Belirtilmemiş', betonarme: 'Betonarme', celik: 'Çelik', ahsap: 'Ahşap', yigma: 'Yığma', prefabrik: 'Prefabrik',
 };
 
 export const TIER_LABEL: Record<string, string> = {

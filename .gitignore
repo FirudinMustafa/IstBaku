@@ -11,3 +11,8 @@ next-env.d.ts
 
 .vercel
 .env*
+
+# Test / E2E artefaktları (videolar, screenshot'lar, raporlar)
+test-results/
+e2e-out/screenshots/
+tsconfig.tsbuildinfo

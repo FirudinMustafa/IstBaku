@@ -7,7 +7,7 @@ import { getCurrentUser } from './auth-actions';
 import { uploadDataUrl } from './storage';
 import { slugify } from './utils';
 import { sendEmail, tplPaymentReceipt, APP_URL } from './email';
-import { sanitizeText, sanitizeLat, sanitizeLng } from './sanitize';
+import { sanitizeText, sanitizeHtml, sanitizeLat, sanitizeLng } from './sanitize';
 import { confirmPayment } from './payment-confirm';
 
 export interface CreateListingInput {
@@ -33,6 +33,29 @@ export interface CreateListingInput {
   currency: 'USD' | 'EUR' | 'TRY' | 'AZN';
   description: string;
   tier: 'standart' | 'guclu' | 'premium';
+  /** Ek detaylar (PR-detail) */
+  customTitle?: string;
+  housingType?: typeof s.listings.$inferInsert.housingType;
+  energyClass?: typeof s.listings.$inferInsert.energyClass;
+  facade?: typeof s.listings.$inferInsert.facade;
+  buildingStatus?: typeof s.listings.$inferInsert.buildingStatus;
+  structureType?: typeof s.listings.$inferInsert.structureType;
+  permitNo?: string;
+  parcelNo?: string;
+  dues?: number;
+  deposit?: number;
+  loanEligible?: boolean;
+  ownerType?: typeof s.listings.$inferInsert.ownerType;
+  titleDeed?: typeof s.listings.$inferInsert.titleDeed;
+  occupancy?: 'bos' | 'kiracili' | 'mulk_sahibi';
+  elevator?: boolean;
+  furnished?: boolean;
+  balcony?: boolean;
+  pool?: boolean;
+  gym?: boolean;
+  inSite?: boolean;
+  swappable?: boolean;
+  siteName?: string;
   coverKind: 'photo' | 'video';
   coverPhotoIndex: number;
   /** Fotoğraf URL'leri (önceden upload edilmiş) veya data URL'ler (eski uyumluluk) */
@@ -114,7 +137,7 @@ export async function createListingAction(
   }
 
   // MH-09: sanitize all user-supplied text fields before storage.
-  const safeDescription = sanitizeText(input.description, { maxLength: 10_000 });
+  const safeDescription = sanitizeHtml(input.description, { maxLength: 10_000 });
   const safeAddress = sanitizeText(input.address, { maxLength: 500 });
   const safeNeighborhood = input.neighborhood
     ? sanitizeText(input.neighborhood, { maxLength: 200 })
@@ -148,7 +171,14 @@ export async function createListingAction(
       slug = `${base}-${suffix++}`;
     }
 
-    const title = `${safeCity} ${safeDistrict} ${input.rooms} ${input.purpose === 'sale' ? 'Satılık' : 'Kiralık'}`;
+    const purposeLabel = input.purpose === 'sale' ? 'Satılık' : input.purpose === 'daily_rent' ? 'Günlük Kiralık' : 'Kiralık';
+    const autoTitle = `${safeCity} ${safeDistrict} ${input.rooms} ${purposeLabel}`;
+    const customTitle = input.customTitle ? sanitizeText(input.customTitle, { maxLength: 200 }) : '';
+    const title = customTitle || autoTitle;
+    const safeSiteName = input.siteName ? sanitizeText(input.siteName, { maxLength: 120 }) : undefined;
+    const safePermitNo = input.permitNo ? sanitizeText(input.permitNo, { maxLength: 64 }) : undefined;
+    const safeParcelNo = input.parcelNo ? sanitizeText(input.parcelNo, { maxLength: 64 }) : undefined;
+    const isDaily = input.purpose === 'daily_rent';
     const regionDiger = Math.max(0, 100 - (input.region.aile + input.region.memur + input.region.ogrenci + input.region.yabanci));
 
     // 5) DB insert. MC-19: ALL new listings start as 'pending'. Premium just gets queue priority.
@@ -177,6 +207,28 @@ export async function createListingAction(
       buildingAge: input.buildingAge,
       heating: input.heating,
       parking: input.parking,
+      // Ek detaylar
+      housingType: input.housingType ?? 'belirtilmemis',
+      energyClass: input.energyClass ?? 'belirsiz',
+      facade: input.facade ?? 'belirtilmemis',
+      buildingStatus: input.buildingStatus ?? 'belirtilmemis',
+      structureType: input.structureType ?? 'belirtilmemis',
+      permitNo: safePermitNo ?? null,
+      parcelNo: safeParcelNo ?? null,
+      siteName: input.inSite ? (safeSiteName ?? null) : null,
+      dues: Number.isFinite(input.dues) && (input.dues ?? 0) > 0 ? input.dues : null,
+      deposit: input.purpose !== 'sale' && Number.isFinite(input.deposit) && (input.deposit ?? 0) > 0 ? input.deposit : null,
+      loanEligible: input.purpose === 'sale' ? (input.loanEligible ?? false) : false,
+      ownerType: input.ownerType ?? 'sahibi',
+      titleDeed: input.titleDeed ?? 'belirsiz',
+      status: input.occupancy ?? 'bos',
+      elevator: input.elevator ?? false,
+      furnished: input.furnished ?? false,
+      balcony: input.balcony ?? false,
+      pool: input.pool ?? false,
+      gym: input.gym ?? false,
+      inSite: input.inSite ?? false,
+      swappable: input.swappable ?? false,
       images: uploadedPhotos,
       video: videoUrl,
       coverKind: input.coverKind,
@@ -195,12 +247,12 @@ export async function createListingAction(
         diger: regionDiger,
       },
       nearby: buildNearbyFromInput(input.nearby),
-      // Günlük kira (PR5)
-      dailyRentalEnabled: input.dailyRentalEnabled ?? false,
-      dailyRentalPricePerNight: input.dailyRentalEnabled ? (input.dailyRentalPricePerNight ?? null) : null,
-      dailyRentalCurrency: input.dailyRentalEnabled ? (input.dailyRentalCurrency ?? null) : null,
+      // Günlük kira — purpose 'daily_rent' ise otomatik aktif
+      dailyRentalEnabled: isDaily,
+      dailyRentalPricePerNight: isDaily ? (input.dailyRentalPricePerNight ?? null) : null,
+      dailyRentalCurrency: isDaily ? (input.dailyRentalCurrency ?? null) : null,
       dailyRentalMinNights: input.dailyRentalMinNights ?? 1,
-      dailyRentalNotes: input.dailyRentalEnabled ? (input.dailyRentalNotes ?? null) : null,
+      dailyRentalNotes: isDaily ? (input.dailyRentalNotes ?? null) : null,
       // MC-19: force pending for ALL tiers; premium only gets prioritized queue position.
       approvalStatus: 'pending',
       istbakuApproved: false,
@@ -297,7 +349,7 @@ export async function updateListingAction(input: UpdateListingInput): Promise<{ 
     touchedApprovalImpacting = true;
   }
   if (input.description !== undefined) {
-    patch.description = sanitizeText(input.description, { maxLength: 10_000 });
+    patch.description = sanitizeHtml(input.description, { maxLength: 10_000 });
     touchedApprovalImpacting = true;
   }
   if (input.price !== undefined) {

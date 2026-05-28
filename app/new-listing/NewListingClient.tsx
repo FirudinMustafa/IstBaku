@@ -10,7 +10,7 @@ import {
 import { Card, CardBody } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
-import { Input, Label, Select, Textarea } from '@/components/ui/Input';
+import { Input, Label, Select } from '@/components/ui/Input';
 import { LocationSelector } from '@/components/ui/LocationSelector';
 import { LocationPicker } from '@/components/listings/LocationPicker';
 import { useToast } from '@/components/ui/Toast';
@@ -20,8 +20,16 @@ import { defaultCity, defaultDistrict } from '@/lib/data/locations';
 import { cn } from '@/lib/utils';
 import type { PropertyType } from '@/lib/types';
 import { createListingSchema, fieldErrors } from '@/lib/schemas';
+import { ROOM_OPTIONS, HOUSING_TYPE_OPTIONS, ENERGY_CLASS_OPTIONS, FACADE_OPTIONS, BUILDING_STATUS_OPTIONS, STRUCTURE_TYPE_OPTIONS } from '@/lib/constants/listing-options';
+import { RichTextEditor } from '@/components/ui/RichTextEditor';
+import { kmToMinutes } from '@/lib/geo';
 
-const STEPS = ['Tür', 'Konum', 'Detay', 'Medya', 'Kapak', 'Bölge', 'Yakın Çevre', 'İlan Seçenekleri', 'Günlük Kira'];
+const BASE_STEPS = ['Tür', 'Konum', 'Detay', 'Medya', 'Kapak', 'Bölge', 'Yakın Çevre', 'İlan Seçenekleri'] as const;
+
+/** HTML açıklamasının düz metin uzunluğu (etiketler hariç). */
+function plainTextLen(html: string): number {
+  return html.replace(/<[^>]*>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim().length;
+}
 
 const CITY_CENTERS: Record<string, { lat: number; lng: number }> = {
   'İstanbul': { lat: 41.015, lng: 28.97 },
@@ -47,7 +55,7 @@ const DRAFT_STORAGE_KEY = 'istbaku.newListing.v1';
 
 // PF-09: empty-state sentinels for step 1. The user has to actively pick both
 // purpose and type before "İleri" advances.
-type PurposeOrEmpty = 'sale' | 'rent' | '';
+type PurposeOrEmpty = 'sale' | 'rent' | 'daily_rent' | '';
 type TypeOrEmpty = PropertyType | '';
 
 export function NewListingClient({ paymentEnabled = false, countries: countryList }: NewListingClientProps) {
@@ -77,17 +85,40 @@ export function NewListingClient({ paymentEnabled = false, countries: countryLis
     address: '',
     lat: 0,
     lng: 0,
+    customTitle: '',
     rooms: '2+1',
     bathrooms: 1,
-    netArea: 100,
-    grossArea: 120,
-    floor: 3,
-    totalFloors: 8,
-    buildingAge: 5,
+    netArea: 0,
+    grossArea: 0,
+    floor: 0,
+    totalFloors: 0,
+    buildingAge: 0,
     heating: 'Kombi',
     parking: 'kapali' as 'kapali' | 'acik' | 'yok',
-    price: 250000,
+    price: 0,
     currency: 'USD',
+    // Ek detaylar
+    housingType: 'belirtilmemis' as string,
+    energyClass: 'belirsiz' as string,
+    facade: 'belirtilmemis' as string,
+    buildingStatus: 'belirtilmemis' as string,
+    structureType: 'belirtilmemis' as string,
+    permitNo: '',
+    parcelNo: '',
+    dues: 0,
+    deposit: 0,
+    loanEligible: false,
+    ownerType: 'sahibi' as 'sahibi' | 'emlakci' | 'insaat' | 'banka',
+    titleDeed: 'belirsiz' as 'kat_mulkiyeti' | 'kat_irtifaki' | 'arsa_payi' | 'cikti_belgesi' | 'belirsiz',
+    occupancy: 'bos' as 'bos' | 'kiracili' | 'mulk_sahibi',
+    elevator: false,
+    furnished: false,
+    balcony: false,
+    pool: false,
+    gym: false,
+    inSite: false,
+    swappable: false,
+    siteName: '',
     description: '',
     tier: 'standart' as 'standart' | 'premium',
     isPrivate: false,
@@ -161,6 +192,12 @@ export function NewListingClient({ paymentEnabled = false, countries: countryLis
 
   const set = (patch: Partial<typeof form>) => setForm((f) => ({ ...f, ...patch }));
   const cityCenter = CITY_CENTERS[form.city] ?? CITY_CENTERS['İstanbul'];
+  const isDaily = form.purpose === 'daily_rent';
+  const STEPS = isDaily ? [...BASE_STEPS, 'Günlük Kira'] : [...BASE_STEPS];
+
+  /** Sayısal input yardımcısı: 0 → boş gösterilir; baştaki sıfır takılı kalmaz. */
+  const numVal = (n: number) => (n === 0 ? '' : String(n));
+  const numSet = (raw: string) => (raw === '' ? 0 : Math.max(0, Math.floor(Number(raw) || 0)));
 
   function handlePhotos(files: FileList | null) {
     if (!files || files.length === 0) return;
@@ -214,8 +251,12 @@ export function NewListingClient({ paymentEnabled = false, countries: countryLis
       toast({ variant: 'error', title: 'Konum seçilmedi', description: 'Haritadan konumu işaretle.' });
       return;
     }
-    if (step === 2 && form.price <= 0) {
+    if (step === 2 && !isDaily && form.price <= 0) {
       toast({ variant: 'error', title: 'Fiyat zorunlu', description: 'Geçerli bir fiyat gir.' });
+      return;
+    }
+    if (step === 2 && form.inSite && !form.siteName.trim()) {
+      toast({ variant: 'error', title: 'Site adı zorunlu', description: 'Site içindeyse site adını yaz.' });
       return;
     }
     if (step === 2 && form.netArea <= 0) {
@@ -228,11 +269,11 @@ export function NewListingClient({ paymentEnabled = false, countries: countryLis
     }
     // PU-05: enforce description min-length at the step-2 → step-3 transition so
     // users learn about the requirement early (not only at publish-time).
-    if (step === 2 && form.description.trim().length < 20) {
+    if (step === 2 && plainTextLen(form.description) < 20) {
       toast({
         variant: 'error',
         title: 'Açıklama çok kısa',
-        description: `En az 20 karakter olmalı (şu an ${form.description.trim().length}).`,
+        description: `En az 20 karakter olmalı (şu an ${plainTextLen(form.description)}).`,
       });
       return;
     }
@@ -281,10 +322,34 @@ export function NewListingClient({ paymentEnabled = false, countries: countryLis
       buildingAge: form.buildingAge,
       heating: form.heating,
       parking: form.parking,
-      price: form.price,
-      currency: form.currency,
+      // Günlük kirada ana fiyat gecelik fiyattan türetilir
+      price: isDaily ? (form.dailyRentalPricePerNight || 0) : form.price,
+      currency: isDaily ? form.dailyRentalCurrency : form.currency,
       description: form.description,
       tier: form.tier,
+      // Ek detaylar
+      customTitle: form.customTitle?.trim() || undefined,
+      housingType: form.housingType as 'belirtilmemis',
+      energyClass: form.energyClass as 'belirsiz',
+      facade: form.facade as 'belirtilmemis',
+      buildingStatus: form.buildingStatus as 'belirtilmemis',
+      structureType: form.structureType as 'belirtilmemis',
+      permitNo: form.permitNo?.trim() || undefined,
+      parcelNo: form.parcelNo?.trim() || undefined,
+      dues: form.dues > 0 ? form.dues : undefined,
+      ownerType: form.ownerType,
+      titleDeed: form.titleDeed,
+      occupancy: form.occupancy,
+      elevator: form.elevator,
+      furnished: form.furnished,
+      balcony: form.balcony,
+      pool: form.pool,
+      gym: form.gym,
+      inSite: form.inSite,
+      swappable: form.swappable,
+      deposit: form.deposit,
+      loanEligible: form.loanEligible,
+      siteName: form.inSite ? (form.siteName?.trim() || undefined) : undefined,
       coverKind: form.coverKind,
       coverPhotoIndex: Math.min(Math.max(0, form.coverPhotoIndex), Math.max(0, photos.length - 1)),
       photoDataUrls: photos,
@@ -296,11 +361,11 @@ export function NewListingClient({ paymentEnabled = false, countries: countryLis
           return (v && typeof v === 'object' && 'name' in v && !(v as { name: string }).name.trim()) ? [k, undefined] : [k, v];
         }),
       ),
-      dailyRentalEnabled: form.dailyRentalEnabled,
-      dailyRentalPricePerNight: form.dailyRentalEnabled ? form.dailyRentalPricePerNight : undefined,
-      dailyRentalCurrency: form.dailyRentalEnabled ? form.dailyRentalCurrency : undefined,
-      dailyRentalMinNights: form.dailyRentalEnabled ? form.dailyRentalMinNights : undefined,
-      dailyRentalNotes: form.dailyRentalEnabled ? (form.dailyRentalNotes || undefined) : undefined,
+      dailyRentalEnabled: isDaily,
+      dailyRentalPricePerNight: isDaily ? form.dailyRentalPricePerNight : undefined,
+      dailyRentalCurrency: isDaily ? form.dailyRentalCurrency : undefined,
+      dailyRentalMinNights: isDaily ? form.dailyRentalMinNights : undefined,
+      dailyRentalNotes: isDaily ? (form.dailyRentalNotes || undefined) : undefined,
     };
     const parsed = createListingSchema.safeParse(payload);
     if (!parsed.success) {
@@ -361,6 +426,28 @@ export function NewListingClient({ paymentEnabled = false, countries: countryLis
       currency: parsed.data.currency,
       description: parsed.data.description,
       tier: parsed.data.tier,
+      customTitle: parsed.data.customTitle,
+      housingType: parsed.data.housingType,
+      energyClass: parsed.data.energyClass,
+      facade: parsed.data.facade,
+      buildingStatus: parsed.data.buildingStatus,
+      structureType: parsed.data.structureType,
+      permitNo: parsed.data.permitNo,
+      parcelNo: parsed.data.parcelNo,
+      dues: parsed.data.dues,
+      ownerType: parsed.data.ownerType,
+      titleDeed: parsed.data.titleDeed,
+      occupancy: parsed.data.occupancy,
+      elevator: parsed.data.elevator,
+      furnished: parsed.data.furnished,
+      balcony: parsed.data.balcony,
+      pool: parsed.data.pool,
+      gym: parsed.data.gym,
+      inSite: parsed.data.inSite,
+      swappable: parsed.data.swappable,
+      deposit: parsed.data.deposit,
+      loanEligible: parsed.data.loanEligible,
+      siteName: parsed.data.siteName,
       coverKind: parsed.data.coverKind,
       coverPhotoIndex: parsed.data.coverPhotoIndex,
       photoDataUrls: uploadedPhotoUrls,
@@ -422,9 +509,9 @@ export function NewListingClient({ paymentEnabled = false, countries: countryLis
             <div>
               <h2 className="text-lg font-semibold">Ne ilan veriyorsun?</h2>
               <p className="mt-1 text-sm text-[color:var(--fg-muted)]">İki seçim de zorunlu — varsayılan yok.</p>
-              <div className="mt-4 grid grid-cols-2 gap-2">
-                {[{ v: 'sale' as const, l: 'Satılık' }, { v: 'rent' as const, l: 'Kiralık' }].map((o) => (
-                  <button key={o.v} onClick={() => set({ purpose: o.v })} aria-pressed={form.purpose === o.v} className={cn('rounded-xl border p-4 font-medium', form.purpose === o.v ? 'border-gold-400 bg-gold-400/10 text-gold-300' : 'border-[color:var(--border)] bg-[color:var(--bg-elev)] text-[color:var(--fg)] hover:border-[color:var(--border-strong)]')}>
+              <div className="mt-4 grid grid-cols-3 gap-2">
+                {[{ v: 'sale' as const, l: 'Satılık' }, { v: 'rent' as const, l: 'Kiralık' }, { v: 'daily_rent' as const, l: 'Günlük Kiralık' }].map((o) => (
+                  <button key={o.v} onClick={() => set({ purpose: o.v })} aria-pressed={form.purpose === o.v} className={cn('rounded-xl border p-4 font-medium text-sm', form.purpose === o.v ? 'border-gold-400 bg-gold-400/10 text-gold-300' : 'border-[color:var(--border)] bg-[color:var(--bg-elev)] text-[color:var(--fg)] hover:border-[color:var(--border-strong)]')}>
                     {o.l}
                   </button>
                 ))}
@@ -487,9 +574,12 @@ export function NewListingClient({ paymentEnabled = false, countries: countryLis
           {step === 2 && (
             <div className="grid sm:grid-cols-2 gap-4">
               <h2 className="sm:col-span-2 text-lg font-semibold">Detaylar</h2>
+              <div className="sm:col-span-2"><Label>İlan başlığı (opsiyonel)</Label>
+                <Input value={form.customTitle} onChange={(e) => set({ customTitle: e.target.value })} maxLength={200} placeholder="Boş bırakırsan otomatik oluşturulur" />
+              </div>
               <div><Label>Oda sayısı</Label>
                 <Select value={form.rooms} onChange={(e) => set({ rooms: e.target.value })}>
-                  {['1+0', '1+1', '2+1', '3+1', '4+1', '5+1', '6+1'].map((r) => <option key={r}>{r}</option>)}
+                  {ROOM_OPTIONS.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
                 </Select>
               </div>
               <div><Label>Banyo sayısı</Label>
@@ -497,11 +587,37 @@ export function NewListingClient({ paymentEnabled = false, countries: countryLis
                   {[1, 2, 3, 4, 5].map((b) => <option key={b} value={b}>{b}</option>)}
                 </Select>
               </div>
-              <div><Label>Net m²</Label><Input type="number" value={form.netArea} onChange={(e) => set({ netArea: +e.target.value })} /></div>
-              <div><Label>Brüt m²</Label><Input type="number" value={form.grossArea} onChange={(e) => set({ grossArea: +e.target.value })} /></div>
-              <div><Label>Bina yaşı</Label><Input type="number" value={form.buildingAge} onChange={(e) => set({ buildingAge: +e.target.value })} /></div>
-              <div><Label>Bulunduğu kat</Label><Input type="number" value={form.floor} onChange={(e) => set({ floor: +e.target.value })} /></div>
-              <div><Label>Toplam kat</Label><Input type="number" value={form.totalFloors} onChange={(e) => set({ totalFloors: +e.target.value })} /></div>
+              <div><Label>Konut tipi</Label>
+                <Select value={form.housingType} onChange={(e) => set({ housingType: e.target.value })}>
+                  {HOUSING_TYPE_OPTIONS.map((h) => <option key={h.value} value={h.value}>{h.label}</option>)}
+                </Select>
+              </div>
+              <div><Label>Enerji kimlik belgesi</Label>
+                <Select value={form.energyClass} onChange={(e) => set({ energyClass: e.target.value })}>
+                  {ENERGY_CLASS_OPTIONS.map((en) => <option key={en.value} value={en.value}>{en.label}</option>)}
+                </Select>
+              </div>
+              <div><Label>Cephe / yön</Label>
+                <Select value={form.facade} onChange={(e) => set({ facade: e.target.value })}>
+                  {FACADE_OPTIONS.map((f) => <option key={f.value} value={f.value}>{f.label}</option>)}
+                </Select>
+              </div>
+              <div><Label>Yapının durumu</Label>
+                <Select value={form.buildingStatus} onChange={(e) => set({ buildingStatus: e.target.value })}>
+                  {BUILDING_STATUS_OPTIONS.map((b) => <option key={b.value} value={b.value}>{b.label}</option>)}
+                </Select>
+              </div>
+              <div><Label>Yapı tipi</Label>
+                <Select value={form.structureType} onChange={(e) => set({ structureType: e.target.value })}>
+                  {STRUCTURE_TYPE_OPTIONS.map((st) => <option key={st.value} value={st.value}>{st.label}</option>)}
+                </Select>
+              </div>
+              <div><Label>Net m²</Label><Input type="number" min={0} value={numVal(form.netArea)} onChange={(e) => set({ netArea: numSet(e.target.value) })} placeholder="Örn: 100" /></div>
+              <div><Label>Brüt m²</Label><Input type="number" min={0} value={numVal(form.grossArea)} onChange={(e) => set({ grossArea: numSet(e.target.value) })} placeholder="Örn: 120" /></div>
+              <div><Label>Bina yaşı</Label><Input type="number" min={0} value={numVal(form.buildingAge)} onChange={(e) => set({ buildingAge: numSet(e.target.value) })} placeholder="0" /></div>
+              <div><Label>Bulunduğu kat</Label><Input type="number" value={numVal(form.floor)} onChange={(e) => set({ floor: numSet(e.target.value) })} placeholder="0" /></div>
+              <div><Label>Toplam kat</Label><Input type="number" min={0} value={numVal(form.totalFloors)} onChange={(e) => set({ totalFloors: numSet(e.target.value) })} placeholder="Örn: 8" /></div>
+              <div><Label>Aidat (aylık)</Label><Input type="number" min={0} value={numVal(form.dues)} onChange={(e) => set({ dues: numSet(e.target.value) })} placeholder="Yoksa boş bırak" /></div>
               <div><Label>Isıtma</Label>
                 <Select value={form.heating} onChange={(e) => set({ heating: e.target.value })}>
                   {['Kombi', 'Merkezi', 'Merkezi (Doğalgaz)', 'Yerden ısıtma', 'Klima', 'Yok'].map((h) => <option key={h}>{h}</option>)}
@@ -514,38 +630,114 @@ export function NewListingClient({ paymentEnabled = false, countries: countryLis
                   <option value="yok">Yok</option>
                 </Select>
               </div>
-              <div><Label>Fiyat</Label><Input type="number" value={form.price} onChange={(e) => set({ price: +e.target.value })} /></div>
-              <div><Label>Para Birimi</Label>
-                <Select value={form.currency} onChange={(e) => set({ currency: e.target.value })}>
-                  {['USD', 'EUR', 'TRY', 'AZN'].map((c) => <option key={c}>{c}</option>)}
+              <div><Label>Kimden</Label>
+                <Select value={form.ownerType} onChange={(e) => set({ ownerType: e.target.value as typeof form.ownerType })}>
+                  <option value="sahibi">Sahibinden</option>
+                  <option value="emlakci">Emlakçıdan</option>
+                  <option value="insaat">İnşaat firmasından</option>
+                  <option value="banka">Bankadan</option>
                 </Select>
               </div>
+              <div><Label>Tapu durumu</Label>
+                <Select value={form.titleDeed} onChange={(e) => set({ titleDeed: e.target.value as typeof form.titleDeed })}>
+                  <option value="belirsiz">Belirtilmemiş</option>
+                  <option value="kat_mulkiyeti">Kat Mülkiyeti</option>
+                  <option value="kat_irtifaki">Kat İrtifakı</option>
+                  <option value="arsa_payi">Arsa Payı</option>
+                  <option value="cikti_belgesi">Çıktı Belgesi</option>
+                </Select>
+              </div>
+              <div><Label>Kullanım durumu</Label>
+                <Select value={form.occupancy} onChange={(e) => set({ occupancy: e.target.value as typeof form.occupancy })}>
+                  <option value="bos">Boş</option>
+                  <option value="kiracili">Kiracılı</option>
+                  <option value="mulk_sahibi">Mülk sahibi oturuyor</option>
+                </Select>
+              </div>
+              <div><Label>İzin / ruhsat belge no</Label><Input value={form.permitNo} onChange={(e) => set({ permitNo: e.target.value })} maxLength={64} placeholder="Opsiyonel" /></div>
+              <div><Label>Taşınmaz numarası</Label><Input value={form.parcelNo} onChange={(e) => set({ parcelNo: e.target.value })} maxLength={64} placeholder="Opsiyonel" /></div>
+
+              {/* Özellikler — evet/hayır */}
+              <div className="sm:col-span-2 grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {([
+                  { k: 'elevator', l: 'Asansör' },
+                  { k: 'furnished', l: 'Eşyalı' },
+                  { k: 'balcony', l: 'Balkon' },
+                  { k: 'pool', l: 'Yüzme havuzu' },
+                  { k: 'gym', l: 'Spor alanı' },
+                  { k: 'inSite', l: 'Site içerisinde' },
+                  { k: 'swappable', l: 'Takasa uygun' },
+                ] as const).map((o) => (
+                  <button
+                    key={o.k}
+                    type="button"
+                    onClick={() => set({ [o.k]: !form[o.k] } as Partial<typeof form>)}
+                    aria-pressed={form[o.k]}
+                    className={cn('rounded-xl border p-3 text-sm text-left', form[o.k] ? 'border-gold-400 bg-gold-400/10 text-gold-300' : 'border-[color:var(--border)] bg-[color:var(--bg-elev)] text-[color:var(--fg)] hover:border-[color:var(--border-strong)]')}
+                  >
+                    {form[o.k] ? '✓ ' : ''}{o.l}
+                  </button>
+                ))}
+              </div>
+              {form.inSite && (
+                <div className="sm:col-span-2"><Label>Site adı</Label>
+                  <Input value={form.siteName} onChange={(e) => set({ siteName: e.target.value })} maxLength={120} placeholder="Örn: Bahçeşehir Park Evleri" />
+                </div>
+              )}
+
+              {!isDaily && (
+                <>
+                  <div><Label>Fiyat</Label><Input type="number" min={0} value={numVal(form.price)} onChange={(e) => set({ price: numSet(e.target.value) })} placeholder="Örn: 250000" /></div>
+                  <div><Label>Para Birimi</Label>
+                    <Select value={form.currency} onChange={(e) => set({ currency: e.target.value })}>
+                      {['USD', 'EUR', 'TRY', 'AZN'].map((c) => <option key={c}>{c}</option>)}
+                    </Select>
+                  </div>
+                  {form.purpose === 'rent' && (
+                    <div><Label>Depozito ({form.currency})</Label><Input type="number" min={0} value={numVal(form.deposit)} onChange={(e) => set({ deposit: numSet(e.target.value) })} placeholder="Yoksa boş bırak" /></div>
+                  )}
+                  {form.purpose === 'sale' && (
+                    <button
+                      type="button"
+                      onClick={() => set({ loanEligible: !form.loanEligible })}
+                      aria-pressed={form.loanEligible}
+                      className={cn('rounded-xl border p-3 text-sm text-left self-end', form.loanEligible ? 'border-gold-400 bg-gold-400/10 text-gold-300' : 'border-[color:var(--border)] bg-[color:var(--bg-elev)] text-[color:var(--fg)] hover:border-[color:var(--border-strong)]')}
+                    >
+                      {form.loanEligible ? '✓ ' : ''}Krediye uygun
+                    </button>
+                  )}
+                  <p className="sm:col-span-2 text-xs font-bold text-[color:var(--fg-muted)] leading-relaxed rounded-lg bg-[color:var(--bg-elev)] border border-[color:var(--border)] p-3">
+                    Ticaret Bakanlığı, ilgili mevzuat gereğince ilanlardaki fiyat artışlarını yakından takip etmektedir. Piyasa koşullarına uygun olmayan fiyat artışı yapılan ilanlara ilişkin bilgilerin Ticaret Bakanlığı tarafından talep edildiğini ve aykırılık tespit edilen ilanlar için 858.620 TL&apos;ye varan idari para cezası uygulanabileceğini önemle hatırlatırız.
+                  </p>
+                </>
+              )}
+              {isDaily && (
+                <p className="sm:col-span-2 text-xs text-[color:var(--fg-muted)] rounded-lg bg-[color:var(--bg-elev)] border border-[color:var(--border)] p-3">
+                  Günlük kiralık ilan — gecelik fiyat ve kuralları son adımda gireceksin.
+                </p>
+              )}
               <div className="sm:col-span-2">
                 <Label>Açıklama</Label>
-                <Textarea
-                  rows={4}
+                <RichTextEditor
                   value={form.description}
-                  onChange={(e) => set({ description: e.target.value })}
+                  onChange={(html) => set({ description: html })}
                   placeholder="İlanın hakkında detaylı açıklama yaz. Bölgenin avantajları, daire içi özellikler, yakın çevre..."
-                  className={cn(
-                    form.description.trim().length > 0 && form.description.trim().length < 20 && 'ring-2 ring-danger/60 border-danger',
-                  )}
-                  aria-invalid={form.description.trim().length > 0 && form.description.trim().length < 20 ? 'true' : undefined}
+                  invalid={plainTextLen(form.description) > 0 && plainTextLen(form.description) < 20}
                 />
-                {/* PU-05: inline counter; turns red once user has typed but is still below threshold. */}
-                <div
-                  className={cn(
-                    'mt-1 text-[11px] tabular-nums',
-                    form.description.trim().length === 0
-                      ? 'text-[color:var(--fg-muted)]'
-                      : form.description.trim().length < 20
-                      ? 'text-danger font-medium'
-                      : 'text-[color:var(--fg-muted)]',
-                  )}
-                >
-                  {form.description.trim().length} / 20
-                  {form.description.trim().length > 0 && form.description.trim().length < 20 && ' · En az 20 karakter'}
-                </div>
+                {(() => {
+                  const len = plainTextLen(form.description);
+                  return (
+                    <div
+                      className={cn(
+                        'mt-1 text-[11px] tabular-nums',
+                        len === 0 ? 'text-[color:var(--fg-muted)]' : len < 20 ? 'text-danger font-medium' : 'text-[color:var(--fg-muted)]',
+                      )}
+                    >
+                      {len} / 20
+                      {len > 0 && len < 20 && ' · En az 20 karakter'}
+                    </div>
+                  );
+                })()}
               </div>
             </div>
           )}
@@ -710,36 +902,21 @@ export function NewListingClient({ paymentEnabled = false, countries: countryLis
 
           {step === 8 && (
             <div>
-              <h2 className="text-lg font-semibold">Günlük Kira (opsiyonel)</h2>
+              <h2 className="text-lg font-semibold">Günlük Kira</h2>
               <p className="text-sm text-[color:var(--fg-muted)] mt-1">
-                İlanını günlük kiralanabilir yap — misafirler takvim üzerinden rezervasyon talep eder,
-                sen onayla veya reddet.
+                Misafirler takvim üzerinden rezervasyon talep eder, sen onaylar veya reddedersin.
+                Gecelik fiyat zorunludur.
               </p>
 
-              <label className="mt-5 flex items-start gap-3 rounded-2xl border p-4 cursor-pointer bg-[color:var(--bg-elev)]">
-                <input
-                  type="checkbox"
-                  checked={form.dailyRentalEnabled}
-                  onChange={(e) => set({ dailyRentalEnabled: e.target.checked })}
-                  className="mt-0.5 size-4 accent-gold-400"
-                />
-                <div>
-                  <div className="font-semibold">Günlük kiralanabilir</div>
-                  <div className="text-xs text-[color:var(--fg-muted)] mt-0.5">
-                    İlan detay sayfasında takvim açılır. Rezervasyon talepleri panele düşer.
-                  </div>
-                </div>
-              </label>
-
-              {form.dailyRentalEnabled && (
+              {(
                 <div className="mt-5 grid sm:grid-cols-2 gap-4">
                   <div>
                     <Label>Gecelik fiyat</Label>
                     <Input
                       type="number"
                       min={1}
-                      value={form.dailyRentalPricePerNight || ''}
-                      onChange={(e) => set({ dailyRentalPricePerNight: +e.target.value })}
+                      value={numVal(form.dailyRentalPricePerNight)}
+                      onChange={(e) => set({ dailyRentalPricePerNight: numSet(e.target.value) })}
                       placeholder="80"
                     />
                   </div>
@@ -1043,15 +1220,15 @@ function NearbyStep({ value, onChange }: { value: NearbyShape; onChange: (v: Nea
       <div>
         <h2 className="text-lg font-semibold">Yakın Çevre</h2>
         <p className="text-sm text-[color:var(--fg-muted)] mt-1">
-          İlana yakın yerleri spesifik isimleriyle gir — örneğin <strong>&ldquo;Bravo Süpermarket&rdquo;</strong>, <strong>&ldquo;Migros 5M&rdquo;</strong>.
-          Tümünü doldurman gerekmez, boş bırakırsan o POI gösterilmez.
+          İlana yakın yerleri spesifik isimleriyle ve km uzaklığıyla gir — örneğin <strong>&ldquo;Bravo Süpermarket&rdquo;</strong>, <strong>&ldquo;Migros 5M&rdquo;</strong>.
+          Yürüme süresi km&apos;den otomatik hesaplanır. Tümünü doldurman gerekmez, boş bırakırsan o POI gösterilmez.
         </p>
       </div>
 
       {FIELDS.map((f) => (
         <div key={f.key} className="rounded-xl border p-3 bg-[color:var(--bg-elev)]">
           <Label className="!text-xs !font-semibold">{f.label}</Label>
-          <div className="grid grid-cols-1 sm:grid-cols-[2fr_1fr_1fr] gap-2 mt-1.5">
+          <div className="grid grid-cols-1 sm:grid-cols-[2fr_1fr_auto] gap-2 mt-1.5 items-center">
             <Input
               value={value[f.key].name}
               onChange={(e) => updateField(f.key, { name: e.target.value })}
@@ -1060,18 +1237,14 @@ function NearbyStep({ value, onChange }: { value: NearbyShape; onChange: (v: Nea
             <Input
               type="number"
               min={0}
-              value={value[f.key].minutes || ''}
-              onChange={(e) => updateField(f.key, { minutes: +e.target.value })}
-              placeholder="Dk"
-            />
-            <Input
-              type="number"
-              min={0}
               step="0.1"
               value={value[f.key].km || ''}
-              onChange={(e) => updateField(f.key, { km: +e.target.value })}
+              onChange={(e) => updateField(f.key, { km: +e.target.value, minutes: kmToMinutes(+e.target.value) })}
               placeholder="Km"
             />
+            <span className="text-xs text-[color:var(--fg-muted)] tabular-nums whitespace-nowrap px-1">
+              {value[f.key].km > 0 ? `≈ ${value[f.key].minutes} dk yürüme` : '— dk'}
+            </span>
           </div>
         </div>
       ))}
@@ -1086,7 +1259,7 @@ function NearbyStep({ value, onChange }: { value: NearbyShape; onChange: (v: Nea
         </div>
         <div className="mt-2 space-y-2">
           {value.markets.map((m, idx) => (
-            <div key={idx} className="grid grid-cols-1 sm:grid-cols-[2fr_1fr_1fr_auto] gap-2 items-center">
+            <div key={idx} className="grid grid-cols-1 sm:grid-cols-[2fr_1fr_auto_auto] gap-2 items-center">
               <Input
                 value={m.name}
                 onChange={(e) => updateMarket(idx, { name: e.target.value })}
@@ -1095,18 +1268,14 @@ function NearbyStep({ value, onChange }: { value: NearbyShape; onChange: (v: Nea
               <Input
                 type="number"
                 min={0}
-                value={m.minutes || ''}
-                onChange={(e) => updateMarket(idx, { minutes: +e.target.value })}
-                placeholder="Dk"
-              />
-              <Input
-                type="number"
-                min={0}
                 step="0.1"
                 value={m.km || ''}
-                onChange={(e) => updateMarket(idx, { km: +e.target.value })}
+                onChange={(e) => updateMarket(idx, { km: +e.target.value, minutes: kmToMinutes(+e.target.value) })}
                 placeholder="Km"
               />
+              <span className="text-xs text-[color:var(--fg-muted)] tabular-nums whitespace-nowrap px-1">
+                {m.km > 0 ? `≈ ${m.minutes} dk` : '— dk'}
+              </span>
               {/* First market row is always visible — only show remove for additional rows */}
               {idx > 0 ? (
                 <button

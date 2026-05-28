@@ -51,7 +51,7 @@ async function takeShot(page: Page, name: string) {
 
 async function switchLanguageToEN(page: Page) {
   // Header LangSwitcher: button has aria-label "Dil değiştir"
-  const trigger = page.locator('button[aria-label="Dil değiştir"]').first();
+  const trigger = page.locator('button[aria-label="Dil seç"], [data-testid="lang-switcher-button"]').first();
   if (await trigger.count()) {
     await trigger.click().catch(() => {});
     // After opening, dropdown shows LANG_LABELS — click "English"

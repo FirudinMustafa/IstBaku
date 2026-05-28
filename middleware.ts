@@ -12,6 +12,7 @@ const PROTECTED_PREFIXES = [
   '/new-listing',
   '/private-portfolio',
   '/publisher',
+  '/kyc',
 ];
 
 // Admin login screen lives under /admin but must remain reachable to bootstrap

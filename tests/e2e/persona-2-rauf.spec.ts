@@ -36,7 +36,7 @@ test.describe('Persona 2 — Rauf', () => {
     await snap(page, 'persona-2-s1-home-initial.png');
 
     // Locate the language switcher (button with aria-label "Dil değiştir")
-    const langButton = page.locator('button[aria-label="Dil değiştir"]').first();
+    const langButton = page.locator('button[aria-label="Dil seç"], [data-testid="lang-switcher-button"]').first();
     const langButtonCount = await langButton.count();
     if (langButtonCount === 0) {
       record('S1 Language switcher', 'BROKEN', 'Could not find header language switcher (aria-label="Dil değiştir").');

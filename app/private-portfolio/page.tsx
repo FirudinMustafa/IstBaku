@@ -22,6 +22,12 @@ export default async function PrivatePortfolioPage() {
         <p className="mt-4 text-sm text-[color:var(--fg-muted)]">
           Mevcut KYC durumun: <code>{user.kycStatus}</code>
         </p>
+        <a
+          href="/kyc"
+          className="mt-6 inline-flex items-center gap-2 rounded-xl bg-gold-400 px-5 py-2.5 text-sm font-semibold text-navy-900 hover:bg-gold-300"
+        >
+          {user.kycStatus === 'pending' ? 'KYC başvurunu görüntüle' : 'KYC doğrulamasını başlat'}
+        </a>
       </div>
     );
   }

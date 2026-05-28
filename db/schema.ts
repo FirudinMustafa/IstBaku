@@ -17,11 +17,22 @@ export const currencyEnum = pgEnum('currency', ['USD', 'EUR', 'TRY', 'AZN']);
 export const propertyTypeEnum = pgEnum('property_type', [
   'konut', 'luks_konut', 'villa', 'is_yeri', 'arsa', 'proje', 'bina', 'turistik_tesis', 'devre_mulk',
 ]);
-export const purposeEnum = pgEnum('purpose', ['sale', 'rent']);
+export const purposeEnum = pgEnum('purpose', ['sale', 'rent', 'daily_rent']);
 export const tierEnum = pgEnum('tier', ['standart', 'guclu', 'premium']);
 export const ownerTypeEnum = pgEnum('owner_type', ['sahibi', 'emlakci', 'insaat', 'banka']);
 export const statusEnum = pgEnum('listing_status', ['bos', 'kiracili', 'mulk_sahibi']);
 export const titleDeedEnum = pgEnum('title_deed', ['kat_mulkiyeti', 'kat_irtifaki', 'arsa_payi', 'cikti_belgesi', 'belirsiz']);
+export const energyClassEnum = pgEnum('energy_class', ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'muaf', 'belirsiz']);
+export const housingTypeEnum = pgEnum('housing_type', [
+  'belirtilmemis', 'dubleks', 'tribleks', 'en_ust_kat', 'ara_kat', 'ara_kat_dubleks',
+  'bahce_dubleksi', 'cati_dubleksi', 'forleks', 'ters_dubleks',
+]);
+export const facadeEnum = pgEnum('facade', [
+  'belirtilmemis', 'kuzey', 'guney', 'dogu', 'bati',
+  'kuzeydogu', 'kuzeybati', 'guneydogu', 'guneybati',
+]);
+export const buildingStatusEnum = pgEnum('building_status', ['belirtilmemis', 'sifir', 'ikinci_el', 'yapim_asamasinda']);
+export const structureTypeEnum = pgEnum('structure_type', ['belirtilmemis', 'betonarme', 'celik', 'ahsap', 'yigma', 'prefabrik']);
 export const parkingEnum = pgEnum('parking', ['kapali', 'acik', 'yok']);
 export const approvalStatusEnum = pgEnum('approval_status', ['pending', 'approved', 'rejected']);
 export const appointmentStatusEnum = pgEnum('appointment_status', ['pending', 'confirmed', 'cancelled', 'completed']);
@@ -164,6 +175,18 @@ export const listings = pgTable('listings', {
   ownerType: ownerTypeEnum('owner_type').notNull().default('sahibi'),
   titleDeed: titleDeedEnum('title_deed').notNull().default('belirsiz'),
   swappable: boolean('swappable').notNull().default(false),
+  loanEligible: boolean('loan_eligible').notNull().default(false),  // Krediye uygun (satılık)
+  // Ek detaylar (PR-detail) — ilan formu genişletmesi
+  housingType: housingTypeEnum('housing_type').notNull().default('belirtilmemis'),
+  energyClass: energyClassEnum('energy_class').notNull().default('belirsiz'),
+  facade: facadeEnum('facade').notNull().default('belirtilmemis'),                  // Cephe / yön
+  buildingStatus: buildingStatusEnum('building_status').notNull().default('belirtilmemis'),
+  structureType: structureTypeEnum('structure_type').notNull().default('belirtilmemis'),
+  permitNo: varchar('permit_no', { length: 64 }),       // İzin / yapı ruhsatı belge no
+  parcelNo: varchar('parcel_no', { length: 64 }),       // Taşınmaz numarası
+  siteName: varchar('site_name', { length: 120 }),      // Site içindeyse site adı
+  dues: integer('dues'),                                // Aidat (aylık)
+  deposit: integer('deposit'),                          // Depozito (kiralık)
   images: jsonb('images').$type<string[]>().notNull().default([]),
   video: text('video'),
   coverKind: coverKindEnum('cover_kind').notNull().default('photo'),

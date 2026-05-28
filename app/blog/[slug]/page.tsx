@@ -3,8 +3,8 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { ArrowLeft, Calendar, User, Tag, Newspaper } from 'lucide-react';
-import DOMPurify from 'isomorphic-dompurify';
 import { getBlogPostBySlug, getPublishedBlogPosts } from '@/lib/blog-actions';
+import { sanitizeHtml } from '@/lib/sanitize';
 import { Badge } from '@/components/ui/Badge';
 import { Card, CardBody } from '@/components/ui/Card';
 
@@ -145,10 +145,7 @@ export default async function BlogPostPage({ params }: Props) {
               prose-blockquote:border-gold-400/40 prose-blockquote:text-[color:var(--fg-muted)]
               prose-code:text-gold-300 prose-code:bg-[color:var(--bg-elev)] prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded
               prose-li:text-[color:var(--fg-muted)]"
-            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(post.content, {
-              ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'a', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'h4', 'blockquote', 'code', 'pre', 'img'],
-              ALLOWED_ATTR: ['href', 'target', 'rel', 'src', 'alt', 'class'],
-            }) }}
+            dangerouslySetInnerHTML={{ __html: sanitizeHtml(post.content, { maxLength: 50_000 }) }}
           />
         </div>
       </article>

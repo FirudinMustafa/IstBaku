@@ -9,6 +9,10 @@
  *   straight into `<Input error={...} />`.
  */
 import { z } from 'zod';
+import {
+  ROOM_VALUES, HOUSING_TYPE_VALUES, ENERGY_CLASS_VALUES,
+  FACADE_VALUES, BUILDING_STATUS_VALUES, STRUCTURE_TYPE_VALUES,
+} from '@/lib/constants/listing-options';
 
 /* -------------------------------------------------------------------------- */
 /* Reusable primitives                                                         */
@@ -149,10 +153,15 @@ export const listingType = z.enum([
   'devre_mulk',
 ]);
 
-export const listingPurpose = z.enum(['sale', 'rent']);
+export const listingPurpose = z.enum(['sale', 'rent', 'daily_rent']);
 export const listingCountry = z.string().trim().min(2, 'Ülke zorunlu').max(8);
 export const listingCurrency = z.enum(['USD', 'EUR', 'TRY', 'AZN']);
-export const listingRooms = z.enum(['1+0', '1+1', '2+1', '3+1', '4+1', '5+1', '6+1']);
+export const listingRooms = z.enum(ROOM_VALUES);
+export const listingHousingType = z.enum(HOUSING_TYPE_VALUES);
+export const listingEnergyClass = z.enum(ENERGY_CLASS_VALUES);
+export const listingOwnerType = z.enum(['sahibi', 'emlakci', 'insaat', 'banka']);
+export const listingStatus = z.enum(['bos', 'kiracili', 'mulk_sahibi']);
+export const listingTitleDeed = z.enum(['kat_mulkiyeti', 'kat_irtifaki', 'arsa_payi', 'cikti_belgesi', 'belirsiz']);
 export const listingHeating = z.enum([
   'Kombi',
   'Merkezi',
@@ -197,6 +206,30 @@ export const createListingSchema = z.object({
   buildingAge: z.number().int().min(0).max(500),
   heating: listingHeating,
   parking: listingParking,
+  /* Step 3: ek detaylar */
+  housingType: listingHousingType.optional(),
+  energyClass: listingEnergyClass.optional(),
+  facade: z.enum(FACADE_VALUES).optional(),
+  buildingStatus: z.enum(BUILDING_STATUS_VALUES).optional(),
+  structureType: z.enum(STRUCTURE_TYPE_VALUES).optional(),
+  permitNo: z.string().trim().max(64).optional(),
+  parcelNo: z.string().trim().max(64).optional(),
+  dues: z.number().int().min(0).max(1_000_000).optional(),
+  deposit: z.number().int().min(0).max(1_000_000_000).optional(),
+  loanEligible: z.boolean().optional(),
+  ownerType: listingOwnerType.optional(),
+  titleDeed: listingTitleDeed.optional(),
+  occupancy: listingStatus.optional(),
+  elevator: z.boolean().optional(),
+  furnished: z.boolean().optional(),
+  balcony: z.boolean().optional(),
+  pool: z.boolean().optional(),
+  gym: z.boolean().optional(),
+  inSite: z.boolean().optional(),
+  swappable: z.boolean().optional(),
+  siteName: z.string().trim().max(120).optional(),
+  /* opsiyonel kullanıcı başlığı — boşsa otomatik üretilir */
+  customTitle: z.string().trim().max(200).optional(),
   /* Step 4: price */
   price: z
     .number()

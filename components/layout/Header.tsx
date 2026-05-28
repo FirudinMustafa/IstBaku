@@ -167,6 +167,9 @@ export function Header() {
                       <Link href="/dashboard?tab=notifications" onClick={() => setUserMenuOpen(false)} className="flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-[color:var(--bg-card-hover)]">
                         <Bell size={14} /> Bildirimler {unread > 0 && <span className="ml-auto text-[10px] rounded-full bg-gold-400 text-navy-900 px-1.5 py-0.5">{unread}</span>}
                       </Link>
+                      <Link href="/dashboard?tab=settings" onClick={() => setUserMenuOpen(false)} className="flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-[color:var(--bg-card-hover)]">
+                        <Settings size={14} /> Ayarlar
+                      </Link>
                       <button
                         onClick={() => { signOut(); setUserMenuOpen(false); }}
                         className="w-full flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-[color:var(--bg-card-hover)] text-danger border-t mt-1"

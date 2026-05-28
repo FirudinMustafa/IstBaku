@@ -7,7 +7,8 @@ import { ArrowLeft, Save, Trash2, AlertTriangle, AlertCircle } from 'lucide-reac
 import type { Property } from '@/lib/types';
 import { Card, CardBody } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { Input, Label, Select, Textarea } from '@/components/ui/Input';
+import { Input, Label, Select } from '@/components/ui/Input';
+import { RichTextEditor } from '@/components/ui/RichTextEditor';
 import { Badge } from '@/components/ui/Badge';
 import { Modal } from '@/components/ui/Modal';
 import { useToast } from '@/components/ui/Toast';
@@ -105,7 +106,7 @@ export function EditListingForm({ initial }: { initial: Property }) {
           </div>
           <div>
             <Label>Açıklama</Label>
-            <Textarea rows={5} value={description} onChange={(e) => setDescription(e.target.value)} />
+            <RichTextEditor value={description} onChange={setDescription} />
           </div>
           <div className="grid sm:grid-cols-2 gap-3">
             <div>

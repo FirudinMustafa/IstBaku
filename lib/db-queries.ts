@@ -186,6 +186,11 @@ export async function searchListings(
   if (filter.with360) conds.push(eq(listings.has360, true));
   if (filter.ownerType?.length) conds.push(inArray(listings.ownerType, filter.ownerType));
   if (filter.status?.length) conds.push(inArray(listings.status, filter.status as never));
+  if (filter.housingType?.length) conds.push(inArray(listings.housingType, filter.housingType as never));
+  if (filter.energyClass?.length) conds.push(inArray(listings.energyClass, filter.energyClass as never));
+  if (filter.buildingStatus?.length) conds.push(inArray(listings.buildingStatus, filter.buildingStatus as never));
+  if (filter.structureType?.length) conds.push(inArray(listings.structureType, filter.structureType as never));
+  if (filter.facade?.length) conds.push(inArray(listings.facade, filter.facade as never));
 
   let order;
   switch (filter.sort) {

@@ -7,8 +7,9 @@ import {
   Home, Heart, GitCompare, Bell, Sparkles, Search,
   Eye, MapPin, ArrowUpRight, BadgeCheck, Pencil, Trash2,
   Zap, Star, AlertTriangle, ExternalLink, CalendarDays, Check, X,
-  CreditCard,
+  CreditCard, Settings,
 } from 'lucide-react';
+import { AccountSettings } from './AccountSettings';
 import { Card, CardBody } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -36,6 +37,7 @@ const TABS = [
   { k: 'searches', l: 'Kayıtlı Aramalar', i: Search },
   { k: 'payments', l: 'Ödemeler', i: CreditCard },
   { k: 'notifications', l: 'Bildirimler', i: Bell },
+  { k: 'settings', l: 'Ayarlar', i: Settings },
 ] as const;
 type Tab = typeof TABS[number]['k'];
 const VALID_TABS = new Set(TABS.map((t) => t.k));
@@ -177,6 +179,7 @@ export function DashboardClient({ initialUser, myListings, favorites, savedSearc
           {tab === 'searches' && <SavedSearches initial={savedSearches} />}
           {tab === 'payments' && <PaymentsTab payments={payments} />}
           {tab === 'notifications' && <Notifications initial={notifications} />}
+          {tab === 'settings' && <AccountSettings />}
         </main>
       </div>
     </div>
@@ -186,21 +189,29 @@ export function DashboardClient({ initialUser, myListings, favorites, savedSearc
 function Overview({ user, myListings, favorites, notifications }: { user: PublicUser; myListings: Property[]; favorites: Property[]; notifications: NotificationUI[] }) {
   const totalViews = myListings.reduce((a, p) => a + p.views, 0);
   const stats = [
-    { l: 'Aktif İlanlarım', v: String(myListings.length), i: Home, c: 'text-gold-300' },
-    { l: 'Favorilerim', v: String(favorites.length), i: Heart, c: 'text-danger' },
-    { l: 'Görüntülenme', v: totalViews.toLocaleString('tr-TR'), i: Eye, c: 'text-navy-300' },
-    { l: 'KYC Durumu', v: user.kycStatus === 'approved' ? '✓ Onaylı' : user.kycStatus === 'pending' ? 'Bekliyor' : 'Yok', i: BadgeCheck, c: 'text-success' },
+    { l: 'Aktif İlanlarım', v: String(myListings.length), i: Home, c: 'text-gold-300', href: undefined as string | undefined },
+    { l: 'Favorilerim', v: String(favorites.length), i: Heart, c: 'text-danger', href: undefined as string | undefined },
+    { l: 'Görüntülenme', v: totalViews.toLocaleString('tr-TR'), i: Eye, c: 'text-navy-300', href: undefined as string | undefined },
+    { l: 'KYC Durumu', v: user.kycStatus === 'approved' ? '✓ Onaylı' : user.kycStatus === 'pending' ? 'Bekliyor' : 'Yok', i: BadgeCheck, c: 'text-success', href: user.kycStatus === 'approved' ? undefined : '/kyc' },
   ];
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        {stats.map((s) => (
-          <Card key={s.l}><CardBody className="p-4">
-            <s.i size={16} className={s.c} />
-            <div className="text-xs text-[color:var(--fg-muted)] mt-2">{s.l}</div>
-            <div className="text-2xl font-bold mt-0.5">{s.v}</div>
-          </CardBody></Card>
-        ))}
+        {stats.map((s) => {
+          const card = (
+            <CardBody className="p-4">
+              <s.i size={16} className={s.c} />
+              <div className="text-xs text-[color:var(--fg-muted)] mt-2">{s.l}</div>
+              <div className="text-2xl font-bold mt-0.5">{s.v}</div>
+              {s.href && <div className="mt-1 text-[11px] text-gold-300">Doğrula →</div>}
+            </CardBody>
+          );
+          return s.href ? (
+            <Link key={s.l} href={s.href}><Card className="hover:border-gold-400/50 transition-colors">{card}</Card></Link>
+          ) : (
+            <Card key={s.l}>{card}</Card>
+          );
+        })}
       </div>
 
       <div className="grid lg:grid-cols-2 gap-6">

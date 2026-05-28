@@ -44,7 +44,16 @@
       "Bash(sort -k5 -h -r)",
       "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\DELL\\\\OneDrive\\\\Desktop\\\\work\\\\IstBaku\" -Force)",
       "Bash(Select-Object Name, PSIsContainer)",
-      "Bash(Format-Table)"
+      "Bash(Format-Table)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\DELL\\\\OneDrive\\\\Desktop\\\\work\\\\IstBaku\" -Recurse -Directory -Name)",
+      "Bash(awk *)",
+      "Bash(tail -5 /tmp/istbaku-dev.log)",
+      "Bash(pgrep -f \"next dev\")",
+      "WebFetch(domain:istbaku.com)",
+      "WebFetch(domain:ist-baku.vercel.app)",
+      "mcp__plugin_vercel_vercel__list_teams",
+      "mcp__plugin_vercel_vercel__get_runtime_logs",
+      "Bash(taskkill //F //IM node.exe)"
     ]
   }
 }

@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { PropertyHeaderActions } from '@/components/listings/PropertyHeaderActions';
 import { getListingBySlug, getSimilarListings, getAgentById, getAllSlugs } from '@/lib/db-queries';
+import { sanitizeHtml } from '@/lib/sanitize';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Card, CardBody } from '@/components/ui/Card';
@@ -25,6 +26,7 @@ import { timeAgo } from '@/lib/utils';
 import {
   OWNER_TYPE_LABEL, TITLE_DEED_LABEL, STATUS_LABEL, PARKING_LABEL,
   PROPERTY_TYPE_LABEL, PURPOSE_LABEL, formatFloor, showsField, HEATING_LABEL,
+  HOUSING_TYPE_LABEL, ENERGY_CLASS_LABEL, FACADE_LABEL, BUILDING_STATUS_LABEL, STRUCTURE_TYPE_LABEL,
 } from '@/lib/labels';
 
 export async function generateStaticParams() {
@@ -131,7 +133,10 @@ export default async function PropertyPage({ params }: { params: Promise<{ slug:
           <Card>
             <CardBody>
               <h3 className="font-semibold mb-3">Açıklama</h3>
-              <p className="text-[color:var(--fg-muted)] leading-relaxed text-pretty whitespace-pre-line">{property.description}</p>
+              <div
+                className="tiptap-content text-[color:var(--fg-muted)] leading-relaxed text-pretty"
+                dangerouslySetInnerHTML={{ __html: sanitizeHtml(property.description) }}
+              />
               <div className="mt-4 inline-flex items-center gap-1.5 text-xs text-[color:var(--fg-faint)]">
                 <Sparkles size={12} className="text-gold-300" /> Bu açıklama ISTBAKU AI ile gözden geçirilmiştir.
               </div>
@@ -141,8 +146,8 @@ export default async function PropertyPage({ params }: { params: Promise<{ slug:
           {/* Bina ve daire detayları */}
           <Card>
             <CardBody>
-              <h3 className="font-semibold mb-4">Bina ve Daire Detayları</h3>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-3 text-sm">
+              <h3 className="font-bold mb-4">Bina ve Daire Detayları</h3>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-3 text-sm font-bold">
                 <DetailRow l="Brüt m²" v={`${property.area.gross} m²`} />
                 <DetailRow l="Net m²" v={`${property.area.net} m²`} />
                 {showsField(property.type, 'floor') && (
@@ -167,6 +172,35 @@ export default async function PropertyPage({ params }: { params: Promise<{ slug:
                 <DetailRow l="Durum" v={STATUS_LABEL[property.status] ?? property.status} />
                 <DetailRow l="Sahip" v={OWNER_TYPE_LABEL[property.ownerType] ?? property.ownerType} />
                 <DetailRow l="Takas" v={property.swappable ? 'Düşünülür' : 'Hayır'} />
+                {property.purpose === 'sale' && property.loanEligible && (
+                  <DetailRow l="Krediye uygun" v="Evet" />
+                )}
+                {property.deposit != null && property.deposit > 0 && (
+                  <DetailRow l="Depozito" v={`${property.deposit.toLocaleString('tr-TR')} ${property.currency}`} />
+                )}
+                {property.housingType && property.housingType !== 'belirtilmemis' && (
+                  <DetailRow l="Konut tipi" v={HOUSING_TYPE_LABEL[property.housingType] ?? property.housingType} />
+                )}
+                {property.energyClass && property.energyClass !== 'belirsiz' && (
+                  <DetailRow l="Enerji sınıfı" v={ENERGY_CLASS_LABEL[property.energyClass] ?? property.energyClass} />
+                )}
+                {property.facade && property.facade !== 'belirtilmemis' && (
+                  <DetailRow l="Cephe" v={FACADE_LABEL[property.facade] ?? property.facade} />
+                )}
+                {property.buildingStatus && property.buildingStatus !== 'belirtilmemis' && (
+                  <DetailRow l="Yapı durumu" v={BUILDING_STATUS_LABEL[property.buildingStatus] ?? property.buildingStatus} />
+                )}
+                {property.structureType && property.structureType !== 'belirtilmemis' && (
+                  <DetailRow l="Yapı tipi" v={STRUCTURE_TYPE_LABEL[property.structureType] ?? property.structureType} />
+                )}
+                {property.dues != null && property.dues > 0 && (
+                  <DetailRow l="Aidat" v={`${property.dues.toLocaleString('tr-TR')} ₺`} />
+                )}
+                {property.inSite && property.siteName && (
+                  <DetailRow l="Site adı" v={property.siteName} />
+                )}
+                {property.permitNo && <DetailRow l="İzin belge no" v={property.permitNo} />}
+                {property.parcelNo && <DetailRow l="Taşınmaz no" v={property.parcelNo} />}
               </div>
 
               <div className="mt-5 pt-5 border-t flex flex-wrap gap-2">
@@ -245,15 +279,15 @@ export default async function PropertyPage({ params }: { params: Promise<{ slug:
 function DetailRow({ l, v }: { l: string; v: React.ReactNode }) {
   return (
     <div className="flex items-center justify-between gap-2 border-b border-dashed py-1">
-      <span className="text-[color:var(--fg-muted)] text-xs">{l}</span>
-      <span className="font-medium text-sm">{v}</span>
+      <span className="text-[color:var(--fg-muted)] text-xs font-bold">{l}</span>
+      <span className="font-bold text-sm">{v}</span>
     </div>
   );
 }
 
 function Feature({ i: I, l }: { i: typeof MapPin; l: string }) {
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full border bg-[color:var(--bg-elev)] px-3 py-1.5 text-xs">
+    <span className="inline-flex items-center gap-1.5 rounded-full border bg-[color:var(--bg-elev)] px-3 py-1.5 text-xs font-bold">
       <I size={13} className="text-gold-300" /> {l}
     </span>
   );

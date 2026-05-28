@@ -16,6 +16,8 @@
  *  - Cap length defensively at MAX_LEN (default 20_000).
  */
 
+import sanitizeHtmlLib from 'sanitize-html';
+
 const DEFAULT_MAX_LEN = 20_000;
 
 const DANGEROUS_BLOCK_TAGS = [
@@ -75,6 +77,34 @@ export function sanitizeText(input: unknown, opts: SanitizeOptions = {}): string
   if (s.length > maxLen) s = s.slice(0, maxLen);
 
   return s;
+}
+
+/**
+ * Zengin metin (Tiptap) HTML sanitizer — allowlist tabanlı.
+ * İlan açıklaması gibi kullanıcı HTML'i için. Sadece güvenli biçimlendirme
+ * etiketleri ve `style="color:..."` korunur; script/onclick/href vb. atılır.
+ */
+export function sanitizeHtml(input: unknown, opts: { maxLength?: number } = {}): string {
+  if (input == null) return '';
+  let s = String(input);
+  const maxLen = opts.maxLength ?? 10_000;
+  if (s.length > maxLen) s = s.slice(0, maxLen);
+
+  // sanitize-html saf JS'tir (htmlparser2) — serverless/Vercel runtime'da jsdom
+  // gerektirmez. Sadece güvenli biçimlendirme etiketleri + `style="color:..."`.
+  const clean = sanitizeHtmlLib(s, {
+    allowedTags: ['p', 'br', 'b', 'strong', 'i', 'em', 'u', 's', 'ul', 'ol', 'li', 'span'],
+    allowedAttributes: { '*': ['style'] },
+    allowedStyles: {
+      '*': {
+        // Sadece color (hex / rgb / isim). url()/expression() reddedilir.
+        color: [/^#(0x)?[0-9a-f]+$/i, /^rgb\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*\)$/, /^[a-z]+$/i],
+      },
+    },
+    allowedSchemes: [],          // href/src zaten allowedAttributes dışı
+    disallowedTagsMode: 'discard',
+  });
+  return clean.trim();
 }
 
 /** Validates an http(s) URL; returns null for everything else. */

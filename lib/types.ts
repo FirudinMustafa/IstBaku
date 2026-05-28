@@ -15,7 +15,7 @@ export type PropertyType =
   | 'turistik_tesis'
   | 'devre_mulk';
 
-export type ListingPurpose = 'sale' | 'rent';
+export type ListingPurpose = 'sale' | 'rent' | 'daily_rent';
 export type ListingTier = 'standart' | 'guclu' | 'premium';
 export type OwnerType = 'sahibi' | 'emlakci' | 'insaat' | 'banka';
 export type UserGoal = 'oturum' | 'kira' | 'yazlik' | 'yatirim';
@@ -126,6 +126,17 @@ export interface Property {
   ownerType: OwnerType;
   titleDeed: 'kat_mulkiyeti' | 'kat_irtifaki' | 'arsa_payi' | 'cikti_belgesi' | 'belirsiz';
   swappable: boolean;
+  loanEligible?: boolean;
+  deposit?: number;
+  housingType?: string;
+  energyClass?: string;
+  facade?: string;
+  buildingStatus?: string;
+  structureType?: string;
+  permitNo?: string;
+  parcelNo?: string;
+  siteName?: string;
+  dues?: number;
   images: string[];
   video?: string;
   has360: boolean;
@@ -224,6 +235,11 @@ export interface FilterState {
   maxFloor?: number;
   heating?: string[];            // ['kombi','merkezi','yerden','yok']
   features?: string[];
+  housingType?: string[];        // konut tipi (dubleks, tribleks, ...)
+  energyClass?: string[];        // A–G, muaf
+  buildingStatus?: string[];     // sifir, ikinci_el, yapim_asamasinda
+  structureType?: string[];      // betonarme, celik, ...
+  facade?: string[];             // kuzey, guney, ...
   ownerType?: OwnerType[];
   status?: string[];             // ['bos','kiracili','mulk_sahibi']
   istbakuApproved?: boolean;

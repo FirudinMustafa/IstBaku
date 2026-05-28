@@ -50,7 +50,7 @@
 
 ### #B007 — Sign-up did not reach verify step
 **URL:** http://localhost:3000/auth/sign-up
-**Action:** Submit sign-up form for ayse-1779302265343@istbaku-test.example
+**Action:** Submit sign-up form for ayse-1779972040186@istbaku-test.example
 **Expected:** 6-digit code prompt (verify step) renders
 **Actual:** Verify input not visible. Alert text: ""
 **Suspected cause:** lib/auth-actions.ts → signUpAction; lib/schemas.ts → signUpSchema (phone format with leading space?)
@@ -59,7 +59,7 @@
 
 ## 🟠 FUNCTIONAL
 ### #F001 — Filter for 2+1 Beşiktaş Konut <250k USD returned 0 results
-**URL:** http://localhost:3000/listings?q=Be%C5%9Fikta%C5%9F+2%2B1&country=TR
+**URL:** http://localhost:3000/listings?q=Be%C5%9Fikta%C5%9F%202%2B1
 **Action:** Apply sidebar filters: TR / İstanbul / Beşiktaş / Konut / 0–250000 USD / 2+1
 **Expected:** At least one matching listing
 **Actual:** Counter says "0 sonuç · 5 aktif filtre"
@@ -74,7 +74,7 @@ _None._
 **URL:** http://localhost:3000/auth/sign-in?next=%2Fmessages
 **Action:** End-of-test diagnostic dump
 **Expected:** 0 console errors, 0 page errors, 0 5xx responses
-**Actual:** console=2 pageerr=0 net5xx=0
+**Actual:** console=1 pageerr=0 net5xx=0
 **Console:** A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:
 
 - A server/client branch `if (typeof window !== 'undefined')`.
@@ -88,12 +88,13 @@ It can also happen if the client has a browser extension installed which messes 
 %s%s https://react.dev/link/hydration-mismatch 
 
   ...
-    <ErrorBoundary errorComponent={undefined} errorStyles={undefined} errorScripts={undefined}>
-      <LoadingBoundary loading={null}>
-        <HTTPAccessFallbackBoundary notFound={undefined} forbidden={undefined} unauthorized={undefined}>
-          <RedirectBoundary>
-            <RedirectErrorBoundary router={{...}}>
-              <InnerLayoutRouter parallelRouterKey="children" url="/auth/sign-up" tree={[...]} childNodes={Map} ...>
+    <LoadingBoundary name="sign-up/" loading={null}>
+      <HTTPAccessFallbackBoundary notFound={undefined} forbidden={undefined} unauthorized={undefined}>
+        <RedirectBoundary>
+          <RedirectErrorBoundary router={{...}}>
+            <InnerLayoutRouter url="/auth/sign-up" tree={[...]} params={{}} cacheNode={{rsc:{...}, ...}} ...>
+              <SegmentViewNode type="page" pagePath="auth/sign-...">
+                <SegmentTrieNode>
                 <SignUpPage>
                   <div className="relative m...">
                     <div>
@@ -165,8 +166,9 @@ It can also happen if the client has a browser extension installed which messes 
                                     >
                                     ...
                                 ...
-                ...
- | Failed to fetch RSC payload for http://localhost:3000/auth/sign-up. Falling back to browser navigation. TypeError: network error
+              ...
+            ...
+
 
 
 ## ✅ PASSED

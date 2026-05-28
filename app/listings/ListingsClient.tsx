@@ -50,6 +50,11 @@ function applyFilters(list: Property[], f: FilterState, q?: string): Property[] 
       );
     });
   }
+  if (f.housingType?.length) out = out.filter((p) => f.housingType!.includes(p.housingType ?? 'belirtilmemis'));
+  if (f.energyClass?.length) out = out.filter((p) => f.energyClass!.includes(p.energyClass ?? 'belirsiz'));
+  if (f.buildingStatus?.length) out = out.filter((p) => f.buildingStatus!.includes(p.buildingStatus ?? 'belirtilmemis'));
+  if (f.structureType?.length) out = out.filter((p) => f.structureType!.includes(p.structureType ?? 'belirtilmemis'));
+  if (f.facade?.length) out = out.filter((p) => f.facade!.includes(p.facade ?? 'belirtilmemis'));
   if (f.ownerType?.length) out = out.filter((p) => f.ownerType!.includes(p.ownerType));
   if (f.status?.length) out = out.filter((p) => f.status!.includes(p.status));
   if (f.swappable) out = out.filter((p) => p.swappable);
@@ -96,6 +101,11 @@ function activeFilterCount(f: FilterState, q?: string): number {
   if (f.minFloor != null || f.maxFloor != null) n++;
   if (f.heating?.length) n += f.heating.length;
   if (f.features?.length) n += f.features.length;
+  if (f.housingType?.length) n += f.housingType.length;
+  if (f.energyClass?.length) n += f.energyClass.length;
+  if (f.buildingStatus?.length) n += f.buildingStatus.length;
+  if (f.structureType?.length) n += f.structureType.length;
+  if (f.facade?.length) n += f.facade.length;
   if (f.ownerType?.length) n += f.ownerType.length;
   if (f.status?.length) n += f.status.length;
   if (f.istbakuApproved) n++;

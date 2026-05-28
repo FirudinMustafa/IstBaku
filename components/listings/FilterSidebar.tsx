@@ -9,6 +9,17 @@ import { cn } from '@/lib/utils';
 import { useLang } from '@/components/layout/LangProvider';
 import { useCurrency } from '@/lib/currency-store';
 import { convert, CURRENCY_SYMBOLS } from '@/lib/currency';
+import {
+  ROOM_OPTIONS, HOUSING_TYPE_OPTIONS, ENERGY_CLASS_OPTIONS,
+  FACADE_OPTIONS, BUILDING_STATUS_OPTIONS, STRUCTURE_TYPE_OPTIONS,
+} from '@/lib/constants/listing-options';
+
+// Filtre chip'lerinde "belirtilmemis/belirsiz" varsayılanlarını gösterme.
+const HOUSING_TYPE_FILTERS = HOUSING_TYPE_OPTIONS.filter((o) => o.value !== 'belirtilmemis');
+const ENERGY_CLASS_FILTERS = ENERGY_CLASS_OPTIONS.filter((o) => o.value !== 'belirsiz');
+const FACADE_FILTERS = FACADE_OPTIONS.filter((o) => o.value !== 'belirtilmemis');
+const BUILDING_STATUS_FILTERS = BUILDING_STATUS_OPTIONS.filter((o) => o.value !== 'belirtilmemis');
+const STRUCTURE_TYPE_FILTERS = STRUCTURE_TYPE_OPTIONS.filter((o) => o.value !== 'belirtilmemis');
 
 interface Props {
   filters: FilterState;
@@ -31,7 +42,7 @@ const TYPE_KEYS: { value: PropertyType; key: string }[] = [
   { value: 'devre_mulk', key: 'type.devre_mulk' },
 ];
 
-const ROOMS = ['1+0', '1+1', '2+1', '3+1', '4+1', '5+1'];
+const ROOMS = ROOM_OPTIONS;
 const FEATURE_KEYS = [
   { k: 'pool', key: 'feat.pool' }, { k: 'gym', key: 'feat.gym' }, { k: 'sauna', key: 'feat.sauna' },
   { k: 'elevator', key: 'feat.elevator' }, { k: 'parking', key: 'feat.parking' }, { k: 'balcony', key: 'feat.balcony' },
@@ -87,9 +98,9 @@ export function FilterSidebar({ filters, onChange, countries: countryList }: Pro
   };
 
   return (
-    <aside className="lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto pr-2 pl-0.5 pb-4 space-y-3 min-w-0">
+    <aside className="font-bold lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto pr-2 pl-0.5 pb-4 space-y-3 min-w-0">
       <div className="hidden lg:flex items-center justify-between">
-        <h3 className="font-semibold inline-flex items-center gap-2"><Filter size={16} /> {t('filter.title')}</h3>
+        <h3 className="font-bold inline-flex items-center gap-2"><Filter size={16} /> {t('filter.title')}</h3>
         <button onClick={reset} className="text-xs text-[color:var(--fg-muted)] hover:text-gold-300 inline-flex items-center gap-1">
           <RotateCcw size={11} /> {t('filter.reset')}
         </button>
@@ -98,10 +109,11 @@ export function FilterSidebar({ filters, onChange, countries: countryList }: Pro
       <Section title={t('filter.purpose')} defaultOpen>
         <div className="grid grid-cols-2 gap-2">
           {[
-            { v: 'sale', l: t('filter.purpose.sale') },
-            { v: 'rent', l: t('filter.purpose.rent') },
+            { v: 'sale' as const, l: t('filter.purpose.sale') },
+            { v: 'rent' as const, l: t('filter.purpose.rent') },
+            { v: 'daily_rent' as const, l: 'Günlük Kiralık' },
           ].map((o) => (
-            <Chip key={o.v} active={filters.purpose === o.v} onClick={() => set({ purpose: filters.purpose === o.v ? undefined : (o.v as 'sale' | 'rent') })}>
+            <Chip key={o.v} active={filters.purpose === o.v} onClick={() => set({ purpose: filters.purpose === o.v ? undefined : o.v })}>
               {o.l}
             </Chip>
           ))}
@@ -189,7 +201,7 @@ export function FilterSidebar({ filters, onChange, countries: countryList }: Pro
       <Section title={t('filter.rooms')}>
         <div className="flex flex-wrap gap-1.5">
           {ROOMS.map((r) => (
-            <Chip key={r} active={filters.rooms?.includes(r)} onClick={() => toggle('rooms', r)}>{r}</Chip>
+            <Chip key={r.value} active={filters.rooms?.includes(r.value)} onClick={() => toggle('rooms', r.value)}>{r.label}</Chip>
           ))}
         </div>
       </Section>
@@ -245,6 +257,46 @@ export function FilterSidebar({ filters, onChange, countries: countryList }: Pro
         </div>
       </Section>
 
+      <Section title="Konut tipi">
+        <div className="flex flex-wrap gap-1.5">
+          {HOUSING_TYPE_FILTERS.map((o) => (
+            <Chip key={o.value} active={filters.housingType?.includes(o.value)} onClick={() => toggle('housingType', o.value)}>{o.label}</Chip>
+          ))}
+        </div>
+      </Section>
+
+      <Section title="Enerji sınıfı">
+        <div className="flex flex-wrap gap-1.5">
+          {ENERGY_CLASS_FILTERS.map((o) => (
+            <Chip key={o.value} active={filters.energyClass?.includes(o.value)} onClick={() => toggle('energyClass', o.value)}>{o.label}</Chip>
+          ))}
+        </div>
+      </Section>
+
+      <Section title="Yapının durumu">
+        <div className="flex flex-wrap gap-1.5">
+          {BUILDING_STATUS_FILTERS.map((o) => (
+            <Chip key={o.value} active={filters.buildingStatus?.includes(o.value)} onClick={() => toggle('buildingStatus', o.value)}>{o.label}</Chip>
+          ))}
+        </div>
+      </Section>
+
+      <Section title="Yapı tipi">
+        <div className="flex flex-wrap gap-1.5">
+          {STRUCTURE_TYPE_FILTERS.map((o) => (
+            <Chip key={o.value} active={filters.structureType?.includes(o.value)} onClick={() => toggle('structureType', o.value)}>{o.label}</Chip>
+          ))}
+        </div>
+      </Section>
+
+      <Section title="Cephe / yön">
+        <div className="flex flex-wrap gap-1.5">
+          {FACADE_FILTERS.map((o) => (
+            <Chip key={o.value} active={filters.facade?.includes(o.value)} onClick={() => toggle('facade', o.value)}>{o.label}</Chip>
+          ))}
+        </div>
+      </Section>
+
       <Section title={t('filter.owner')}>
         <div className="flex flex-wrap gap-1.5">
           {OWNER_KEYS.map((o) => (
@@ -292,7 +344,7 @@ function Section({ title, children, defaultOpen = false }: { title: string; chil
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-center justify-between text-[11px] uppercase tracking-wider font-medium text-[color:var(--fg-muted)] py-1.5"
+        className="w-full flex items-center justify-between text-[11px] uppercase tracking-wider font-bold text-[color:var(--fg-muted)] py-1.5"
       >
         {title}
         <ChevronDown size={13} className={cn('transition-transform', open && 'rotate-180')} />
@@ -308,7 +360,7 @@ function Chip({ active, onClick, children }: { active?: boolean; onClick: () => 
       type="button"
       onClick={onClick}
       className={cn(
-        'px-3 py-1.5 rounded-full text-xs border transition-colors',
+        'px-3 py-1.5 rounded-full text-xs font-bold border transition-colors',
         active
           ? 'bg-gold-400/15 border-gold-400/50 text-gold-300'
           : 'border-[color:var(--border)] hover:border-[color:var(--border-strong)] text-[color:var(--fg)]',
