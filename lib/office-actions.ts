@@ -202,11 +202,18 @@ export async function getMyOfficeMetrics(): Promise<OfficeMetricRow | null> {
   if (!a) return null;
 
   const ym = currentYearMonth();
-  const [existing] = await db
-    .select()
-    .from(agentMonthlyMetrics)
-    .where(and(eq(agentMonthlyMetrics.agentId, user.id), eq(agentMonthlyMetrics.yearMonth, ym)))
-    .limit(1);
+  // Tablo henüz oluşturulmadıysa (migration uygulanmadan) sorgu hata verebilir;
+  // bu durumda anlık hesaplamaya düşeriz (mevcut tablolardan).
+  let existing: typeof agentMonthlyMetrics.$inferSelect | undefined;
+  try {
+    [existing] = await db
+      .select()
+      .from(agentMonthlyMetrics)
+      .where(and(eq(agentMonthlyMetrics.agentId, user.id), eq(agentMonthlyMetrics.yearMonth, ym)))
+      .limit(1);
+  } catch {
+    existing = undefined;
+  }
 
   if (existing) {
     return {

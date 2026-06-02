@@ -9,7 +9,12 @@ export const dynamic = 'force-dynamic';
 
 // Ofisin KENDİ performans/rütbe durumu (müşteriye kapalı, sadece ofis + admin görür).
 export default async function OfficePerformancePage() {
-  const m = await getMyOfficeMetrics();
+  let m = null as Awaited<ReturnType<typeof getMyOfficeMetrics>>;
+  try {
+    m = await getMyOfficeMetrics();
+  } catch (err) {
+    console.error('office-performance page', err);
+  }
 
   if (!m) {
     return (
