@@ -7,13 +7,14 @@ import {
   Home, Heart, GitCompare, Bell, Sparkles, Search,
   Eye, MapPin, ArrowUpRight, BadgeCheck, Pencil, Trash2,
   Zap, Star, AlertTriangle, ExternalLink, CalendarDays, Check, X,
-  CreditCard, Settings,
+  CreditCard, Settings, Crown,
 } from 'lucide-react';
 import { AccountSettings } from './AccountSettings';
 import { Card, CardBody } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
+import { PaymentModal, type PendingPayment } from '@/components/payments/PaymentModal';
 import { ListingCard } from '@/components/listings/ListingCard';
 import { ScoreRing } from '@/components/listings/ScoreRing';
 import { useNotifications } from '@/lib/notifications-store';
@@ -276,6 +277,8 @@ function MyListings({ listings }: { listings: Property[] }) {
   const [upgradeFor, setUpgradeFor] = React.useState<Property | null>(null);
   const [deleteFor, setDeleteFor] = React.useState<Property | null>(null);
   const [working, setWorking] = React.useState(false);
+  const [pendingPayment, setPendingPayment] = React.useState<PendingPayment | null>(null);
+  const upgradeSuccessRef = React.useRef<'guclu' | 'premium'>('guclu');
 
   if (listings.length === 0) {
     return (
@@ -294,12 +297,26 @@ function MyListings({ listings }: { listings: Property[] }) {
     const res = await upgradeTierAction(upgradeFor.id, tier);
     setWorking(false);
     if (res.ok) {
-      toast({ variant: 'success', title: 'Yükseltildi!', description: `İlan ${tier === 'premium' ? 'Premium' : 'Güçlü'} seviyeye geçti.` });
+      // Ödeme penceresini aç; onay sonrası tier yükselir.
+      upgradeSuccessRef.current = tier;
       setUpgradeFor(null);
-      router.refresh();
+      setPendingPayment({
+        paymentId: res.paymentId,
+        amount: res.amount,
+        currency: res.currency,
+        title: tier === 'premium' ? 'Premium ilan (30 gün)' : 'Güçlü ilan (30 gün)',
+        description: tier === 'premium' ? 'En üst sırada + İstBaku Onaylı süreci.' : 'Yüksek görünürlük, video kapak.',
+      });
     } else {
       toast({ variant: 'error', title: 'Hata', description: res.error });
     }
+  }
+
+  async function onUpgradePaid() {
+    const tier = upgradeSuccessRef.current;
+    setPendingPayment(null);
+    toast({ variant: 'success', title: 'Yükseltildi!', description: `İlan ${tier === 'premium' ? 'Premium' : 'Güçlü'} seviyeye geçti.` });
+    router.refresh();
   }
 
   async function doDelete() {
@@ -318,6 +335,15 @@ function MyListings({ listings }: { listings: Property[] }) {
 
   return (
     <div className="space-y-4">
+      <Link
+        href="/office-performance"
+        className="flex items-center justify-between gap-3 rounded-xl border border-gold-400/30 bg-gold-400/5 px-4 py-3 hover:border-gold-400/60 transition-colors"
+      >
+        <span className="inline-flex items-center gap-2 text-sm font-medium">
+          <Crown size={15} className="text-gold-300" /> Ofis performansım & rütbe durumum
+        </span>
+        <ArrowUpRight size={16} className="text-gold-300" />
+      </Link>
       {listings.map((p) => (
         <Card key={p.id}><CardBody className="flex items-center gap-4 flex-wrap">
           <img src={p.cover.kind === 'photo' ? p.cover.src : p.images[0]} alt="" className="size-20 sm:size-24 rounded-xl object-cover" />
@@ -377,11 +403,18 @@ function MyListings({ listings }: { listings: Property[] }) {
               </button>
             </div>
             <p className="mt-4 text-[10px] text-[color:var(--fg-faint)]">
-              Ödemeler iyzico ve Stripe altyapısı ile güvenli şekilde alınır.
+              Ödeme penceresinde bilgilerini girerek tamamlarsın.
             </p>
           </>
         )}
       </Modal>
+
+      <PaymentModal
+        open={!!pendingPayment}
+        payment={pendingPayment}
+        onClose={() => setPendingPayment(null)}
+        onSuccess={onUpgradePaid}
+      />
 
       <Modal open={!!deleteFor} onClose={() => setDeleteFor(null)} title="İlanı sil?">
         {deleteFor && (

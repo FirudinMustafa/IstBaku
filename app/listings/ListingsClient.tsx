@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
-import { Map as MapIcon, List, Sparkles, Columns, SlidersHorizontal, X } from 'lucide-react';
+import { Map as MapIcon, List, Sparkles, Columns, SlidersHorizontal, X, ShieldCheck } from 'lucide-react';
 import { Select } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -201,6 +201,20 @@ export function ListingsClient({ initialListings = [], countries = [] }: Listing
             />
             <Sparkles size={14} className="absolute left-3 top-3 text-gold-300" />
           </div>
+          <button
+            type="button"
+            onClick={() => setFilters({ ...filters, istbakuApproved: !filters.istbakuApproved })}
+            aria-pressed={!!filters.istbakuApproved}
+            title="Yalnızca İstBaku Onaylı ilanlar"
+            className={cn(
+              'h-10 px-3 inline-flex items-center gap-1.5 rounded-xl border text-sm font-medium transition-colors',
+              filters.istbakuApproved
+                ? 'bg-gold-400/15 border-gold-400/60 text-gold-300'
+                : 'bg-[color:var(--bg-elev)] text-[color:var(--fg-muted)] hover:border-gold-400/40',
+            )}
+          >
+            <ShieldCheck size={15} /> İstBaku Onaylı
+          </button>
           <Select value={filters.sort ?? 'newest'} onChange={(e) => setFilters({ ...filters, sort: e.target.value as FilterState['sort'] })} className="w-44">
             <option value="newest">En yeni</option>
             <option value="price_asc">Fiyat: Artan</option>
@@ -287,6 +301,20 @@ export function ListingsClient({ initialListings = [], countries = [] }: Listing
           <option value="score_desc">AI Skor</option>
         </Select>
 
+        {/* Hızlı İstBaku Onaylı toggle */}
+        <button
+          onClick={() => setFilters({ ...filters, istbakuApproved: filters.istbakuApproved ? undefined : true })}
+          aria-pressed={!!filters.istbakuApproved}
+          className={cn(
+            'shrink-0 h-9 px-3 rounded-full border inline-flex items-center gap-1.5 text-xs font-medium active:scale-95 transition-transform',
+            filters.istbakuApproved
+              ? 'bg-gold-400/15 border-gold-400 text-gold-300'
+              : 'border-[color:var(--border-strong)] bg-[color:var(--bg-elev)]',
+          )}
+        >
+          <ShieldCheck size={13} /> Onaylı
+        </button>
+
         {/* Hızlı chip'ler */}
         {filters.country && (
           <button
@@ -294,14 +322,6 @@ export function ListingsClient({ initialListings = [], countries = [] }: Listing
             className="shrink-0 h-9 px-3 rounded-full bg-gold-400/15 border border-gold-400/40 text-gold-300 text-xs inline-flex items-center gap-1"
           >
             {filters.country === 'TR' ? '🇹🇷 Türkiye' : '🇦🇿 Azərbaycan'} <X size={11} />
-          </button>
-        )}
-        {filters.istbakuApproved && (
-          <button
-            onClick={() => setFilters({ ...filters, istbakuApproved: undefined })}
-            className="shrink-0 h-9 px-3 rounded-full bg-gold-400/15 border border-gold-400/40 text-gold-300 text-xs inline-flex items-center gap-1"
-          >
-            Onaylı <X size={11} />
           </button>
         )}
         <button

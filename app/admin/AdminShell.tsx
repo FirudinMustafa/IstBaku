@@ -2,11 +2,12 @@
 
 import * as React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, ListChecks, Users, Briefcase, ShieldCheck,
   Flag, CreditCard, BarChart3, FileText, Bell, Search, Crown, LogOut, BookOpen,
-  Newspaper, Menu, X,
+  Newspaper, Menu, X, Route,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
 import { cn } from '@/lib/utils';
@@ -16,11 +17,13 @@ const NAV = [
   { href: '/admin/approvals', l: 'İlan Onayları', i: ListChecks },
   { href: '/admin/users', l: 'Kullanıcılar', i: Users },
   { href: '/admin/agents', l: 'Ofisler & Ajanlar', i: Briefcase },
+  { href: '/admin/offices', l: 'Ofis Performansı', i: Crown },
   { href: '/admin/kyc', l: 'KYC İnceleme', i: ShieldCheck },
   { href: '/admin/reports', l: 'Şikayetler', i: Flag },
   { href: '/admin/payments', l: 'Ödemeler & Gelir', i: CreditCard },
   { href: '/admin/analytics', l: 'Analitik', i: BarChart3 },
   { href: '/admin/country-guides', l: 'Ülke Rehberleri', i: BookOpen },
+  { href: '/admin/cross-border', l: 'Sınır Ötesi Adımlar', i: Route },
   { href: '/admin/blog', l: 'Blog / Haberler', i: Newspaper },
   { href: '/admin/publishers', l: 'Blog Yayıncıları', i: Newspaper },
   { href: '/admin/audit', l: 'Denetim Logu', i: FileText },
@@ -52,9 +55,10 @@ export function AdminShell({
       <div className="p-5 border-b">
         <div className="flex items-center justify-between">
           <Link href="/admin" className="flex items-center gap-2.5">
-            <div className="size-9 rounded-xl bg-gradient-to-br from-gold-300 to-gold-500 flex items-center justify-center text-navy-900 font-bold text-sm">
-              AD
-            </div>
+            <span className="relative size-9 shrink-0">
+              <Image src="/brand/mark-navy.png" alt="" width={36} height={36} className="block dark:hidden h-full w-full object-contain" />
+              <Image src="/brand/mark-tan.png" alt="" width={36} height={36} className="hidden dark:block absolute inset-0 h-full w-full object-contain" />
+            </span>
             <div>
               <div className="font-bold text-sm leading-none">ISTBAKU</div>
               <div className="text-[10px] uppercase tracking-[0.18em] text-gold-300 mt-1">Admin Console</div>

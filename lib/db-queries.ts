@@ -67,6 +67,25 @@ export async function getPrivateListings(opts?: ListingPageOpts): Promise<Proper
   return rows.map(rowToProperty);
 }
 
+// En çok görüntülenen (popüler) ilanlar — anasayfadaki "Popüler ilanlar" bölümü.
+export async function getPopularListings(opts?: ListingPageOpts): Promise<Property[]> {
+  const { limit, offset } = clampPage(opts);
+  const rows = await db
+    .select()
+    .from(listings)
+    .where(
+      and(
+        eq(listings.approvalStatus, 'approved'),
+        eq(listings.isPrivate, false),
+        isNull(listings.deletedAt),
+      ),
+    )
+    .orderBy(desc(listings.views), desc(listings.publishedAt), desc(listings.id))
+    .limit(limit)
+    .offset(offset);
+  return rows.map(rowToProperty);
+}
+
 export async function getPremiumListings(opts?: ListingPageOpts): Promise<Property[]> {
   const { limit, offset } = clampPage(opts);
   const rows = await db

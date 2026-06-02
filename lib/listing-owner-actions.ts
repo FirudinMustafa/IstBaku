@@ -2,27 +2,34 @@
 
 import { db } from '@/db/client';
 import { listings, payments, approvalRequests, notifications, users } from '@/db/schema';
-import { eq, sql } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { getCurrentUser } from './auth-actions';
 import { revalidatePath } from 'next/cache';
-import { confirmPayment } from './payment-confirm';
 
 // ============================================================
 // LISTING OWNER ACTIONS
 // ============================================================
 
+/** Bekleyen (pending) ödeme oluşturulduğunda dönen tip — istemci ödeme
+ *  penceresini bu bilgilerle açar, ödeme onayını mock-confirm ucu yapar.
+ *  NOT: 'use server' modülü yalnızca async fonksiyon export edebildiği için
+ *  tip ve sabitler bu dosyada local tutulur (export edilmez). */
+type PendingPaymentResult =
+  | { ok: true; paymentId: string; amount: number; currency: 'USD' }
+  | { ok: false; error: string };
+
 /**
- * Renew listing date — bumps publishedAt so the listing appears fresh in
- * chronological feeds. Creates a pending payment record ($19).
+ * Renew listing date — ücretli ($19). Bekleyen ödeme kaydı oluşturur ve
+ * paymentId döndürür; ödeme penceresinde onaylanınca confirmPayment
+ * publishedAt'i tazeler. (Eskiden otomatik onaylanıyordu.)
  */
 export async function renewListingDateAction(
   listingId: string,
-): Promise<{ ok: true } | { ok: false; error: string }> {
+): Promise<PendingPaymentResult> {
   const user = await getCurrentUser();
   if (!user) return { ok: false, error: 'Giriş yapmalısın.' };
 
   try {
-    // Verify ownership
     const [listing] = await db
       .select()
       .from(listings)
@@ -32,28 +39,17 @@ export async function renewListingDateAction(
     if (!listing) return { ok: false, error: 'İlan bulunamadı.' };
     if (listing.agentId !== user.id) return { ok: false, error: 'Bu ilan sana ait değil.' };
 
-    // Create payment record (pending)
+    const amount = 1900;
     const [paymentRow] = await db.insert(payments).values({
       userId: user.id,
       listingId,
       type: 'date_renewal',
-      amount: 1900,
+      amount,
       currency: 'USD',
       status: 'pending',
     }).returning();
 
-    // Mock confirmation — immediately confirm the payment.
-    // When a real provider is integrated, this call is removed and the
-    // provider webhook calls confirmPayment instead.
-    const confirmResult = await confirmPayment(paymentRow.id);
-    if (!confirmResult.ok) {
-      return { ok: false, error: confirmResult.error };
-    }
-
-    revalidatePath('/dashboard');
-    revalidatePath(`/property/${listing.slug}`);
-
-    return { ok: true };
+    return { ok: true, paymentId: paymentRow.id, amount, currency: 'USD' };
   } catch (err) {
     console.error('renewListingDate error', err);
     return { ok: false, error: 'Tarih yenileme başarısız. Lütfen tekrar dene.' };
@@ -61,18 +57,17 @@ export async function renewListingDateAction(
 }
 
 /**
- * Request premium (istbakuApproved) upgrade — sets tier to 'premium' and
- * creates an approval request for admin review. The istbakuApproved flag
- * is NOT flipped here; admin decides after reviewing the request.
+ * Request premium (istbakuApproved) upgrade — ücretli ($49). Bekleyen ödeme +
+ * admin onay talebi oluşturur; ödeme penceresinde onaylanınca confirmPayment
+ * tier'i premium yapar. istbakuApproved bayrağını admin kararı flipler.
  */
 export async function requestPremiumUpgradeAction(
   listingId: string,
-): Promise<{ ok: true } | { ok: false; error: string }> {
+): Promise<PendingPaymentResult> {
   const user = await getCurrentUser();
   if (!user) return { ok: false, error: 'Giriş yapmalısın.' };
 
   try {
-    // Verify ownership
     const [listing] = await db
       .select()
       .from(listings)
@@ -81,19 +76,19 @@ export async function requestPremiumUpgradeAction(
 
     if (!listing) return { ok: false, error: 'İlan bulunamadı.' };
     if (listing.agentId !== user.id) return { ok: false, error: 'Bu ilan sana ait değil.' };
-    if (listing.istbakuApproved) return { ok: false, error: 'Bu ilan zaten IstBaku onaylı.' };
+    if (listing.istbakuApproved) return { ok: false, error: 'Bu ilan zaten İstBaku onaylı.' };
 
-    // Create payment record ($49) — pending
+    const amount = 4900;
     const [paymentRow] = await db.insert(payments).values({
       userId: user.id,
       listingId,
       type: 'istbaku_approved',
-      amount: 4900,
+      amount,
       currency: 'USD',
       status: 'pending',
     }).returning();
 
-    // Create approval request (admin will decide on istbakuApproved after payment)
+    // Admin onay talebi (ödeme sonrası admin istbakuApproved'a karar verir)
     await db.insert(approvalRequests).values({
       listingId,
       submittedById: user.id,
@@ -103,20 +98,77 @@ export async function requestPremiumUpgradeAction(
       status: 'pending',
     });
 
-    // Mock confirmation — immediately confirm the payment.
-    const confirmResult = await confirmPayment(paymentRow.id);
-    if (!confirmResult.ok) {
-      return { ok: false, error: confirmResult.error };
-    }
-
-    revalidatePath('/dashboard');
-    revalidatePath(`/property/${listing.slug}`);
-
-    return { ok: true };
+    return { ok: true, paymentId: paymentRow.id, amount, currency: 'USD' };
   } catch (err) {
     console.error('requestPremiumUpgrade error', err);
     return { ok: false, error: 'Premium başvurusu başarısız. Lütfen tekrar dene.' };
   }
+}
+
+// İlan sihirbazı sonu ücretli eklentileri (rozet + gizli) için sabit fiyatlar.
+// (export edilmez — 'use server' kısıtı; sadece bu dosyada kullanılır.)
+const BADGE_PRICE = 4900;   // İstBaku Onaylı rozet — $49
+const PRIVATE_PRICE = 9900; // Gizli portföy — $99
+
+/**
+ * İlan sihirbazı sonunda seçilen ücretli eklentiler (rozet ve/veya gizli) için
+ * TEK birleşik bekleyen ödeme oluşturur ve paymentId döndürür. Ödeme penceresi
+ * onaylayınca: rozet → confirmPayment tier'i premium yapar; gizli →
+ * applyWizardPrivateAction ile uygulanır.
+ */
+export async function createWizardExtrasPaymentAction(
+  listingId: string,
+  opts: { badge: boolean; gizli: boolean },
+): Promise<PendingPaymentResult | { ok: true; none: true }> {
+  const user = await getCurrentUser();
+  if (!user) return { ok: false, error: 'Giriş yapmalısın.' };
+  if (!opts.badge && !opts.gizli) return { ok: true, none: true };
+
+  try {
+    const [listing] = await db.select().from(listings).where(eq(listings.id, listingId)).limit(1);
+    if (!listing) return { ok: false, error: 'İlan bulunamadı.' };
+    if (listing.agentId !== user.id) return { ok: false, error: 'Bu ilan sana ait değil.' };
+
+    const amount = (opts.badge ? BADGE_PRICE : 0) + (opts.gizli ? PRIVATE_PRICE : 0);
+    // Rozet varsa istbaku_approved (confirmPayment premium yapar); yoksa
+    // premium_membership (gizli-only — listing mutasyonu applyWizardPrivate ile).
+    const type = opts.badge ? ('istbaku_approved' as const) : ('premium_membership' as const);
+
+    const [paymentRow] = await db.insert(payments).values({
+      userId: user.id,
+      listingId,
+      type,
+      amount,
+      currency: 'USD',
+      status: 'pending',
+    }).returning();
+
+    if (opts.badge) {
+      await db.insert(approvalRequests).values({
+        listingId,
+        submittedById: user.id,
+        type: 'tier_upgrade',
+        aiQualityScore: 0,
+        aiFlags: [],
+        status: 'pending',
+      });
+    }
+
+    return { ok: true, paymentId: paymentRow.id, amount, currency: 'USD' };
+  } catch (err) {
+    console.error('createWizardExtrasPayment error', err);
+    return { ok: false, error: 'Ödeme başlatılamadı. Lütfen tekrar dene.' };
+  }
+}
+
+/**
+ * Ödeme onaylandıktan sonra ilanı gizli portföye alır (KYC + fiyat eşiği
+ * kontrolüyle). Sihirbazın ödeme penceresi başarıyla kapanınca çağrılır.
+ */
+export async function applyWizardPrivateAction(
+  listingId: string,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  return convertToPrivateAction(listingId);
 }
 
 /**

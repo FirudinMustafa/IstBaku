@@ -1,13 +1,13 @@
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import { ListingCard } from '@/components/listings/ListingCard';
-import { getPublicListings } from '@/lib/db-queries';
+import { getPopularListings } from '@/lib/db-queries';
 
 export async function FeaturedListings() {
-  let featured: Awaited<ReturnType<typeof getPublicListings>> = [];
+  let featured: Awaited<ReturnType<typeof getPopularListings>> = [];
   try {
-    // MC-21 — only fetch what we render; no need to pull the whole catalog.
-    featured = await getPublicListings({ limit: 6 });
+    // En çok görüntülenen ilanlar — popülerliğe göre sıralanır.
+    featured = await getPopularListings({ limit: 6 });
   } catch {
     featured = [];
   }
@@ -26,8 +26,8 @@ export async function FeaturedListings() {
     <section className="w-full px-4 py-6 sm:py-10">
       <div className="flex items-end justify-between flex-wrap gap-3">
         <div>
-          <h2 className="font-display text-2xl sm:text-4xl font-bold tracking-tight">Editörün seçtikleri</h2>
-          <p className="mt-2 text-[color:var(--fg-muted)]">AI skoru yüksek, doğrulanmış ilanlar.</p>
+          <h2 className="font-display text-2xl sm:text-4xl font-bold tracking-tight">Popüler ilanlar</h2>
+          <p className="mt-2 text-[color:var(--fg-muted)]">En çok görüntülenen ilanlar.</p>
         </div>
         <Link href="/listings" className="inline-flex items-center gap-1.5 text-sm text-gold-300 hover:text-gold-400">
           Tümünü gör <ArrowRight size={14} />

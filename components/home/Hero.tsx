@@ -23,7 +23,25 @@ export function Hero() {
       }}
     >
       <div className="absolute inset-0 grid-bg opacity-20 pointer-events-none" />
-      <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-[900px] h-[900px] aurora rounded-full opacity-30 pointer-events-none" />
+      <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-[900px] h-[900px] aurora rounded-full opacity-40 pointer-events-none" />
+      {/* Marka tonlu yumuşak ışık lekeleri — arka plana derinlik ve renk katar */}
+      <div
+        className="absolute -top-24 -left-24 w-[480px] h-[480px] rounded-full pointer-events-none blur-3xl opacity-50"
+        style={{ background: 'radial-gradient(circle, rgba(202,174,153,0.32) 0%, transparent 70%)' }}
+      />
+      <div
+        className="absolute -bottom-32 -right-16 w-[560px] h-[560px] rounded-full pointer-events-none blur-3xl opacity-40"
+        style={{ background: 'radial-gradient(circle, rgba(202,174,153,0.22) 0%, transparent 70%)' }}
+      />
+      <div
+        className="absolute top-1/3 right-1/4 w-[320px] h-[320px] rounded-full pointer-events-none blur-3xl opacity-30"
+        style={{ background: 'radial-gradient(circle, rgba(120,160,200,0.18) 0%, transparent 70%)' }}
+      />
+      {/* Alttan yukarı yumuşak vignette — içeriği zeminden ayırır */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{ background: 'radial-gradient(ellipse 90% 60% at 50% 40%, transparent 40%, rgba(10,19,32,0.55) 100%)' }}
+      />
 
       <div className="relative w-full px-4 pt-12 pb-16 sm:pt-20 sm:pb-24 text-center">
         <h1 className="font-display text-balance text-[2rem] sm:text-5xl lg:text-7xl font-bold tracking-tight leading-[1.08]">
@@ -61,7 +79,7 @@ export function Hero() {
         </form>
 
         <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-xs">
-          <span className="text-[color:var(--fg-faint)]">Popüler:</span>
+          <span className="text-[color:var(--fg-faint)]">{t('hero.popular')}:</span>
           {[
             { l: 'Bakı Səbail penthouse', q: 'Bakı Səbail penthouse' },
             { l: 'İstanbul Beşiktaş 3+1', q: 'Beşiktaş 3+1' },
@@ -89,10 +107,10 @@ export function Hero() {
 
         <div className="mt-8 sm:mt-12 grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 max-w-3xl mx-auto">
           {[
-            { v: '12,800+', l: 'Aktif İlan' },
-            { v: '%17.3', l: 'YoY Trend' },
-            { v: '180', l: 'Onaylı Ofis' },
-            { v: 'AI', l: 'Yatırım Skoru' },
+            { v: '12,800+', l: t('hero.stat.listings') },
+            { v: '%17.3', l: t('hero.stat.trend') },
+            { v: '180', l: t('hero.stat.offices') },
+            { v: 'AI', l: t('hero.stat.score') },
           ].map((s) => (
             <div key={s.l} className="glass rounded-2xl p-3 sm:p-4">
               <div className="text-xl sm:text-2xl font-bold tracking-tight bg-gradient-to-br from-gold-300 to-gold-500 bg-clip-text text-transparent">

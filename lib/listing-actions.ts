@@ -6,9 +6,7 @@ import { eq, sql, and, isNull } from 'drizzle-orm';
 import { getCurrentUser } from './auth-actions';
 import { uploadDataUrl } from './storage';
 import { slugify } from './utils';
-import { sendEmail, tplPaymentReceipt, APP_URL } from './email';
 import { sanitizeText, sanitizeHtml, sanitizeLat, sanitizeLng } from './sanitize';
-import { confirmPayment } from './payment-confirm';
 
 export interface CreateListingInput {
   type: typeof s.listings.$inferInsert.type;
@@ -112,7 +110,7 @@ function shortScore(c: { lat: number; lng: number; price: number; netArea: numbe
 
 export async function createListingAction(
   input: CreateListingInput,
-): Promise<{ ok: true; slug: string } | { ok: false; error: string }> {
+): Promise<{ ok: true; slug: string; id: string } | { ok: false; error: string }> {
   const user = await getCurrentUser();
   if (!user) return { ok: false, error: 'Giriş yapmalısın.' };
 
@@ -282,7 +280,7 @@ export async function createListingAction(
       meta: { tier: input.tier, price: input.price, currency: input.currency },
     });
 
-    return { ok: true, slug: created.slug };
+    return { ok: true, slug: created.slug, id: created.id };
   } catch (err) {
     console.error('createListing error', err);
     return { ok: false, error: 'İlan oluşturulamadı. Lütfen tekrar dene.' };
@@ -447,21 +445,17 @@ export async function deleteListingAction(id: string): Promise<{ ok: boolean; er
 export async function upgradeTierAction(
   id: string,
   tier: 'guclu' | 'premium',
-): Promise<{ ok: boolean; error?: string }> {
+): Promise<{ ok: true; paymentId: string; amount: number; currency: 'USD' } | { ok: false; error?: string }> {
   const user = await getCurrentUser();
   if (!user) return { ok: false, error: 'Giriş yapmalısın.' };
   const target = await getEditableListing(id);
   if (!target) return { ok: false, error: 'İlan bulunamadı.' };
 
-  // MC-08: gate — no real provider configured → refuse (unless mock mode).
-  const providerKey = process.env.PAYMENT_PROVIDER_KEY;
-  if (!providerKey) {
-    return { ok: false, error: 'PAYMENT_NOT_CONFIGURED' };
-  }
-
+  // Bekleyen ödeme oluştur ve paymentId döndür; ödeme penceresi onaylayınca
+  // confirmPayment tier'i (amount'a göre) yükseltir. Gerçek sağlayıcı bağlanınca
+  // confirmPayment yerine provider webhook'u çalışır (lib/payment-provider.ts).
   const amount = tier === 'premium' ? 2900 : 900;
   try {
-    // Record an unresolved payment row; provider webhook flips status to 'paid'.
     const [payment] = await db.insert(s.payments).values({
       userId: user.id,
       listingId: id,
@@ -479,31 +473,7 @@ export async function upgradeTierAction(
       meta: { amount, currency: 'USD', paymentId: payment.id, status: 'pending' },
     });
 
-    // Mock mode: immediately confirm payment
-    if (providerKey === 'mock') {
-      const confirmResult = await confirmPayment(payment.id);
-      if (!confirmResult.ok) {
-        return { ok: false, error: confirmResult.error };
-      }
-      return { ok: true };
-    }
-
-    // Real provider: send "talep alindi" email and wait for webhook
-    sendEmail({
-      to: user.email,
-      subject: `Ödeme talebi alındı — ${tier === 'premium' ? 'Premium' : 'Güçlü'} ilan`,
-      html: tplPaymentReceipt({
-        name: user.name,
-        amount,
-        currency: 'USD',
-        type: tier === 'premium' ? 'Premium ilan yükseltme (30 gün) — beklemede' : 'Güçlü ilan yükseltme (30 gün) — beklemede',
-        listingTitle: target.title,
-        receiptUrl: `${APP_URL}/dashboard?tab=listings`,
-      }),
-      silent: true,
-    }).catch((e) => console.warn('[payment mail]', e));
-
-    return { ok: true };
+    return { ok: true, paymentId: payment.id, amount, currency: 'USD' };
   } catch (err) {
     console.error('upgradeTier', err);
     return { ok: false, error: 'Yükseltme başarısız.' };

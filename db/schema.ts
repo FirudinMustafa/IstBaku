@@ -460,6 +460,57 @@ export const countryGuides = pgTable('country_guides', {
 });
 
 // ============================================================
+// CROSS-BORDER STEPS (admin yönetir — "Adım adım sınır ötesi alım")
+// Uyruk × hedef ülke × amaç × dil kırılımında, admin panelden eklenip/çıkarılıp
+// sıralanabilen adımlar. Eski hardcoded `lib/data/country-guides.ts` STEPS'in
+// DB karşılığı.
+// ============================================================
+
+export const crossBorderSteps = pgTable('cross_border_steps', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  nationality: varchar('nationality', { length: 8 }).notNull(), // 'TR' | 'AZ' | 'OTHER'
+  country: varchar('country', { length: 2 }).notNull(),         // hedef ülke: 'TR' | 'AZ'
+  purpose: varchar('purpose', { length: 16 }).notNull(),        // 'oturum' | 'yatirim' | 'isyeri'
+  language: languageEnum('language').notNull().default('tr'),
+  orderIndex: integer('order_index').notNull().default(0),
+  icon: varchar('icon', { length: 48 }),                        // lucide ikon adı (örn. 'FileCheck2')
+  title: text('title').notNull(),
+  description: text('description').notNull(),
+  active: boolean('active').notNull().default(true),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => ({
+  comboIdx: index('cross_border_steps_combo_idx').on(t.nationality, t.country, t.purpose, t.language, t.orderIndex),
+}));
+
+// ============================================================
+// OFFICE PERFORMANCE / RÜTBE (EnParaliol mantığı — müşteriye KAPALI)
+// Aylık 12 kritere göre ofis/ajan rütbesi: ilk 8 → Premium Office, 12 → Gold Partner.
+// ============================================================
+
+export const officeTierEnum = pgEnum('office_tier', ['none', 'premium_office', 'gold_partner']);
+
+export const agentMonthlyMetrics = pgTable('agent_monthly_metrics', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  agentId: uuid('agent_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  yearMonth: varchar('year_month', { length: 7 }).notNull(), // 'YYYY-MM'
+  activeListings: integer('active_listings').notNull().default(0),
+  videoRatio: real('video_ratio').notNull().default(0),       // 0..1
+  tour360Ratio: real('tour360_ratio').notNull().default(0),   // 0..1
+  avgPhotoCount: real('avg_photo_count').notNull().default(0),
+  avgReviewRating: real('avg_review_rating').notNull().default(0),
+  complaintRatio: real('complaint_ratio').notNull().default(0), // 0..1
+  avgResponseMins: integer('avg_response_mins').notNull().default(0),
+  soldClosedCount: integer('sold_closed_count').notNull().default(0),
+  // 1..12 kriterlerden karşılananların listesi
+  criteriaMet: jsonb('criteria_met').$type<number[]>().notNull().default([]),
+  tier: officeTierEnum('tier').notNull().default('none'),
+  computedAt: timestamp('computed_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => ({
+  agentMonthIdx: uniqueIndex('agent_monthly_metrics_agent_month_idx').on(t.agentId, t.yearMonth),
+}));
+
+// ============================================================
 // BLOG POSTS (haber & rehber içerikler)
 // ============================================================
 

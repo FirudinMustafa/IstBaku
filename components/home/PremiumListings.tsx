@@ -17,8 +17,8 @@ export function PremiumListings({ listings }: Props) {
     <section className="w-full px-4 py-6 sm:py-10">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <Badge variant="gold"><ShieldCheck size={11} /> IstBaku Onaylı</Badge>
-          <h2 className="font-display mt-2 text-2xl sm:text-3xl font-bold tracking-tight">Onaylı Premium İlanlar</h2>
+          <Badge variant="gold"><ShieldCheck size={11} /> İstBaku Onaylı</Badge>
+          <h2 className="font-display mt-2 text-2xl sm:text-3xl font-bold tracking-tight">İstBaku Onaylı İlanlar</h2>
           <p className="mt-1 text-sm text-[color:var(--fg-muted)]">ISTBAKU tarafından kontrol edilmiş, güvenilir ilanlar.</p>
         </div>
         <Link href="/listings?approved=true">

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import {
   Sparkles, Camera, X, Play, Image as ImgIcon, Upload, Video,
   ArrowRight, ArrowLeft, CheckCircle2, AlertCircle, Users, Briefcase, GraduationCap, Globe,
-  ShieldCheck, Lock,
+  ShieldCheck, Lock, GripVertical, MapPin, Sparkles as SparklesIcon,
 } from 'lucide-react';
 import { Card, CardBody } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -16,6 +16,8 @@ import { LocationPicker } from '@/components/listings/LocationPicker';
 import { useToast } from '@/components/ui/Toast';
 import { useUser } from '@/lib/user-auth';
 import { createListingAction } from '@/lib/listing-actions';
+import { createWizardExtrasPaymentAction, applyWizardPrivateAction } from '@/lib/listing-owner-actions';
+import { PaymentModal, type PendingPayment } from '@/components/payments/PaymentModal';
 import { defaultCity, defaultDistrict } from '@/lib/data/locations';
 import { cn } from '@/lib/utils';
 import type { PropertyType } from '@/lib/types';
@@ -58,7 +60,7 @@ const DRAFT_STORAGE_KEY = 'istbaku.newListing.v1';
 type PurposeOrEmpty = 'sale' | 'rent' | 'daily_rent' | '';
 type TypeOrEmpty = PropertyType | '';
 
-export function NewListingClient({ paymentEnabled = false, countries: countryList }: NewListingClientProps) {
+export function NewListingClient({ countries: countryList }: NewListingClientProps) {
   const dynamicCountries = countryList && countryList.length > 0
     ? countryList
     : [
@@ -149,6 +151,9 @@ export function NewListingClient({ paymentEnabled = false, countries: countryLis
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const videoInputRef = React.useRef<HTMLInputElement>(null);
   const [publishing, setPublishing] = React.useState(false);
+  // İlan sonu ücretli eklenti (rozet/gizli) ödeme penceresi durumu.
+  const [pendingPayment, setPendingPayment] = React.useState<PendingPayment | null>(null);
+  const paidContextRef = React.useRef<{ listingId: string; slug: string; gizli: boolean } | null>(null);
 
   // PF-06: rehydrate from sessionStorage on mount and persist on every change
   // so browser back/forward (which re-mounts this client component) does NOT
@@ -214,6 +219,31 @@ export function NewListingClient({ paymentEnabled = false, countries: countryLis
     });
   }
 
+  // Fotoğrafları sürükleyerek yeniden sırala — 1. foto (kapak) dahil her foto
+  // taşınabilir. Sürüklenen indeksten hedef indekse taşır.
+  const dragIndexRef = React.useRef<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = React.useState<number | null>(null);
+
+  function movePhoto(from: number, to: number) {
+    if (from === to || from < 0 || to < 0) return;
+    setPhotos((cur) => {
+      if (from >= cur.length || to >= cur.length) return cur;
+      const next = [...cur];
+      const [moved] = next.splice(from, 1);
+      next.splice(to, 0, moved);
+      return next;
+    });
+    // Kapak fotoğrafı indeksini taşımaya göre güncelle (kapak adımı 1. fotoyu baz alır).
+    setForm((f) => {
+      const ci = f.coverPhotoIndex ?? 0;
+      let nci = ci;
+      if (ci === from) nci = to;
+      else if (from < ci && to >= ci) nci = ci - 1;
+      else if (from > ci && to <= ci) nci = ci + 1;
+      return nci === ci ? f : { ...f, coverPhotoIndex: nci };
+    });
+  }
+
   function handleVideo(file: File | null) {
     if (!file) return;
     if (file.size > 60 * 1024 * 1024) {
@@ -223,6 +253,65 @@ export function NewListingClient({ paymentEnabled = false, countries: countryLis
     const reader = new FileReader();
     reader.onload = () => setCoverVideo(String(reader.result));
     reader.readAsDataURL(file);
+  }
+
+  // Adresten otomatik konum (geocode) — yazılan adresi koordinata çevirir.
+  const [geocoding, setGeocoding] = React.useState(false);
+  async function geocodeFromAddress() {
+    const parts = [form.address, form.neighborhood, form.district, form.city, form.country === 'AZ' ? 'Azerbaijan' : 'Turkey'].filter(Boolean);
+    const q = parts.join(', ');
+    if (!form.address || form.address.trim().length < 3) {
+      toast({ variant: 'error', title: 'Adres eksik', description: 'Önce açık adresi yaz.' });
+      return;
+    }
+    setGeocoding(true);
+    try {
+      const res = await fetch(`/api/geocode?q=${encodeURIComponent(q)}`);
+      const data = await res.json().catch(() => ({ ok: false }));
+      if (data.ok && Number.isFinite(data.lat) && Number.isFinite(data.lng)) {
+        set({ lat: data.lat, lng: data.lng });
+        toast({ variant: 'success', title: 'Konum bulundu', description: 'Haritada işaretlendi — gerekirse pini sürükleyerek düzelt.' });
+      } else {
+        toast({ variant: 'error', title: 'Konum bulunamadı', description: 'Adresi netleştir veya haritada elle işaretle.' });
+      }
+    } catch {
+      toast({ variant: 'error', title: 'Hata', description: 'Konum servisine ulaşılamadı.' });
+    } finally {
+      setGeocoding(false);
+    }
+  }
+
+  // Yakın çevreyi otomatik hesapla — lat/lng çevresindeki POI mesafeleri.
+  const [nearbyLoading, setNearbyLoading] = React.useState(false);
+  async function autoCalcNearby() {
+    if (!form.lat || !form.lng) {
+      toast({ variant: 'error', title: 'Konum gerekli', description: 'Önce "Konum" adımında haritada konumu belirle.' });
+      return;
+    }
+    setNearbyLoading(true);
+    try {
+      const res = await fetch(`/api/nearby?lat=${form.lat}&lng=${form.lng}`);
+      const data = await res.json().catch(() => ({ ok: false }));
+      if (data.ok && data.nearby) {
+        const merged = { ...form.nearby };
+        for (const [k, v] of Object.entries(data.nearby as Record<string, { name: string; km: number; minutes: number }>)) {
+          if (k === 'market') {
+            merged.markets = [v]; // form'da market çoğul (dizi) tutulur
+          } else if (k in merged) {
+            (merged as Record<string, unknown>)[k] = v;
+          }
+        }
+        set({ nearby: merged });
+        const count = Object.keys(data.nearby).length;
+        toast({ variant: count ? 'success' : 'info', title: count ? 'Yakın çevre hesaplandı' : 'Sonuç bulunamadı', description: count ? `${count} kategori dolduruldu — düzenleyebilirsin.` : 'Bu konum için POI bulunamadı, elle girebilirsin.' });
+      } else {
+        toast({ variant: 'error', title: 'Hesaplanamadı', description: 'Konum servisine ulaşılamadı.' });
+      }
+    } catch {
+      toast({ variant: 'error', title: 'Hata', description: 'Konum servisine ulaşılamadı.' });
+    } finally {
+      setNearbyLoading(false);
+    }
   }
 
   if (!ready) {
@@ -289,18 +378,10 @@ export function NewListingClient({ paymentEnabled = false, countries: countryLis
   }
 
   async function publish() {
-    // PB-04: premium tier requires a configured payment provider. The server
-    // action would reject it too, but blocking client-side gives the user a
-    // clearer message and keeps the wizard from looking like it accepts free
-    // premium upgrades.
-    if (form.tier === 'premium' && !paymentEnabled) {
-      toast({
-        variant: 'error',
-        title: 'Premium ödeme aktif değil',
-        description: 'Premium tier ödeme sistemi henüz yapılandırılmadı.',
-      });
-      return;
-    }
+    // Rozet (premium) ve gizli seçimleri ücretlidir; ilan ÖNCE standart/açık
+    // oluşturulur, ödeme penceresi onaylanınca eklentiler uygulanır.
+    const wantBadge = form.tier === 'premium';
+    const wantGizli = form.isPrivate;
     // MC-14: validate full payload before hitting the server action.
     const payload = {
       type: form.type,
@@ -326,7 +407,8 @@ export function NewListingClient({ paymentEnabled = false, countries: countryLis
       price: isDaily ? (form.dailyRentalPricePerNight || 0) : form.price,
       currency: isDaily ? form.dailyRentalCurrency : form.currency,
       description: form.description,
-      tier: form.tier,
+      // Rozet ödeme sonrası uygulanır; ilan standart oluşturulur.
+      tier: 'standart' as const,
       // Ek detaylar
       customTitle: form.customTitle?.trim() || undefined,
       housingType: form.housingType as 'belirtilmemis',
@@ -461,24 +543,51 @@ export function NewListingClient({ paymentEnabled = false, countries: countryLis
       dailyRentalNotes: parsed.data.dailyRentalNotes,
     });
     setPublishing(false);
-    if (res.ok) {
-      // PF-06: clear the in-flight draft on success so a subsequent visit
-      // starts with a clean wizard instead of rehydrating a now-published
-      // listing.
-      try {
-        window.sessionStorage.removeItem(DRAFT_STORAGE_KEY);
-      } catch {
-        // ignore
-      }
-      toast({
-        variant: 'success',
-        title: 'İlanın yayınlandı!',
-        description: form.tier === 'premium' ? 'Admin onayı bekleniyor (ISTBAKU Onaylı süreci).' : 'Yayında ve aramada görünür.',
-      });
-      setTimeout(() => router.push(`/property/${res.slug}`), 600);
-    } else {
+    if (!res.ok) {
       toast({ variant: 'error', title: 'Yayınlanamadı', description: res.error });
+      return;
     }
+
+    // PF-06: clear the in-flight draft on success so a subsequent visit
+    // starts with a clean wizard instead of rehydrating a now-published listing.
+    try { window.sessionStorage.removeItem(DRAFT_STORAGE_KEY); } catch { /* ignore */ }
+
+    // Ücretli eklenti seçilmişse ödeme penceresini aç; yoksa direkt yayında.
+    if ((wantBadge || wantGizli) && res.id) {
+      const pay = await createWizardExtrasPaymentAction(res.id, { badge: wantBadge, gizli: wantGizli });
+      if (pay.ok && 'paymentId' in pay) {
+        paidContextRef.current = { listingId: res.id, slug: res.slug, gizli: wantGizli };
+        const parts = [wantBadge ? 'İstBaku Onaylı rozet' : null, wantGizli ? 'Gizli portföy' : null].filter(Boolean);
+        setPendingPayment({
+          paymentId: pay.paymentId,
+          amount: pay.amount,
+          currency: pay.currency,
+          title: 'İlan eklentileri',
+          description: parts.join(' + '),
+        });
+        return;
+      }
+      // Ödeme başlatılamadıysa ilan yine de yayında — uyar ve yönlendir.
+      toast({ variant: 'success', title: 'İlanın yayınlandı!', description: 'Eklenti ödemesi başlatılamadı, panelinden tekrar deneyebilirsin.' });
+      setTimeout(() => router.push(`/property/${res.slug}`), 600);
+      return;
+    }
+
+    toast({ variant: 'success', title: 'İlanın yayınlandı!', description: 'Yayında ve aramada görünür.' });
+    setTimeout(() => router.push(`/property/${res.slug}`), 600);
+  }
+
+  // Ödeme penceresi başarıyla onaylanınca: gizli seçildiyse uygula, sonra yönlendir.
+  async function onWizardPaid() {
+    const ctx = paidContextRef.current;
+    setPendingPayment(null);
+    if (ctx?.gizli) {
+      const r = await applyWizardPrivateAction(ctx.listingId);
+      if (!r.ok) toast({ variant: 'error', title: 'Gizli portföy uygulanamadı', description: r.error });
+    }
+    toast({ variant: 'success', title: 'İlanın yayınlandı!', description: 'Ödeme alındı, eklentiler uygulandı.' });
+    const slug = ctx?.slug;
+    setTimeout(() => router.push(slug ? `/property/${slug}` : '/dashboard'), 400);
   }
 
   return (
@@ -557,7 +666,16 @@ export function NewListingClient({ paymentEnabled = false, countries: countryLis
                   onDistrictChange={(d) => set({ district: d })}
                 />
                 <div className="sm:col-span-2"><Label>Mahalle (opsiyonel)</Label><Input value={form.neighborhood} onChange={(e) => set({ neighborhood: e.target.value })} placeholder="Örn: Etiler" /></div>
-                <div className="sm:col-span-2"><Label>Açık adres</Label><Input value={form.address} onChange={(e) => set({ address: e.target.value })} placeholder="Cadde, no, kapı..." /></div>
+                <div className="sm:col-span-2">
+                  <Label>Açık adres</Label>
+                  <div className="flex gap-2">
+                    <Input value={form.address} onChange={(e) => set({ address: e.target.value })} placeholder="Cadde, no, kapı..." className="flex-1" />
+                    <Button type="button" variant="outline" onClick={geocodeFromAddress} loading={geocoding} className="shrink-0">
+                      <MapPin size={15} /> Adresten bul
+                    </Button>
+                  </div>
+                  <p className="mt-1 text-[11px] text-[color:var(--fg-faint)]">Adresi yazıp "Adresten bul" ile haritada otomatik işaretle.</p>
+                </div>
               </div>
               <div>
                 <Label>Haritada tam konumu işaretle</Label>
@@ -761,10 +879,38 @@ export function NewListingClient({ paymentEnabled = false, countries: countryLis
                 className="sr-only"
               />
 
-              <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {photos.length > 1 && (
+                <p className="mt-3 text-[11px] text-[color:var(--fg-faint)] inline-flex items-center gap-1">
+                  <GripVertical size={12} /> Sırayı değiştirmek için fotoğrafları sürükle. 1. foto kapak olur.
+                </p>
+              )}
+
+              <div className="mt-2 grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {photos.map((src, i) => (
-                  <div key={i} className="relative aspect-[4/3] rounded-xl overflow-hidden border bg-[color:var(--bg-card-hover)]">
-                    <img src={src} alt={`Foto ${i + 1}`} className="absolute inset-0 w-full h-full object-cover" />
+                  <div
+                    key={i}
+                    draggable
+                    onDragStart={(e) => { dragIndexRef.current = i; e.dataTransfer.effectAllowed = 'move'; }}
+                    onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; if (dragOverIndex !== i) setDragOverIndex(i); }}
+                    onDragLeave={() => { if (dragOverIndex === i) setDragOverIndex(null); }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      const from = dragIndexRef.current;
+                      if (from !== null) movePhoto(from, i);
+                      dragIndexRef.current = null;
+                      setDragOverIndex(null);
+                    }}
+                    onDragEnd={() => { dragIndexRef.current = null; setDragOverIndex(null); }}
+                    className={cn(
+                      'group relative aspect-[4/3] rounded-xl overflow-hidden border bg-[color:var(--bg-card-hover)] cursor-grab active:cursor-grabbing transition-shadow',
+                      dragOverIndex === i ? 'ring-2 ring-gold-400 ring-offset-1 ring-offset-[color:var(--bg)]' : '',
+                      i === 0 ? 'border-gold-400/60' : '',
+                    )}
+                  >
+                    <img src={src} alt={`Foto ${i + 1}`} draggable={false} className="absolute inset-0 w-full h-full object-cover pointer-events-none" />
+                    <span className="absolute top-1.5 left-1.5 size-6 rounded-md bg-black/55 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity" aria-hidden="true">
+                      <GripVertical size={13} />
+                    </span>
                     <button
                       type="button"
                       onClick={() => setPhotos((p) => p.filter((_, j) => j !== i))}
@@ -774,7 +920,7 @@ export function NewListingClient({ paymentEnabled = false, countries: countryLis
                       <X size={13} />
                     </button>
                     {i === 0 && (
-                      <span className="absolute bottom-1.5 left-1.5 text-[10px] bg-black/70 text-white px-1.5 py-0.5 rounded-full">1. foto</span>
+                      <span className="absolute bottom-1.5 left-1.5 text-[10px] bg-gold-400 text-navy-900 font-semibold px-1.5 py-0.5 rounded-full">1. foto · Kapak</span>
                     )}
                   </div>
                 ))}
@@ -897,7 +1043,15 @@ export function NewListingClient({ paymentEnabled = false, countries: countryLis
           )}
 
           {step === 6 && (
-            <NearbyStep value={form.nearby} onChange={(nearby) => set({ nearby })} />
+            <div>
+              <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
+                <p className="text-sm text-[color:var(--fg-muted)]">Konuma göre yakın çevre mesafelerini otomatik hesaplayabilirsin.</p>
+                <Button type="button" variant="gold" size="sm" onClick={autoCalcNearby} loading={nearbyLoading}>
+                  <SparklesIcon size={14} /> Otomatik hesapla
+                </Button>
+              </div>
+              <NearbyStep value={form.nearby} onChange={(nearby) => set({ nearby })} />
+            </div>
           )}
 
           {step === 8 && (
@@ -964,15 +1118,7 @@ export function NewListingClient({ paymentEnabled = false, countries: countryLis
                 {/* Option 1: IstBaku Onaylı Rozet */}
                 <button
                   type="button"
-                  onClick={() => {
-                    if (form.tier === 'premium') {
-                      // Deselect — back to standart
-                      set({ tier: 'standart' });
-                    } else {
-                      // Select premium, deselect private
-                      set({ tier: 'premium', isPrivate: false });
-                    }
-                  }}
+                  onClick={() => set({ tier: form.tier === 'premium' ? 'standart' : 'premium' })}
                   data-testid="option-premium"
                   className={cn(
                     'rounded-2xl border p-5 text-left transition-all',
@@ -983,10 +1129,10 @@ export function NewListingClient({ paymentEnabled = false, countries: countryLis
                 >
                   <div className="flex items-center gap-2">
                     <ShieldCheck size={20} className={form.tier === 'premium' ? 'text-gold-300' : 'text-[color:var(--fg-muted)]'} />
-                    <div className="font-bold">IstBaku Onayli Rozet Al</div>
+                    <div className="font-bold">İstBaku Onaylı Rozet Al</div>
                   </div>
                   <p className="text-xs text-[color:var(--fg-muted)] mt-2">
-                    İlanın kontrol edilir, onaylanırsa öne çıkarılır ve premium rozet alır.
+                    İlanın kontrol edilir, onaylanırsa öne çıkarılır ve İstBaku Onaylı rozeti alır.
                   </p>
                   <div className="mt-3 text-gold-300 font-bold">$49</div>
                 </button>
@@ -1017,8 +1163,7 @@ export function NewListingClient({ paymentEnabled = false, countries: countryLis
                         });
                         return;
                       }
-                      // Select private, deselect premium
-                      set({ isPrivate: true, tier: 'standart' });
+                      set({ isPrivate: true });
                     }
                   }}
                   data-testid="option-private"
@@ -1034,46 +1179,39 @@ export function NewListingClient({ paymentEnabled = false, countries: countryLis
                     <div className="font-bold">Gizli Portföy Yap</div>
                   </div>
                   <p className="text-xs text-[color:var(--fg-muted)] mt-2">
-                    İlanın sadece doğrulanmış kullanıcılara gösterilir.
+                    İlanın sadece doğrulanmış kullanıcılara gösterilir. ($500K+ ilanlar)
                   </p>
-                  <div className="mt-3 text-[color:var(--fg-muted)] text-xs font-medium">
-                    Ücretsiz (sadece $500K+ ilanlar)
-                  </div>
+                  <div className="mt-3 text-gold-300 font-bold">$99</div>
                 </button>
               </div>
 
-              {/* PB-04: inline notice when premium is selected but payment is off. */}
-              {form.tier === 'premium' && !paymentEnabled && (
+              {/* Ücretli eklenti toplamı — seçim varsa ödeme penceresi "Yayınla"da açılır. */}
+              {(form.tier === 'premium' || form.isPrivate) ? (
                 <div
-                  role="alert"
-                  data-testid="premium-payment-notice"
-                  className="mt-4 rounded-xl bg-danger/10 border border-danger/30 p-4 text-sm flex items-start gap-3"
+                  data-testid="extras-total"
+                  className="mt-5 rounded-xl bg-gold-500/10 border border-gold-500/30 p-4 text-sm"
                 >
-                  <AlertCircle size={16} className="text-danger mt-0.5" />
-                  <div>
-                    <strong>Premium tier ödeme sistemi henüz yapılandırılmadı.</strong>{' '}
-                    Standart tier ile devam edebilirsiniz.
+                  <div className="flex items-center gap-2 font-semibold text-gold-300">
+                    <ShieldCheck size={16} /> Ödenecek eklentiler
+                  </div>
+                  <ul className="mt-2 space-y-1 text-[color:var(--fg-muted)]">
+                    {form.tier === 'premium' && <li className="flex justify-between"><span>İstBaku Onaylı rozet</span><span>$49</span></li>}
+                    {form.isPrivate && <li className="flex justify-between"><span>Gizli portföy</span><span>$99</span></li>}
+                  </ul>
+                  <div className="mt-2 pt-2 border-t border-[color:var(--border)] flex justify-between font-bold">
+                    <span>Toplam</span>
+                    <span className="text-gold-300">${(form.tier === 'premium' ? 49 : 0) + (form.isPrivate ? 99 : 0)}</span>
+                  </div>
+                  <p className="mt-2 text-xs text-[color:var(--fg-faint)]">"Yayınla" deyince ödeme penceresi açılır.</p>
+                </div>
+              ) : (
+                <div className="mt-5 rounded-xl bg-[color:var(--bg-elev)] border border-[color:var(--border)] p-4 text-sm flex items-start gap-3">
+                  <AlertCircle size={16} className="text-[color:var(--fg-muted)] mt-0.5 shrink-0" />
+                  <div className="text-[color:var(--fg-muted)]">
+                    Hiçbirini seçmezsen ilanın standart olarak yayınlanır.
                   </div>
                 </div>
               )}
-
-              {form.tier === 'premium' && paymentEnabled && (
-                <div
-                  className="mt-4 rounded-xl bg-gold-500/10 border border-gold-500/30 p-4 text-sm flex items-start gap-3"
-                >
-                  <ShieldCheck size={16} className="text-gold-300 mt-0.5" />
-                  <div>
-                    Premium ilan ücreti yayınlama sırasında otomatik olarak işlenir.
-                  </div>
-                </div>
-              )}
-
-              <div className="mt-5 rounded-xl bg-[color:var(--bg-elev)] border border-[color:var(--border)] p-4 text-sm flex items-start gap-3">
-                <AlertCircle size={16} className="text-[color:var(--fg-muted)] mt-0.5 shrink-0" />
-                <div className="text-[color:var(--fg-muted)]">
-                  Hiçbirini seçmezsen ilanın standart olarak yayınlanır.
-                </div>
-              </div>
             </div>
           )}
 
@@ -1087,7 +1225,7 @@ export function NewListingClient({ paymentEnabled = false, countries: countryLis
             // PF-08: also disable İleri while the photo minimum isn't met,
             // so the requirement is surfaced on first paint (not after click).
             const nextDisabled = step1Incomplete || photosShort;
-            const publishDisabled = publishing || (form.tier === 'premium' && !paymentEnabled);
+            const publishDisabled = publishing;
             return (
               <div className="mt-8 hidden md:flex items-center justify-between">
                 <Button variant="ghost" onClick={() => setStep((s) => Math.max(0, s - 1))} disabled={step === 0}>
@@ -1156,13 +1294,25 @@ export function NewListingClient({ paymentEnabled = false, countries: countryLis
             className="!h-12"
             onClick={publish}
             loading={publishing}
-            disabled={publishing || (form.tier === 'premium' && !paymentEnabled)}
+            disabled={publishing}
             data-testid="wizard-publish-mobile"
           >
             <CheckCircle2 size={16} /> Yayınla
           </Button>
         )}
       </div>
+      <PaymentModal
+        open={!!pendingPayment}
+        payment={pendingPayment}
+        onClose={() => {
+          // Ödeme iptal — ilan zaten standart/açık yayında; panele yönlendir.
+          const slug = paidContextRef.current?.slug;
+          setPendingPayment(null);
+          toast({ variant: 'info', title: 'Ödeme iptal edildi', description: 'İlanın standart olarak yayında. Eklentileri panelinden ekleyebilirsin.' });
+          setTimeout(() => router.push(slug ? `/property/${slug}` : '/dashboard'), 300);
+        }}
+        onSuccess={onWizardPaid}
+      />
     </div>
   );
 }

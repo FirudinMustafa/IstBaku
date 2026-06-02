@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import type { Currency } from './types';
+import { RATES, setLiveRates } from './currency';
 
 /**
  * Global currency switcher store (PF-01 / PU-01).
@@ -34,15 +35,23 @@ function writeCookie(value: Currency) {
 interface Ctx {
   currency: Currency;
   setCurrency: (c: Currency) => void;
+  /** Aktif kur tablosu (USD bazlı). Canlı kur gelene kadar yedek kurlar. */
+  rates: Record<Currency, number>;
+  /** Kurlar canlı kaynaktan mı geldi? */
+  ratesLive: boolean;
 }
 
 const CurrencyCtx = React.createContext<Ctx>({
   currency: DEFAULT_CURRENCY,
   setCurrency: () => {},
+  rates: { ...RATES },
+  ratesLive: false,
 });
 
 export function CurrencyProvider({ children }: { children: React.ReactNode }) {
   const [currency, setState] = React.useState<Currency>(DEFAULT_CURRENCY);
+  const [rates, setRates] = React.useState<Record<Currency, number>>({ ...RATES });
+  const [ratesLive, setRatesLive] = React.useState(false);
 
   React.useEffect(() => {
     try {
@@ -50,12 +59,29 @@ export function CurrencyProvider({ children }: { children: React.ReactNode }) {
       if (isCurrency(stored)) {
         setState(stored);
         writeCookie(stored);
-        return;
+      } else {
+        writeCookie(DEFAULT_CURRENCY);
       }
     } catch {
       // localStorage may be unavailable (private mode); fall through.
+      writeCookie(DEFAULT_CURRENCY);
     }
-    writeCookie(DEFAULT_CURRENCY);
+  }, []);
+
+  // Canlı döviz kurlarını çek; hem context state'ine hem de currency.ts içindeki
+  // aktif tabloya (convert için) yaz.
+  React.useEffect(() => {
+    const ctrl = new AbortController();
+    fetch('/api/rates', { signal: ctrl.signal })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: { rates?: Record<Currency, number>; live?: boolean } | null) => {
+        if (!data?.rates) return;
+        setLiveRates(data.rates);
+        setRates({ ...RATES, ...data.rates });
+        setRatesLive(Boolean(data.live));
+      })
+      .catch(() => {});
+    return () => ctrl.abort();
   }, []);
 
   const setCurrency = React.useCallback((c: Currency) => {
@@ -68,7 +94,7 @@ export function CurrencyProvider({ children }: { children: React.ReactNode }) {
     writeCookie(c);
   }, []);
 
-  return <CurrencyCtx.Provider value={{ currency, setCurrency }}>{children}</CurrencyCtx.Provider>;
+  return <CurrencyCtx.Provider value={{ currency, setCurrency, rates, ratesLive }}>{children}</CurrencyCtx.Provider>;
 }
 
 export function useCurrency() {

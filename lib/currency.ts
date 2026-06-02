@@ -14,13 +14,35 @@ import type { Currency } from './types';
  * rates server-side, cache them, and persist daily snapshots.
  */
 
-// 1 USD = X currency (mock rates — replace with live feed).
+// 1 USD = X currency. Bunlar canlı kur alınamazsa kullanılan yedek (fallback)
+// değerlerdir. Canlı kurlar `lib/rates.ts` ile çekilir ve uygulama açılışında
+// `setLiveRates()` ile aşağıdaki aktif tabloya yazılır.
 export const RATES: Record<Currency, number> = {
   USD: 1,
   EUR: 0.92,
   TRY: 38.6,
   AZN: 1.7,
 };
+
+// Aktif kur tablosu — varsayılan olarak yedek kurlarla başlar; canlı kur
+// gelince güncellenir. `convert()` bu tabloyu okur.
+let ACTIVE_RATES: Record<Currency, number> = { ...RATES };
+
+/** Canlı kurları aktif tabloya yaz (USD bazlı). Geçersiz değerleri yok sayar. */
+export function setLiveRates(rates: Partial<Record<Currency, number>>): void {
+  const next = { ...ACTIVE_RATES };
+  for (const k of Object.keys(next) as Currency[]) {
+    const v = rates[k];
+    if (typeof v === 'number' && Number.isFinite(v) && v > 0) next[k] = v;
+  }
+  next.USD = 1;
+  ACTIVE_RATES = next;
+}
+
+/** O an aktif olan kur tablosunun kopyası. */
+export function getActiveRates(): Record<Currency, number> {
+  return { ...ACTIVE_RATES };
+}
 
 export const CURRENCY_SYMBOLS: Record<Currency, string> = {
   USD: '$',
@@ -60,8 +82,8 @@ export function convert(amount: number, from: Currency, to: Currency): number {
   if (from === to) return amount;
   const minorFrom = toMinorUnits(amount, from);
   // Convert via USD pivot. Use integer cents on USD side.
-  const usdMinor = Math.round(minorFrom / RATES[from]);
-  const toMinor = Math.round(usdMinor * RATES[to]);
+  const usdMinor = Math.round(minorFrom / ACTIVE_RATES[from]);
+  const toMinor = Math.round(usdMinor * ACTIVE_RATES[to]);
   return fromMinorUnits(toMinor, to);
 }
 

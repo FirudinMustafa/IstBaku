@@ -8,9 +8,19 @@ import { Card, CardBody } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Select } from '@/components/ui/Input';
+import { Home, Building2, Banknote, Stamp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useLang } from '@/components/layout/LangProvider';
 import type { Lang } from '@/lib/types';
+import { getCrossBorderSteps } from '@/lib/cross-border-actions';
+
+// Stored lucide icon name → component. Bilinmeyen ad için generic ikon.
+const ICON_MAP: Record<string, typeof FileCheck2> = {
+  FileCheck2, Scale, Coins, Globe2, BookOpen, CheckCircle2, Home, Building2, Banknote, Stamp,
+};
+function iconFor(name?: string | null): typeof FileCheck2 {
+  return (name && ICON_MAP[name]) || FileCheck2;
+}
 
 type Nationality = 'TR' | 'AZ' | 'OTHER';
 type Country = 'TR' | 'AZ';
@@ -176,8 +186,30 @@ export default function LegalGuidePage() {
 
   const key: GuideKey = `${nationality}-${country}`;
   const trSteps = STEPS.tr!;
-  const guide = STEPS[lang]?.[key] ?? trSteps[key] ?? trSteps['TR-AZ'];
-  void purpose;
+  const hardcoded = STEPS[lang]?.[key] ?? trSteps[key] ?? trSteps['TR-AZ'];
+
+  // DB'den adımları çek; combo için kayıt yoksa hardcoded'a düş (graceful).
+  const [dbSteps, setDbSteps] = React.useState<{ title: string; desc: string; i: typeof FileCheck2 }[] | null>(null);
+  React.useEffect(() => {
+    let cancelled = false;
+    setDbSteps(null);
+    getCrossBorderSteps({ nationality, country, purpose, language: lang })
+      .then((rows) => {
+        if (cancelled) return;
+        if (rows.length > 0) {
+          setDbSteps(rows.map((r) => ({ title: r.title, desc: r.description, i: iconFor(r.icon) })));
+        } else {
+          setDbSteps([]); // boş = fallback kullan
+        }
+      })
+      .catch(() => { if (!cancelled) setDbSteps([]); });
+    return () => { cancelled = true; };
+  }, [nationality, country, purpose, lang]);
+
+  const guide = dbSteps && dbSteps.length > 0 ? dbSteps : hardcoded;
+  React.useEffect(() => { setStep(0); }, [guide.length]);
+  const safeStep = Math.min(step, guide.length - 1);
+  const current = guide[safeStep];
 
   return (
     <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-10">
@@ -237,8 +269,8 @@ export default function LegalGuidePage() {
         <Card>
           <CardBody className="p-7">
             <Badge variant="gold">{t('legal.step')} {step + 1} / {guide.length}</Badge>
-            <h2 className="mt-3 text-2xl font-bold">{guide[step].title}</h2>
-            <p className="mt-2 text-[color:var(--fg-muted)] text-pretty">{guide[step].desc}</p>
+            <h2 className="mt-3 text-2xl font-bold">{current.title}</h2>
+            <p className="mt-2 text-[color:var(--fg-muted)] text-pretty">{current.desc}</p>
 
             <div className="mt-6 grid sm:grid-cols-3 gap-3">
               <Card className="bg-[color:var(--bg-elev)]"><CardBody className="p-4">

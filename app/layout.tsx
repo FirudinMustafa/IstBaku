@@ -25,7 +25,15 @@ export const metadata: Metadata = {
     siteName: 'ISTBAKU',
     locale: 'tr_TR',
     type: 'website',
+    images: [{ url: '/brand/og-default.png', width: 1200, height: 630, alt: 'ISTBAKU' }],
   },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'ISTBAKU',
+    description: 'AI destekli yatırım analiziyle emlak. Tek tıkla bölgeyi, getiriyi ve riski gör.',
+    images: ['/brand/og-default.png'],
+  },
+  manifest: '/manifest.webmanifest',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',

@@ -22,6 +22,7 @@ import { NearbyPOIList } from '@/components/listings/NearbyPOI';
 import { MapView } from '@/components/listings/MapView';
 import { ListingCard } from '@/components/listings/ListingCard';
 import { OwnerActionBarWrapper } from '@/components/listings/OwnerActionBarWrapper';
+import { ViewTracker } from '@/components/listings/ViewTracker';
 import { timeAgo } from '@/lib/utils';
 import {
   OWNER_TYPE_LABEL, TITLE_DEED_LABEL, STATUS_LABEL, PARKING_LABEL,
@@ -58,6 +59,7 @@ export default async function PropertyPage({ params }: { params: Promise<{ slug:
       className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-4 sm:py-10 pb-44 md:pb-10"
       style={{ scrollPaddingBottom: '96px' }}
     >
+      <ViewTracker id={property.id} />
       {/* PP-04: pb-44 (was pb-32) gives the mobile bottom-bar + global bottom-nav +
           iOS safe-area enough headroom so the agent's "Mesaj gönder" CTA at the end
           of the page is never visually clipped behind the sticky CTA. */}
@@ -76,10 +78,11 @@ export default async function PropertyPage({ params }: { params: Promise<{ slug:
           <div className="flex flex-wrap items-center gap-2 mb-2">
             <Badge variant="outline">{PURPOSE_LABEL[property.purpose]}</Badge>
             <Badge variant="outline">{PROPERTY_TYPE_LABEL[property.type]}</Badge>
-            {property.istbakuApproved && (
-              <Badge variant="success"><ShieldCheck size={11} /> ISTBAKU Onaylı (Seviye {property.approvalLevel})</Badge>
+            {(property.istbakuApproved || property.tier === 'premium') && (
+              <Badge variant="success">
+                <ShieldCheck size={11} /> İstBaku Onaylı{property.istbakuApproved ? ` (Seviye ${property.approvalLevel})` : ''}
+              </Badge>
             )}
-            {property.tier === 'premium' && <Badge variant="premium">★ Premium</Badge>}
             {property.tier === 'guclu' && <Badge variant="ai">Güçlü</Badge>}
             {property.has360 && <Badge variant="navy">360° Tur</Badge>}
           </div>

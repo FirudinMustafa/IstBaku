@@ -189,7 +189,7 @@ export function emailShell({
               <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
                 <tr>
                   <td style="font-size:22px;font-weight:800;letter-spacing:-0.02em;line-height:1;">
-                    <span style="color:${C.orange};">IST</span><span style="color:${C.white};">BAKU</span>
+                    <img src="${appUrl}/brand/word-tan.png" alt="ISTBAKU" height="26" style="height:26px;width:auto;display:inline-block;border:0;outline:none;text-decoration:none;" />
                   </td>
                   <td align="right" style="font-size:10px;color:${C.textMuted};letter-spacing:0.18em;text-transform:uppercase;">
                     ISTBAKU

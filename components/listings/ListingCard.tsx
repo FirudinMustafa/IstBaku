@@ -137,13 +137,13 @@ export function ListingCard({ property: p, compact }: Props) {
 
         <div className="absolute top-3 left-3 right-3 flex items-start justify-between pointer-events-none">
           <div className="flex flex-col gap-1.5">
-            {p.tier === 'premium' && <Badge variant="premium"><span aria-hidden="true">★ </span>Premium</Badge>}
-            {p.tier === 'guclu' && <Badge variant="ai">Güçlü</Badge>}
-            {p.istbakuApproved && (
+            {/* Tek birleşik rozet: premium VEYA onaylı → "İstBaku Onaylı" */}
+            {(p.istbakuApproved || p.tier === 'premium') && (
               <Badge variant="success" className="bg-success/25">
-                <ShieldCheck size={11} aria-hidden="true" /> ISTBAKU Onaylı
+                <ShieldCheck size={11} aria-hidden="true" /> İstBaku Onaylı
               </Badge>
             )}
+            {p.tier === 'guclu' && <Badge variant="ai">Güçlü</Badge>}
           </div>
           {/* Z-index above the stretched Link so clicks register on these buttons. */}
           <div className="flex flex-col gap-1.5 relative z-10 pointer-events-auto">

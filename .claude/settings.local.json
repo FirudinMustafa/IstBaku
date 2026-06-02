@@ -53,7 +53,9 @@
       "WebFetch(domain:ist-baku.vercel.app)",
       "mcp__plugin_vercel_vercel__list_teams",
       "mcp__plugin_vercel_vercel__get_runtime_logs",
-      "Bash(taskkill //F //IM node.exe)"
+      "Bash(taskkill //F //IM node.exe)",
+      "Bash(npx playwright *)",
+      "Bash(node scripts/_tmp_live_login.mjs)"
     ]
   }
 }
