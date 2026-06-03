@@ -1,35 +1,36 @@
 import Link from 'next/link';
 import Image from 'next/image';
 
-export function Logo({ size = 'md', wordmark = true }: { size?: 'sm' | 'md' | 'lg'; wordmark?: boolean }) {
-  const dim = size === 'sm' ? 28 : size === 'lg' ? 44 : 34;
+// "istbaku.com" wordmark (381×96, ~3.97:1). Navy on light backgrounds,
+// tan when inside a `.dark` scope. Sized by fixed height; width follows ratio.
+const RATIO = 381 / 96;
+
+export function Logo({ size = 'md' }: { size?: 'sm' | 'md' | 'lg'; wordmark?: boolean }) {
+  const h = size === 'sm' ? 18 : size === 'lg' ? 28 : 22;
+  const w = Math.round(h * RATIO);
   return (
-    <Link href="/" className="inline-flex items-center gap-2.5 group" aria-label="ISTBAKU">
+    <Link href="/" className="inline-flex items-center group" aria-label="istbaku.com">
       <span
-        className="relative inline-flex items-center justify-center shrink-0 transition-transform group-hover:scale-105"
-        style={{ width: dim, height: dim }}
+        className="relative inline-flex items-center shrink-0 transition-transform group-hover:scale-105"
+        style={{ height: h, width: w }}
       >
-        {/* Navy mark for light backgrounds; tan mark when inside a .dark scope */}
         <Image
-          src="/brand/mark-navy.png"
-          alt=""
-          width={dim}
-          height={dim}
+          src="/brand/word-navy.png"
+          alt="istbaku.com"
+          width={w}
+          height={h}
           priority
           className="block dark:hidden h-full w-full object-contain"
         />
         <Image
-          src="/brand/mark-tan.png"
-          alt=""
-          width={dim}
-          height={dim}
+          src="/brand/word-tan.png"
+          alt="istbaku.com"
+          width={w}
+          height={h}
           priority
           className="hidden dark:block absolute inset-0 h-full w-full object-contain"
         />
       </span>
-      {wordmark && (
-        <span className="font-display font-bold tracking-tight text-[15px] leading-none">ISTBAKU</span>
-      )}
     </Link>
   );
 }

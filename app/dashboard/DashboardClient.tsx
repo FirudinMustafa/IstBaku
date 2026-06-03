@@ -7,7 +7,7 @@ import {
   Home, Heart, GitCompare, Bell, Sparkles, Search,
   Eye, MapPin, ArrowUpRight, BadgeCheck, Pencil, Trash2,
   Zap, Star, AlertTriangle, ExternalLink, CalendarDays, Check, X,
-  CreditCard, Settings, Crown,
+  CreditCard, Settings, Crown, RefreshCw, ShieldCheck, Loader2,
 } from 'lucide-react';
 import { AccountSettings } from './AccountSettings';
 import { Card, CardBody } from '@/components/ui/Card';
@@ -20,6 +20,7 @@ import { ScoreRing } from '@/components/listings/ScoreRing';
 import { useNotifications } from '@/lib/notifications-store';
 import { signOutAction, type PublicUser } from '@/lib/auth-actions';
 import { upgradeTierAction, deleteListingAction, deleteSavedSearchAction } from '@/lib/listing-actions';
+import { renewListingDateAction, requestPremiumUpgradeAction } from '@/lib/listing-owner-actions';
 import { markNotificationReadAction, markAllNotificationsReadAction } from '@/lib/notification-actions';
 import { useCompare } from '@/lib/compare-store';
 import { useFavorites } from '@/lib/favorites-store';
@@ -81,6 +82,8 @@ interface Props {
   notifications: NotificationUI[];
   dailyBookings: DailyBookingUI[];
   payments: PaymentUI[];
+  /** Admin'den ayarlanabilir platform fiyatları (USD cent). */
+  prices: { renewal: number; badge: number; guclu: number; premium: number };
 }
 
 const PAYMENT_TYPE_LABELS: Record<string, string> = {
@@ -98,7 +101,7 @@ const PAYMENT_STATUS_LABELS: Record<string, { l: string; v: 'success' | 'gold' |
   refunded: { l: 'İade', v: 'default' },
 };
 
-export function DashboardClient({ initialUser, myListings, favorites, savedSearches, notifications, dailyBookings, payments }: Props) {
+export function DashboardClient({ initialUser, myListings, favorites, savedSearches, notifications, dailyBookings, payments, prices }: Props) {
   const sp = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
@@ -172,7 +175,7 @@ export function DashboardClient({ initialUser, myListings, favorites, savedSearc
 
         <main>
           {tab === 'overview' && <Overview user={user} myListings={myListings} favorites={favorites} notifications={notifications} />}
-          {tab === 'listings' && <MyListings listings={myListings} />}
+          {tab === 'listings' && <MyListings listings={myListings} prices={prices} />}
           {tab === 'daily-bookings' && <DailyBookingsTab initial={dailyBookings} />}
           {tab === 'favorites' && <Favorites favorites={favorites} />}
           {tab === 'compare' && <CompareTab />}
@@ -271,7 +274,7 @@ function Overview({ user, myListings, favorites, notifications }: { user: Public
   );
 }
 
-function MyListings({ listings }: { listings: Property[] }) {
+function MyListings({ listings, prices }: { listings: Property[]; prices: { renewal: number; badge: number; guclu: number; premium: number } }) {
   const router = useRouter();
   const { toast } = useToast();
   const [upgradeFor, setUpgradeFor] = React.useState<Property | null>(null);
@@ -279,6 +282,28 @@ function MyListings({ listings }: { listings: Property[] }) {
   const [working, setWorking] = React.useState(false);
   const [pendingPayment, setPendingPayment] = React.useState<PendingPayment | null>(null);
   const upgradeSuccessRef = React.useRef<'guclu' | 'premium'>('guclu');
+  // Tarih yenileme / İstBaku onaylı ödemeleri için başarı mesajı.
+  const ownerSuccessRef = React.useRef<{ title: string; description: string } | null>(null);
+  const [loadingAction, setLoadingAction] = React.useState<string | null>(null);
+  const usd = (cents: number) => `$${Math.round(cents / 100)}`;
+
+  async function startRenew(p: Property) {
+    setLoadingAction(`renew-${p.id}`);
+    const res = await renewListingDateAction(p.id);
+    setLoadingAction(null);
+    if (!res.ok) { toast({ variant: 'error', title: 'Hata', description: res.error }); return; }
+    ownerSuccessRef.current = { title: 'Tarih yenilendi', description: 'Ödeme onaylandı — ilanın tarihi tazelendi.' };
+    setPendingPayment({ paymentId: res.paymentId, amount: res.amount, currency: res.currency, title: 'Tarihi Yenile', description: 'İlanın yayın tarihi tazelenir ve listelerde öne çıkar.' });
+  }
+
+  async function startApprove(p: Property) {
+    setLoadingAction(`approve-${p.id}`);
+    const res = await requestPremiumUpgradeAction(p.id);
+    setLoadingAction(null);
+    if (!res.ok) { toast({ variant: 'error', title: 'Hata', description: res.error }); return; }
+    ownerSuccessRef.current = { title: 'Ödeme onaylandı', description: 'İstBaku Onaylı başvurun admin onayına gönderildi.' };
+    setPendingPayment({ paymentId: res.paymentId, amount: res.amount, currency: res.currency, title: 'İstBaku Onaylı Rozet', description: 'İlan en üst sıralarda gösterilir ve İstBaku Onaylı sürecine girer.' });
+  }
 
   if (listings.length === 0) {
     return (
@@ -293,6 +318,7 @@ function MyListings({ listings }: { listings: Property[] }) {
 
   async function doUpgrade(tier: 'guclu' | 'premium') {
     if (!upgradeFor) return;
+    ownerSuccessRef.current = null; // tier yükseltme — owner mesajını temizle
     setWorking(true);
     const res = await upgradeTierAction(upgradeFor.id, tier);
     setWorking(false);
@@ -313,9 +339,16 @@ function MyListings({ listings }: { listings: Property[] }) {
   }
 
   async function onUpgradePaid() {
-    const tier = upgradeSuccessRef.current;
     setPendingPayment(null);
-    toast({ variant: 'success', title: 'Yükseltildi!', description: `İlan ${tier === 'premium' ? 'Premium' : 'Güçlü'} seviyeye geçti.` });
+    // Tarih yenileme / onaylı ödemesi ise ona ait mesajı göster; değilse tier yükseltme.
+    if (ownerSuccessRef.current) {
+      const msg = ownerSuccessRef.current;
+      ownerSuccessRef.current = null;
+      toast({ variant: 'success', title: msg.title, description: msg.description });
+    } else {
+      const tier = upgradeSuccessRef.current;
+      toast({ variant: 'success', title: 'Yükseltildi!', description: `İlan ${tier === 'premium' ? 'Premium' : 'Güçlü'} seviyeye geçti.` });
+    }
     router.refresh();
   }
 
@@ -358,6 +391,28 @@ function MyListings({ listings }: { listings: Property[] }) {
             <div className="text-sm font-bold text-gold-300 mt-1">{formatPrice(p.price, p.currency)}</div>
           </div>
           <div className="flex items-center gap-1.5 flex-wrap">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => startRenew(p)}
+              disabled={loadingAction !== null}
+              className="gap-1"
+            >
+              {loadingAction === `renew-${p.id}` ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
+              Tarihi Yenile ({usd(prices.renewal)})
+            </Button>
+            {!p.istbakuApproved && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => startApprove(p)}
+                disabled={loadingAction !== null}
+                className="gap-1"
+              >
+                {loadingAction === `approve-${p.id}` ? <Loader2 size={12} className="animate-spin" /> : <ShieldCheck size={12} className="text-gold-300" />}
+                İstBaku Onaylı Yap ({usd(prices.badge)})
+              </Button>
+            )}
             {p.tier !== 'premium' && (
               <Button variant="outline" size="sm" onClick={() => setUpgradeFor(p)} className="gap-1">
                 <Zap size={12} /> Yükselt
@@ -389,7 +444,7 @@ function MyListings({ listings }: { listings: Property[] }) {
                 <Star size={18} className="text-gold-300" />
                 <div className="font-bold mt-2">Güçlü</div>
                 <div className="text-xs text-[color:var(--fg-muted)] mt-1">Foto + video kapak, yüksek görünürlük</div>
-                <div className="mt-3 text-gold-300 font-bold">$9 / 30 gün</div>
+                <div className="mt-3 text-gold-300 font-bold">{usd(prices.guclu)} / 30 gün</div>
               </button>
               <button
                 onClick={() => doUpgrade('premium')}
@@ -399,7 +454,7 @@ function MyListings({ listings }: { listings: Property[] }) {
                 <Badge variant="premium">★ Premium</Badge>
                 <div className="font-bold mt-2">Premium</div>
                 <div className="text-xs text-[color:var(--fg-muted)] mt-1">En üst sırada + ISTBAKU Onaylı süreci</div>
-                <div className="mt-3 text-amber-300 font-bold">$29 / 30 gün</div>
+                <div className="mt-3 text-amber-300 font-bold">{usd(prices.premium)} / 30 gün</div>
               </button>
             </div>
             <p className="mt-4 text-[10px] text-[color:var(--fg-faint)]">

@@ -10,6 +10,7 @@ interface Props {
   isApproved: boolean;
   isPrivate: boolean;
   price: number;
+  prices: { renewal: number; badge: number };
 }
 
 /**
@@ -17,7 +18,7 @@ interface Props {
  * Rendered inside the ISR property page — only shows OwnerActionBar when
  * the authenticated user matches the listing's agentId.
  */
-export function OwnerActionBarWrapper({ listingId, agentId, currentTier, isApproved, isPrivate, price }: Props) {
+export function OwnerActionBarWrapper({ listingId, agentId, currentTier, isApproved, isPrivate, price, prices }: Props) {
   const { user, ready } = useUser();
 
   // Don't render anything until we know who the viewer is
@@ -33,6 +34,7 @@ export function OwnerActionBarWrapper({ listingId, agentId, currentTier, isAppro
       isPrivate={isPrivate}
       price={price}
       userKycStatus={user.kycStatus}
+      prices={prices}
     />
   );
 }

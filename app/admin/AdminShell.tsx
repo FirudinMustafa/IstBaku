@@ -7,7 +7,7 @@ import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, ListChecks, Users, Briefcase, ShieldCheck,
   Flag, CreditCard, BarChart3, FileText, Bell, Search, Crown, LogOut, BookOpen,
-  Newspaper, Menu, X, Route,
+  Newspaper, Menu, X, Route, Tag,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
 import { cn } from '@/lib/utils';
@@ -21,6 +21,7 @@ const NAV = [
   { href: '/admin/kyc', l: 'KYC İnceleme', i: ShieldCheck },
   { href: '/admin/reports', l: 'Şikayetler', i: Flag },
   { href: '/admin/payments', l: 'Ödemeler & Gelir', i: CreditCard },
+  { href: '/admin/pricing', l: 'Fiyatlandırma', i: Tag },
   { href: '/admin/analytics', l: 'Analitik', i: BarChart3 },
   { href: '/admin/country-guides', l: 'Ülke Rehberleri', i: BookOpen },
   { href: '/admin/cross-border', l: 'Sınır Ötesi Adımlar', i: Route },

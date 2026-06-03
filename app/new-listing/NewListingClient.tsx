@@ -50,7 +50,12 @@ interface NewListingClientProps {
   paymentEnabled?: boolean;
   /** Dinamik ülke listesi — RSC page'den. Boşsa TR/AZ fallback. */
   countries?: { code: string; label: string; flag: string }[];
+  /** Admin'den ayarlanabilir ücretli eklenti fiyatları (USD cent). */
+  prices?: { badge: number; private: number };
 }
+
+// USD cent → "$NN" gösterimi
+const usdLabel = (cents: number) => `$${Math.round(cents / 100)}`;
 
 // PF-06: bump this whenever the persisted shape changes so old drafts are dropped.
 const DRAFT_STORAGE_KEY = 'istbaku.newListing.v1';
@@ -60,7 +65,10 @@ const DRAFT_STORAGE_KEY = 'istbaku.newListing.v1';
 type PurposeOrEmpty = 'sale' | 'rent' | 'daily_rent' | '';
 type TypeOrEmpty = PropertyType | '';
 
-export function NewListingClient({ countries: countryList }: NewListingClientProps) {
+export function NewListingClient({ countries: countryList, prices }: NewListingClientProps) {
+  // Fallback default'lar (RSC fiyat geçmezse).
+  const badgePrice = prices?.badge ?? 4900;
+  const privatePrice = prices?.private ?? 9900;
   const dynamicCountries = countryList && countryList.length > 0
     ? countryList
     : [
@@ -354,6 +362,10 @@ export function NewListingClient({ countries: countryList }: NewListingClientPro
     }
     if (step === 2 && form.grossArea <= 0) {
       toast({ variant: 'error', title: 'Brüt m² zorunlu', description: 'Brüt alan 0\'dan büyük olmalı.' });
+      return;
+    }
+    if (step === 2 && form.totalFloors < 1) {
+      toast({ variant: 'error', title: 'Toplam kat zorunlu', description: 'Binadaki toplam kat sayısını gir (en az 1).' });
       return;
     }
     // PU-05: enforce description min-length at the step-2 → step-3 transition so
@@ -1134,7 +1146,7 @@ export function NewListingClient({ countries: countryList }: NewListingClientPro
                   <p className="text-xs text-[color:var(--fg-muted)] mt-2">
                     İlanın kontrol edilir, onaylanırsa öne çıkarılır ve İstBaku Onaylı rozeti alır.
                   </p>
-                  <div className="mt-3 text-gold-300 font-bold">$49</div>
+                  <div className="mt-3 text-gold-300 font-bold">{usdLabel(badgePrice)}</div>
                 </button>
 
                 {/* Option 2: Gizli Portföy */}
@@ -1181,7 +1193,7 @@ export function NewListingClient({ countries: countryList }: NewListingClientPro
                   <p className="text-xs text-[color:var(--fg-muted)] mt-2">
                     İlanın sadece doğrulanmış kullanıcılara gösterilir. ($500K+ ilanlar)
                   </p>
-                  <div className="mt-3 text-gold-300 font-bold">$99</div>
+                  <div className="mt-3 text-gold-300 font-bold">{usdLabel(privatePrice)}</div>
                 </button>
               </div>
 
@@ -1195,12 +1207,12 @@ export function NewListingClient({ countries: countryList }: NewListingClientPro
                     <ShieldCheck size={16} /> Ödenecek eklentiler
                   </div>
                   <ul className="mt-2 space-y-1 text-[color:var(--fg-muted)]">
-                    {form.tier === 'premium' && <li className="flex justify-between"><span>İstBaku Onaylı rozet</span><span>$49</span></li>}
-                    {form.isPrivate && <li className="flex justify-between"><span>Gizli portföy</span><span>$99</span></li>}
+                    {form.tier === 'premium' && <li className="flex justify-between"><span>İstBaku Onaylı rozet</span><span>{usdLabel(badgePrice)}</span></li>}
+                    {form.isPrivate && <li className="flex justify-between"><span>Gizli portföy</span><span>{usdLabel(privatePrice)}</span></li>}
                   </ul>
                   <div className="mt-2 pt-2 border-t border-[color:var(--border)] flex justify-between font-bold">
                     <span>Toplam</span>
-                    <span className="text-gold-300">${(form.tier === 'premium' ? 49 : 0) + (form.isPrivate ? 99 : 0)}</span>
+                    <span className="text-gold-300">{usdLabel((form.tier === 'premium' ? badgePrice : 0) + (form.isPrivate ? privatePrice : 0))}</span>
                   </div>
                   <p className="mt-2 text-xs text-[color:var(--fg-faint)]">"Yayınla" deyince ödeme penceresi açılır.</p>
                 </div>

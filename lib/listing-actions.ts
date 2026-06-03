@@ -7,6 +7,7 @@ import { getCurrentUser } from './auth-actions';
 import { uploadDataUrl } from './storage';
 import { slugify } from './utils';
 import { sanitizeText, sanitizeHtml, sanitizeLat, sanitizeLng } from './sanitize';
+import { getPrice } from './pricing';
 
 export interface CreateListingInput {
   type: typeof s.listings.$inferInsert.type;
@@ -454,7 +455,9 @@ export async function upgradeTierAction(
   // Bekleyen ödeme oluştur ve paymentId döndür; ödeme penceresi onaylayınca
   // confirmPayment tier'i (amount'a göre) yükseltir. Gerçek sağlayıcı bağlanınca
   // confirmPayment yerine provider webhook'u çalışır (lib/payment-provider.ts).
-  const amount = tier === 'premium' ? 2900 : 900;
+  // Fiyat admin'den ayarlanabilir. Hedef tier'ı providerRef'e gömüyoruz ki
+  // confirmPayment fiyattan bağımsız, deterministik karar versin (fiyat değişse de).
+  const amount = await getPrice(tier === 'premium' ? 'tier_premium' : 'tier_guclu');
   try {
     const [payment] = await db.insert(s.payments).values({
       userId: user.id,
@@ -463,7 +466,7 @@ export async function upgradeTierAction(
       currency: 'USD',
       type: 'tier_upgrade',
       status: 'pending',
-      providerRef: `pending-${Date.now()}`,
+      providerRef: `pending-tier:${tier}-${Date.now()}`,
     }).returning();
 
     await db.insert(s.auditLog).values({

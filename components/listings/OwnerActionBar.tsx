@@ -16,9 +16,13 @@ interface Props {
   isPrivate: boolean;
   price: number;
   userKycStatus: string;
+  /** Admin'den ayarlanabilir fiyatlar (USD cent). */
+  prices: { renewal: number; badge: number };
 }
 
-export function OwnerActionBar({ listingId, currentTier, isApproved, isPrivate, price, userKycStatus }: Props) {
+const usd = (cents: number) => `$${Math.round(cents / 100)}`;
+
+export function OwnerActionBar({ listingId, currentTier, isApproved, isPrivate, price, userKycStatus, prices }: Props) {
   const { toast } = useToast();
   const router = useRouter();
   const [loading, setLoading] = React.useState<string | null>(null);
@@ -66,13 +70,13 @@ export function OwnerActionBar({ listingId, currentTier, isApproved, isPrivate, 
 
         <Button variant="outline" size="sm" className="w-full justify-start gap-2" onClick={startRenew} disabled={loading !== null}>
           {loading === 'renew' ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
-          Tarihi Yenile ($19)
+          Tarihi Yenile ({usd(prices.renewal)})
         </Button>
 
         {!isApproved && (
           <Button variant="outline" size="sm" className="w-full justify-start gap-2" onClick={startPremium} disabled={loading !== null}>
             {loading === 'premium' ? <Loader2 size={14} className="animate-spin" /> : <ShieldCheck size={14} className="text-gold-300" />}
-            İstBaku Onaylı Rozet Al ($49)
+            İstBaku Onaylı Rozet Al ({usd(prices.badge)})
           </Button>
         )}
 

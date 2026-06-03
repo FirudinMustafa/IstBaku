@@ -328,6 +328,12 @@ input[type="date"], input[type="time"], input[type="datetime-local"] {
 .leaflet-container {
   background: var(--bg-elev) !important;
   font-family: inherit;
+  /* Konteyneri kendi stacking context'i + clip'i içinde tut: Leaflet pane/kontrol/
+     popup z-index'leri (200–1000) bu context'e hapsolur ve sticky header'ı (z-40/50)
+     veya komşu bölümleri aşmaz. İç katman sıralaması (tile<marker<popup) korunur. */
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
 }
 .dark .leaflet-tile {
   filter: brightness(0.85) invert(0.92) hue-rotate(180deg) saturate(0.4);

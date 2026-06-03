@@ -582,6 +582,19 @@ export const countries = pgTable('countries', {
 export type DbCountry = typeof countries.$inferSelect;
 
 // ============================================================
+// APP SETTINGS (admin-configurable key/value — platform fiyatları vb.)
+// ============================================================
+// Tek tablo, basit key→integer (USD cent) eşlemesi. Fiyatlar admin panelinden
+// güncellenir; kod tarafında `lib/pricing.ts` okur (DB boşsa fallback sabitler).
+export const appSettings = pgTable('app_settings', {
+  key: varchar('key', { length: 64 }).primaryKey(),
+  valueInt: integer('value_int').notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+export type DbAppSetting = typeof appSettings.$inferSelect;
+
+// ============================================================
 // EXPORTED TYPES (inferred)
 // ============================================================
 

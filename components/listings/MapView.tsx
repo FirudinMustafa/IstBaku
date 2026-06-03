@@ -140,5 +140,14 @@ export function MapView({ properties, activeId, onSelect }: Props) {
   }
 
   // Parent kontrol eder: yükseklik + border-radius. MapView yalnızca 100% doldurur.
-  return <div ref={containerRef} className="w-full h-full" style={{ minHeight: 0 }} />;
+  // `isolation:isolate` + `relative`: Leaflet pane/kontrol z-index'lerini (400–1000)
+  // haritanın kendi stacking context'ine hapseder; böylece sticky header'ı ve
+  // komşu bölümleri aşmaz (overflow taşması düzeltmesi).
+  return (
+    <div
+      ref={containerRef}
+      className="w-full h-full relative"
+      style={{ minHeight: 0, isolation: 'isolate' }}
+    />
+  );
 }

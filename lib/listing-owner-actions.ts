@@ -4,6 +4,7 @@ import { db } from '@/db/client';
 import { listings, payments, approvalRequests, notifications, users } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { getCurrentUser } from './auth-actions';
+import { getPrice } from './pricing';
 import { revalidatePath } from 'next/cache';
 
 // ============================================================
@@ -39,7 +40,7 @@ export async function renewListingDateAction(
     if (!listing) return { ok: false, error: 'İlan bulunamadı.' };
     if (listing.agentId !== user.id) return { ok: false, error: 'Bu ilan sana ait değil.' };
 
-    const amount = 1900;
+    const amount = await getPrice('date_renewal');
     const [paymentRow] = await db.insert(payments).values({
       userId: user.id,
       listingId,
@@ -78,7 +79,7 @@ export async function requestPremiumUpgradeAction(
     if (listing.agentId !== user.id) return { ok: false, error: 'Bu ilan sana ait değil.' };
     if (listing.istbakuApproved) return { ok: false, error: 'Bu ilan zaten İstBaku onaylı.' };
 
-    const amount = 4900;
+    const amount = await getPrice('istbaku_badge');
     const [paymentRow] = await db.insert(payments).values({
       userId: user.id,
       listingId,
@@ -105,11 +106,6 @@ export async function requestPremiumUpgradeAction(
   }
 }
 
-// İlan sihirbazı sonu ücretli eklentileri (rozet + gizli) için sabit fiyatlar.
-// (export edilmez — 'use server' kısıtı; sadece bu dosyada kullanılır.)
-const BADGE_PRICE = 4900;   // İstBaku Onaylı rozet — $49
-const PRIVATE_PRICE = 9900; // Gizli portföy — $99
-
 /**
  * İlan sihirbazı sonunda seçilen ücretli eklentiler (rozet ve/veya gizli) için
  * TEK birleşik bekleyen ödeme oluşturur ve paymentId döndürür. Ödeme penceresi
@@ -129,7 +125,11 @@ export async function createWizardExtrasPaymentAction(
     if (!listing) return { ok: false, error: 'İlan bulunamadı.' };
     if (listing.agentId !== user.id) return { ok: false, error: 'Bu ilan sana ait değil.' };
 
-    const amount = (opts.badge ? BADGE_PRICE : 0) + (opts.gizli ? PRIVATE_PRICE : 0);
+    const [badgePrice, privatePrice] = await Promise.all([
+      getPrice('istbaku_badge'),
+      getPrice('private'),
+    ]);
+    const amount = (opts.badge ? badgePrice : 0) + (opts.gizli ? privatePrice : 0);
     // Rozet varsa istbaku_approved (confirmPayment premium yapar); yoksa
     // premium_membership (gizli-only — listing mutasyonu applyWizardPrivate ile).
     const type = opts.badge ? ('istbaku_approved' as const) : ('premium_membership' as const);

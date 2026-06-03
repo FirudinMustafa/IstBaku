@@ -22,6 +22,7 @@ import { NearbyPOIList } from '@/components/listings/NearbyPOI';
 import { MapView } from '@/components/listings/MapView';
 import { ListingCard } from '@/components/listings/ListingCard';
 import { OwnerActionBarWrapper } from '@/components/listings/OwnerActionBarWrapper';
+import { getAllPrices } from '@/lib/pricing';
 import { ViewTracker } from '@/components/listings/ViewTracker';
 import { timeAgo } from '@/lib/utils';
 import {
@@ -48,10 +49,11 @@ export default async function PropertyPage({ params }: { params: Promise<{ slug:
   if (!property) notFound();
   // MH-20 — fan out independent queries; agent lookup depends on property.agentId
   // but does not depend on `similar`, so both can run in parallel.
-  const [agent, similar, occupiedRanges] = await Promise.all([
+  const [agent, similar, occupiedRanges, prices] = await Promise.all([
     property.agentId ? getAgentById(property.agentId) : Promise.resolve(null),
     getSimilarListings(property, 3),
     property.dailyRentalEnabled ? getOccupiedRanges(property.id) : Promise.resolve([]),
+    getAllPrices(),
   ]);
 
   return (
@@ -260,10 +262,11 @@ export default async function PropertyPage({ params }: { params: Promise<{ slug:
               isApproved={property.istbakuApproved}
               isPrivate={property.isPrivate}
               price={property.price}
+              prices={{ renewal: prices.date_renewal, badge: prices.istbaku_badge }}
             />
           )}
           <PropertyDetailActions property={property} agent={agent ?? undefined} />
-          {property.dailyRentalEnabled && property.dailyRentalPricePerNight && (
+          {property.purpose === 'daily_rent' && property.dailyRentalEnabled && property.dailyRentalPricePerNight && (
             <DailyBookingCard
               listingId={property.id}
               pricePerNight={property.dailyRentalPricePerNight}

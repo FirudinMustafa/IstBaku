@@ -72,10 +72,15 @@ export async function confirmPayment(
             break;
 
           case 'tier_upgrade': {
-            // Determine tier based on amount: 900 = guclu, 2900 = premium
-            const newTier = payment.amount >= 2900 ? 'premium' as const
-              : payment.amount >= 900 ? 'guclu' as const
-              : 'guclu' as const;
+            // Hedef tier providerRef'e gömülü (`pending-tier:<tier>-...`) — fiyattan
+            // bağımsız deterministik. Eski kayıtlar için amount fallback'i korunur.
+            const newTier = payment.providerRef?.includes('tier:premium')
+              ? 'premium' as const
+              : payment.providerRef?.includes('tier:guclu')
+                ? 'guclu' as const
+                : payment.amount >= 2900
+                  ? 'premium' as const
+                  : 'guclu' as const;
             await db
               .update(listings)
               .set({

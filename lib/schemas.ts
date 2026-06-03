@@ -198,11 +198,11 @@ export const createListingSchema = z.object({
     .refine((n) => n !== 0, 'Konumu haritadan seç'),
   /* Step 3: physical */
   rooms: listingRooms,
-  bathrooms: z.number().int().min(1).max(20),
+  bathrooms: z.number().int().min(1, 'Banyo sayısı en az 1 olmalı').max(20),
   netArea: z.number().int().min(1, 'Net alan zorunlu').max(100000),
   grossArea: z.number().int().min(1, 'Brüt alan zorunlu').max(100000),
   floor: z.number().int().min(-5).max(200),
-  totalFloors: z.number().int().min(1).max(200),
+  totalFloors: z.number().int().min(1, 'Toplam kat sayısı zorunlu').max(200),
   buildingAge: z.number().int().min(0).max(500),
   heating: listingHeating,
   parking: listingParking,
