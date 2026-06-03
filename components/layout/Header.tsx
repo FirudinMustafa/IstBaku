@@ -78,7 +78,9 @@ export function Header() {
       >
         <div className="w-full px-4">
           <div className="h-16 flex items-center justify-between gap-3">
-            <Logo />
+            <span className="pl-1 sm:pl-3 lg:pl-5 shrink-0">
+              <Logo size="lg" />
+            </span>
 
             <nav aria-label="Ana gezinme" className="hidden lg:flex items-center gap-1">
               {NAV.map((item) => {
