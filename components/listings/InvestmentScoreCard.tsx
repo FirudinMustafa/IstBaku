@@ -5,9 +5,11 @@ import { Sparkles, ChevronDown, Info } from 'lucide-react';
 import { Card, CardBody } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { ScoreRing } from './ScoreRing';
+import { useLang } from '@/components/layout/LangProvider';
 import type { Property } from '@/lib/types';
 
 export function InvestmentScoreCard({ property: p }: { property: Property }) {
+  const { t } = useLang();
   const [open, setOpen] = React.useState(true);
   const total10 = (p.score.total / 10).toFixed(1);
 
@@ -16,7 +18,7 @@ export function InvestmentScoreCard({ property: p }: { property: Property }) {
       <div className="p-5 flex items-center gap-5 border-b">
         <ScoreRing value={p.score.total} size={84} stroke={6} outOf={10} />
         <div className="flex-1">
-          <Badge variant="ai" className="mb-1.5"><Sparkles size={11} /> AI Yatırım Skoru</Badge>
+          <Badge variant="ai" className="mb-1.5"><Sparkles size={11} /> {t('score.title')}</Badge>
           <div className="text-2xl font-bold">
             {total10} <span className="text-sm text-[color:var(--fg-muted)] font-medium">/ 10</span>
           </div>
@@ -29,7 +31,7 @@ export function InvestmentScoreCard({ property: p }: { property: Property }) {
         className="w-full px-5 py-3 flex items-center justify-between text-sm hover:bg-[color:var(--bg-card-hover)]"
       >
         <span className="inline-flex items-center gap-2 text-[color:var(--fg-muted)]">
-          <Info size={13} /> Skor nasıl hesaplandı?
+          <Info size={13} /> {t('score.how')}
         </span>
         <ChevronDown size={15} className={`transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
@@ -37,10 +39,10 @@ export function InvestmentScoreCard({ property: p }: { property: Property }) {
       {open && (
         <CardBody className="border-t space-y-3">
           {[
-            { l: 'Konum puanı', v: p.score.region, d: 'Bölge talep yoğunluğu + demografi' },
-            { l: 'Fiyat uygunluğu', v: p.score.price, d: 'Bölge ortalamasıyla kıyaslama' },
-            { l: 'Kira getirisi', v: p.score.rentYield, d: 'Beklenen yıllık brüt yield' },
-            { l: 'Piyasa talebi', v: p.score.demand, d: 'Yabancı yatırımcı ilgisi dahil' },
+            { l: t('score.location'), v: p.score.region, d: t('score.locationDesc') },
+            { l: t('score.price'), v: p.score.price, d: t('score.priceDesc') },
+            { l: t('score.rent'), v: p.score.rentYield, d: t('score.rentDesc') },
+            { l: t('score.demand'), v: p.score.demand, d: t('score.demandDesc') },
           ].map((m) => (
             <div key={m.l}>
               <div className="flex items-center justify-between text-sm">

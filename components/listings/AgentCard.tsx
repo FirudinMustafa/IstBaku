@@ -111,14 +111,14 @@ export const AgentCard = React.forwardRef<AgentCardHandle, AgentCardProps>(funct
 
           {/* Sayısal göstergeler */}
           <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
-            <Stat icon={<Star size={11} fill="currentColor" />} label="Puan" value={`${agent.rating.toFixed(1)}/5`} accent />
-            <Stat icon={<MessageSquare size={11} />} label="Yorum" value={String(agent.reviewsCount)} />
-            <Stat icon={<Clock size={11} />} label="Yanıt" value={`~${agent.responseMins} dk`} />
-            <Stat label="İlan" value={String(agent.listingsCount)} />
-            <Stat label="Üyelik" value={membershipDuration(agent.memberSince)} className="col-span-2" />
+            <Stat icon={<Star size={11} fill="currentColor" />} label={t('agent.rating')} value={`${agent.rating.toFixed(1)}/5`} accent />
+            <Stat icon={<MessageSquare size={11} />} label={t('agent.reviews')} value={String(agent.reviewsCount)} />
+            <Stat icon={<Clock size={11} />} label={t('agent.response')} value={`~${agent.responseMins} ${t('unit.min')}`} />
+            <Stat label={t('agent.listings')} value={String(agent.listingsCount)} />
+            <Stat label={t('agent.membership')} value={membershipDuration(agent.memberSince)} className="col-span-2" />
           </div>
 
-          <Badge variant="success" className="mt-3">Performans: {agent.performance}/100</Badge>
+          <Badge variant="success" className="mt-3">{t('agent.performance')}: {agent.performance}/100</Badge>
 
           <div className="mt-4 grid grid-cols-3 gap-2">
             <a href={`tel:${agent.phone}`}>
@@ -133,26 +133,26 @@ export const AgentCard = React.forwardRef<AgentCardHandle, AgentCardProps>(funct
           </div>
 
           <Button variant="primary" size="md" className="w-full mt-3 gap-1.5" onClick={() => setOpenAppt(true)}>
-            <CalendarIcon size={14} /> Gezinti Randevusu Al
+            <CalendarIcon size={14} /> {t('agent.appointmentBtn')}
           </Button>
         </CardBody>
       </Card>
       )}
 
-      <Modal open={openMsg} onClose={() => setOpenMsg(false)} title={`${agent.name} ile mesajlaş`}>
+      <Modal open={openMsg} onClose={() => setOpenMsg(false)} title={`${agent.name} — ${t('agent.message')}`}>
         <Textarea
           id="agent-msg"
-          label="Mesajın"
+          label={t('agent.messageLabel')}
           rows={5}
           value={msg}
           onChange={(e) => setMsg(e.target.value)}
           maxLength={4000}
         />
         <Button variant="gold" className="w-full mt-3" onClick={sendMsg} loading={sending}>
-          <Mail size={14} aria-hidden="true" /> Gönder
+          <Mail size={14} aria-hidden="true" /> {t('common.send')}
         </Button>
         <p className="mt-2 text-[10px] text-[color:var(--fg-faint)]">
-          Mesajların ISTBAKU üzerinden kayıt altında tutulur (KVKK uyumlu).
+          {t('agent.privacyNote')}
         </p>
       </Modal>
 
