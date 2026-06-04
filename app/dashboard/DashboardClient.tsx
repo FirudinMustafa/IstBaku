@@ -31,16 +31,16 @@ import { useLang } from '@/components/layout/LangProvider';
 import type { Property } from '@/lib/types';
 
 const TABS = [
-  { k: 'overview', l: 'Genel Bakış', i: Home },
-  { k: 'listings', l: 'İlanlarım', i: Home },
-  { k: 'daily-bookings', l: 'Günlük Rezervasyonlar', i: CalendarDays },
-  { k: 'favorites', l: 'Favoriler', i: Heart },
-  { k: 'compare', l: 'Karşılaştır', i: GitCompare },
-  { k: 'matches', l: 'AI Eşleşmeler', i: Sparkles },
-  { k: 'searches', l: 'Kayıtlı Aramalar', i: Search },
-  { k: 'payments', l: 'Ödemeler', i: CreditCard },
-  { k: 'notifications', l: 'Bildirimler', i: Bell },
-  { k: 'settings', l: 'Ayarlar', i: Settings },
+  { k: 'overview', lk: 'dash.tab.overview', i: Home },
+  { k: 'listings', lk: 'dash.tab.listings', i: Home },
+  { k: 'daily-bookings', lk: 'dash.tab.dailyBookings', i: CalendarDays },
+  { k: 'favorites', lk: 'dash.tab.favorites', i: Heart },
+  { k: 'compare', lk: 'dash.tab.compare', i: GitCompare },
+  { k: 'matches', lk: 'dash.tab.matches', i: Sparkles },
+  { k: 'searches', lk: 'dash.tab.searches', i: Search },
+  { k: 'payments', lk: 'dash.tab.payments', i: CreditCard },
+  { k: 'notifications', lk: 'dash.tab.notifications', i: Bell },
+  { k: 'settings', lk: 'dash.tab.settings', i: Settings },
 ] as const;
 type Tab = typeof TABS[number]['k'];
 const VALID_TABS = new Set(TABS.map((t) => t.k));
@@ -154,7 +154,7 @@ export function DashboardClient({ initialUser, myListings, favorites, savedSearc
         <div className="flex items-center gap-3">
           <img src={user.avatar ?? ''} alt={user.name} className="size-12 rounded-2xl object-cover bg-gold-400/20" />
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Hoş geldin, {user.name.split(' ')[0]}</h1>
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight">{t('dash.welcome')} {user.name.split(' ')[0]}</h1>
             <p className="text-xs text-[color:var(--fg-muted)] mt-0.5 flex items-center gap-1.5 flex-wrap">
               <span className="truncate max-w-[180px]">{user.email}</span>
               {user.premium && <Badge variant="premium" className="!text-[10px]"><BadgeCheck size={11} /> Premium</Badge>}
@@ -163,31 +163,31 @@ export function DashboardClient({ initialUser, myListings, favorites, savedSearc
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Link href="/new-listing"><Button variant="gold" size="md">+ İlan Ekle</Button></Link>
-          <Button variant="ghost" size="md" onClick={signOut} className="text-danger hover:bg-danger/10">Çıkış</Button>
+          <Link href="/new-listing"><Button variant="gold" size="md">{t('dash.addListing')}</Button></Link>
+          <Button variant="ghost" size="md" onClick={signOut} className="text-danger hover:bg-danger/10">{t('dash.signOut')}</Button>
         </div>
       </div>
 
       <div className="grid lg:grid-cols-[240px_1fr] gap-6">
         <aside className="lg:sticky lg:top-20 lg:h-fit space-y-1 overflow-x-auto lg:overflow-visible -mx-4 px-4 lg:mx-0 lg:px-0">
           <div className="flex lg:flex-col gap-1 lg:gap-1 min-w-max lg:min-w-0">
-            {TABS.map((t) => (
+            {TABS.map((item) => (
               <button
-                key={t.k}
-                onClick={() => setTab(t.k)}
+                key={item.k}
+                onClick={() => setTab(item.k)}
                 className={cn(
                   'w-full flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-xl text-sm border transition-colors whitespace-nowrap',
-                  tab === t.k ? 'bg-gold-400/15 border-gold-400/40 text-gold-300' : 'border-transparent hover:bg-[color:var(--bg-card-hover)]',
+                  tab === item.k ? 'bg-gold-400/15 border-gold-400/40 text-gold-300' : 'border-transparent hover:bg-[color:var(--bg-card-hover)]',
                 )}
               >
-                <span className="inline-flex items-center gap-2.5"><t.i size={15} /> {t.l}</span>
-                {t.k === 'notifications' && showUnread && (
+                <span className="inline-flex items-center gap-2.5"><item.i size={15} /> {t(item.lk)}</span>
+                {item.k === 'notifications' && showUnread && (
                   <span className="text-[10px] rounded-full bg-gold-400 text-navy-900 px-1.5">{unread}</span>
                 )}
-                {t.k === 'favorites' && favorites.length > 0 && (
+                {item.k === 'favorites' && favorites.length > 0 && (
                   <span className="text-[10px] text-[color:var(--fg-muted)]">{favorites.length}</span>
                 )}
-                {t.k === 'listings' && myListings.length > 0 && (
+                {item.k === 'listings' && myListings.length > 0 && (
                   <span className="text-[10px] text-[color:var(--fg-muted)]">{myListings.length}</span>
                 )}
               </button>
@@ -213,12 +213,13 @@ export function DashboardClient({ initialUser, myListings, favorites, savedSearc
 }
 
 function Overview({ user, myListings, favorites, notifications }: { user: PublicUser; myListings: Property[]; favorites: Property[]; notifications: NotificationUI[] }) {
+  const { t } = useLang();
   const totalViews = myListings.reduce((a, p) => a + p.views, 0);
   const stats = [
-    { l: 'Aktif İlanlarım', v: String(myListings.length), i: Home, c: 'text-gold-300', href: undefined as string | undefined },
-    { l: 'Favorilerim', v: String(favorites.length), i: Heart, c: 'text-danger', href: undefined as string | undefined },
-    { l: 'Görüntülenme', v: totalViews.toLocaleString('tr-TR'), i: Eye, c: 'text-navy-300', href: undefined as string | undefined },
-    { l: 'KYC Durumu', v: user.kycStatus === 'approved' ? '✓ Onaylı' : user.kycStatus === 'pending' ? 'Bekliyor' : 'Yok', i: BadgeCheck, c: 'text-success', href: user.kycStatus === 'approved' ? undefined : '/kyc' },
+    { l: t('dash.stat.activeListings'), v: String(myListings.length), i: Home, c: 'text-gold-300', href: undefined as string | undefined },
+    { l: t('dash.stat.favorites'), v: String(favorites.length), i: Heart, c: 'text-danger', href: undefined as string | undefined },
+    { l: t('dash.stat.views'), v: totalViews.toLocaleString('tr-TR'), i: Eye, c: 'text-navy-300', href: undefined as string | undefined },
+    { l: t('dash.stat.kyc'), v: user.kycStatus === 'approved' ? t('dash.kyc.approved') : user.kycStatus === 'pending' ? t('dash.kyc.pending') : t('dash.kyc.none'), i: BadgeCheck, c: 'text-success', href: user.kycStatus === 'approved' ? undefined : '/kyc' },
   ];
   return (
     <div className="space-y-6">
@@ -229,7 +230,7 @@ function Overview({ user, myListings, favorites, notifications }: { user: Public
               <s.i size={16} className={s.c} />
               <div className="text-xs text-[color:var(--fg-muted)] mt-2">{s.l}</div>
               <div className="text-2xl font-bold mt-0.5">{s.v}</div>
-              {s.href && <div className="mt-1 text-[11px] text-gold-300">Doğrula →</div>}
+              {s.href && <div className="mt-1 text-[11px] text-gold-300">{t('dash.verify')}</div>}
             </CardBody>
           );
           return s.href ? (
@@ -243,10 +244,10 @@ function Overview({ user, myListings, favorites, notifications }: { user: Public
       <div className="grid lg:grid-cols-2 gap-6">
         <Card>
           <CardBody>
-            <h3 className="font-semibold mb-3 inline-flex items-center gap-2"><Sparkles size={15} className="text-gold-300" /> Senin ilanların</h3>
+            <h3 className="font-semibold mb-3 inline-flex items-center gap-2"><Sparkles size={15} className="text-gold-300" /> {t('dash.yourListings')}</h3>
             {myListings.length === 0 ? (
               <div className="text-sm text-[color:var(--fg-muted)] py-4 text-center">
-                Henüz ilanın yok. <Link href="/new-listing" className="text-gold-300 hover:underline">İlk ilanını ver →</Link>
+                {t('dash.noListings')} <Link href="/new-listing" className="text-gold-300 hover:underline">{t('dash.firstListing')}</Link>
               </div>
             ) : (
               <div className="space-y-2">
@@ -270,9 +271,9 @@ function Overview({ user, myListings, favorites, notifications }: { user: Public
 
         <Card>
           <CardBody>
-            <h3 className="font-semibold mb-3">Son bildirimler</h3>
+            <h3 className="font-semibold mb-3">{t('dash.recentNotifs')}</h3>
             {notifications.length === 0 ? (
-              <div className="text-sm text-[color:var(--fg-muted)] py-4 text-center">Henüz bildirim yok.</div>
+              <div className="text-sm text-[color:var(--fg-muted)] py-4 text-center">{t('dash.noNotifs')}</div>
             ) : (
               <div className="space-y-2">
                 {notifications.slice(0, 4).map((n) => (
