@@ -300,6 +300,7 @@ function Overview({ user, myListings, favorites, notifications }: { user: Public
 function MyListings({ listings, prices }: { listings: Property[]; prices: { renewal: number; badge: number; guclu: number; premium: number } }) {
   const router = useRouter();
   const { toast } = useToast();
+  const { t } = useLang();
   const [upgradeFor, setUpgradeFor] = React.useState<Property | null>(null);
   const [deleteFor, setDeleteFor] = React.useState<Property | null>(null);
   const [working, setWorking] = React.useState(false);
@@ -332,9 +333,9 @@ function MyListings({ listings, prices }: { listings: Property[]; prices: { rene
     return (
       <Card><CardBody className="text-center py-12">
         <Home size={28} className="text-gold-300 mx-auto" />
-        <h3 className="mt-3 text-lg font-semibold">Henüz ilanın yok</h3>
-        <p className="mt-1 text-sm text-[color:var(--fg-muted)]">İlk ilanını yayınla, yatırımcıların önüne çıksın.</p>
-        <Link href="/new-listing"><Button variant="gold" size="md" className="mt-5">+ İlan Ver</Button></Link>
+        <h3 className="mt-3 text-lg font-semibold">{t('dash.ml.emptyTitle')}</h3>
+        <p className="mt-1 text-sm text-[color:var(--fg-muted)]">{t('dash.ml.emptyDesc')}</p>
+        <Link href="/new-listing"><Button variant="gold" size="md" className="mt-5">{t('dash.ml.emptyButton')}</Button></Link>
       </CardBody></Card>
     );
   }
@@ -397,7 +398,7 @@ function MyListings({ listings, prices }: { listings: Property[]; prices: { rene
         className="flex items-center justify-between gap-3 rounded-xl border border-gold-400/30 bg-gold-400/5 px-4 py-3 hover:border-gold-400/60 transition-colors"
       >
         <span className="inline-flex items-center gap-2 text-sm font-medium">
-          <Crown size={15} className="text-gold-300" /> Ofis performansım & rütbe durumum
+          <Crown size={15} className="text-gold-300" /> {t('dash.ml.officeLink')}
         </span>
         <ArrowUpRight size={16} className="text-gold-300" />
       </Link>
@@ -409,8 +410,8 @@ function MyListings({ listings, prices }: { listings: Property[]; prices: { rene
             <div className="text-xs text-[color:var(--fg-muted)] mt-1 flex items-center gap-2 flex-wrap">
               <span><Eye size={11} className="inline" /> {p.views.toLocaleString('tr-TR')}</span>
               <span><Heart size={11} className="inline" /> {p.favorites}</span>
-              <Badge variant={p.tier === 'premium' ? 'premium' : p.tier === 'guclu' ? 'ai' : 'outline'}>{p.tier}</Badge>
-              {p.istbakuApproved && <Badge variant="success">Onaylı</Badge>}
+              <Badge variant={p.tier === 'premium' ? 'premium' : p.tier === 'guclu' ? 'ai' : 'outline'}>{t(`enums.tier.${p.tier}`)}</Badge>
+              {p.istbakuApproved && <Badge variant="success">{t('listings.approvedShort')}</Badge>}
             </div>
             <div className="text-sm font-bold text-gold-300 mt-1">{formatPrice(p.price, p.currency)}</div>
           </div>
@@ -423,7 +424,7 @@ function MyListings({ listings, prices }: { listings: Property[]; prices: { rene
               className="gap-1"
             >
               {loadingAction === `renew-${p.id}` ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
-              Tarihi Yenile ({usd(prices.renewal)})
+              {t('dash.ml.renew')} ({usd(prices.renewal)})
             </Button>
             {!p.istbakuApproved && (
               <Button
@@ -434,16 +435,16 @@ function MyListings({ listings, prices }: { listings: Property[]; prices: { rene
                 className="gap-1"
               >
                 {loadingAction === `approve-${p.id}` ? <Loader2 size={12} className="animate-spin" /> : <ShieldCheck size={12} className="text-gold-300" />}
-                İstBaku Onaylı Yap ({usd(prices.badge)})
+                {t('dash.ml.approve')} ({usd(prices.badge)})
               </Button>
             )}
             {p.tier !== 'premium' && (
               <Button variant="outline" size="sm" onClick={() => setUpgradeFor(p)} className="gap-1">
-                <Zap size={12} /> Yükselt
+                <Zap size={12} /> {t('dash.ml.upgrade')}
               </Button>
             )}
             <Link href={`/property/${p.slug}/edit`}>
-              <Button variant="ghost" size="sm" className="gap-1"><Pencil size={12} /> Düzenle</Button>
+              <Button variant="ghost" size="sm" className="gap-1"><Pencil size={12} /> {t('dash.ml.edit')}</Button>
             </Link>
             <Button variant="ghost" size="sm" className="text-danger hover:bg-danger/10 gap-1" onClick={() => setDeleteFor(p)}>
               <Trash2 size={12} />
@@ -452,12 +453,11 @@ function MyListings({ listings, prices }: { listings: Property[]; prices: { rene
         </CardBody></Card>
       ))}
 
-      <Modal open={!!upgradeFor} onClose={() => setUpgradeFor(null)} title="İlanı yükselt">
+      <Modal open={!!upgradeFor} onClose={() => setUpgradeFor(null)} title={t('dash.ml.upgradeTitle')}>
         {upgradeFor && (
           <>
             <p className="text-sm text-[color:var(--fg-muted)] mb-4">
-              <strong className="text-[color:var(--fg)]">{upgradeFor.title}</strong> ilanını üst sıralarda göstermek için seviye seç.
-              Tek seferlik ödeme, 30 gün geçerli.
+              <strong className="text-[color:var(--fg)]">{upgradeFor.title}</strong> {t('dash.ml.upgradeDesc')}
             </p>
             <div className="grid grid-cols-2 gap-3">
               <button
@@ -466,23 +466,23 @@ function MyListings({ listings, prices }: { listings: Property[]; prices: { rene
                 className="rounded-2xl border p-4 text-left hover:border-gold-400/60 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Star size={18} className="text-gold-300" />
-                <div className="font-bold mt-2">Güçlü</div>
-                <div className="text-xs text-[color:var(--fg-muted)] mt-1">Foto + video kapak, yüksek görünürlük</div>
-                <div className="mt-3 text-gold-300 font-bold">{usd(prices.guclu)} / 30 gün</div>
+                <div className="font-bold mt-2">{t('enums.tier.guclu')}</div>
+                <div className="text-xs text-[color:var(--fg-muted)] mt-1">{t('dash.ml.strongDesc')}</div>
+                <div className="mt-3 text-gold-300 font-bold">{usd(prices.guclu)} {t('dash.ml.per30')}</div>
               </button>
               <button
                 onClick={() => doUpgrade('premium')}
                 disabled={working || upgradeFor.tier === 'premium'}
                 className="rounded-2xl border border-amber-400/30 bg-amber-400/5 p-4 text-left hover:border-amber-400 disabled:opacity-50"
               >
-                <Badge variant="premium">★ Premium</Badge>
-                <div className="font-bold mt-2">Premium</div>
-                <div className="text-xs text-[color:var(--fg-muted)] mt-1">En üst sırada + ISTBAKU Onaylı süreci</div>
-                <div className="mt-3 text-amber-300 font-bold">{usd(prices.premium)} / 30 gün</div>
+                <Badge variant="premium">★ {t('enums.tier.premium')}</Badge>
+                <div className="font-bold mt-2">{t('enums.tier.premium')}</div>
+                <div className="text-xs text-[color:var(--fg-muted)] mt-1">{t('dash.ml.premiumDesc')}</div>
+                <div className="mt-3 text-amber-300 font-bold">{usd(prices.premium)} {t('dash.ml.per30')}</div>
               </button>
             </div>
             <p className="mt-4 text-[10px] text-[color:var(--fg-faint)]">
-              Ödeme penceresinde bilgilerini girerek tamamlarsın.
+              {t('dash.ml.upgradeFooter')}
             </p>
           </>
         )}
@@ -495,7 +495,7 @@ function MyListings({ listings, prices }: { listings: Property[]; prices: { rene
         onSuccess={onUpgradePaid}
       />
 
-      <Modal open={!!deleteFor} onClose={() => setDeleteFor(null)} title="İlanı sil?">
+      <Modal open={!!deleteFor} onClose={() => setDeleteFor(null)} title={t('dash.ml.deleteTitle')}>
         {deleteFor && (
           <>
             <div className="flex items-start gap-3 mb-4">
@@ -503,13 +503,13 @@ function MyListings({ listings, prices }: { listings: Property[]; prices: { rene
                 <AlertTriangle size={18} />
               </div>
               <p className="text-sm text-[color:var(--fg-muted)]">
-                <strong className="text-[color:var(--fg)]">{deleteFor.title}</strong> kalıcı olarak silinecek. Bu işlem geri alınamaz.
+                <strong className="text-[color:var(--fg)]">{deleteFor.title}</strong> {t('dash.ml.deleteDesc')}
               </p>
             </div>
             <div className="flex justify-end gap-2">
-              <Button variant="ghost" onClick={() => setDeleteFor(null)}>İptal</Button>
+              <Button variant="ghost" onClick={() => setDeleteFor(null)}>{t('dash.cancel')}</Button>
               <Button variant="danger" onClick={doDelete} loading={working}>
-                <Trash2 size={14} /> Evet, sil
+                <Trash2 size={14} /> {t('dash.ml.deleteConfirm')}
               </Button>
             </div>
           </>
@@ -523,14 +523,15 @@ function Favorites({ favorites }: { favorites: Property[] }) {
   const router = useRouter();
   const fav = useFavorites();
   const { toast } = useToast();
+  const { t } = useLang();
 
   if (favorites.length === 0) {
     return (
       <Card><CardBody className="text-center py-12">
         <Heart size={28} className="text-danger mx-auto" />
-        <h3 className="mt-3 text-lg font-semibold">Henüz favori yok</h3>
-        <p className="mt-1 text-sm text-[color:var(--fg-muted)]">İlanlardaki ❤ butonuyla beğendiklerini buraya ekle.</p>
-        <Link href="/listings"><Button variant="gold" size="md" className="mt-5">İlanları Keşfet</Button></Link>
+        <h3 className="mt-3 text-lg font-semibold">{t('dash.fav.emptyTitle')}</h3>
+        <p className="mt-1 text-sm text-[color:var(--fg-muted)]">{t('dash.fav.emptyDesc')}</p>
+        <Link href="/listings"><Button variant="gold" size="md" className="mt-5">{t('dash.fav.emptyButton')}</Button></Link>
       </CardBody></Card>
     );
   }
@@ -538,7 +539,7 @@ function Favorites({ favorites }: { favorites: Property[] }) {
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
-        <div className="text-sm text-[color:var(--fg-muted)]">{favorites.length} favori ilan</div>
+        <div className="text-sm text-[color:var(--fg-muted)]">{favorites.length} {t('dash.fav.count')}</div>
         <Button
           variant="ghost"
           size="sm"
@@ -549,7 +550,7 @@ function Favorites({ favorites }: { favorites: Property[] }) {
             router.refresh();
           }}
         >
-          Tümünü kaldır
+          {t('dash.fav.clearAll')}
         </Button>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -561,21 +562,22 @@ function Favorites({ favorites }: { favorites: Property[] }) {
 
 function CompareTab() {
   const compare = useCompare();
+  const { t } = useLang();
   return (
     <Card><CardBody className="text-center py-12">
       <GitCompare size={28} className="text-gold-300 mx-auto" />
       <h3 className="mt-3 text-lg font-semibold">
         {compare.count > 0
-          ? `${compare.count} ilan karşılaştırmaya hazır`
-          : 'Henüz karşılaştırma seçimi yok'}
+          ? `${compare.count} ${t('dash.cmp.ready')}`
+          : t('dash.cmp.emptyTitle')}
       </h3>
       <p className="mt-1 text-sm text-[color:var(--fg-muted)] max-w-md mx-auto">
-        İlan kartlarındaki karşılaştırma butonuyla seçim yap. En fazla 3 ilan kıyaslayabilirsin.
+        {t('dash.cmp.emptyDesc')}
       </p>
       <div className="mt-5 flex justify-center gap-2 flex-wrap">
-        <Link href="/listings"><Button variant="outline">İlanları Gez</Button></Link>
+        <Link href="/listings"><Button variant="outline">{t('dash.cmp.browse')}</Button></Link>
         {compare.count >= 2 && (
-          <Link href="/compare"><Button variant="gold">Karşılaştır →</Button></Link>
+          <Link href="/compare"><Button variant="gold">{t('dash.cmp.compare')}</Button></Link>
         )}
       </div>
     </CardBody></Card>
@@ -583,20 +585,22 @@ function CompareTab() {
 }
 
 function Matches() {
+  const { t } = useLang();
   return (
     <Card><CardBody className="text-center py-12">
       <Sparkles size={28} className="text-gold-300 mx-auto" />
-      <h3 className="mt-3 text-lg font-semibold">AI Eşleşmelerini başlat</h3>
+      <h3 className="mt-3 text-lg font-semibold">{t('dash.match.title')}</h3>
       <p className="mt-1 text-sm text-[color:var(--fg-muted)] max-w-md mx-auto">
-        Hedeflerini söyle, seçtiğin ülkelerden en uygun 5 ilanı sana getirelim — açıklamalı, karşılaştırmalı, şeffaf.
+        {t('dash.match.desc')}
       </p>
-      <Link href="/ai-match"><Button variant="gold" size="md" className="mt-5">Başla <ArrowUpRight size={14} /></Button></Link>
+      <Link href="/ai-match"><Button variant="gold" size="md" className="mt-5">{t('dash.match.start')} <ArrowUpRight size={14} /></Button></Link>
     </CardBody></Card>
   );
 }
 
 function SavedSearches({ initial }: { initial: SavedSearchUI[] }) {
   const { toast } = useToast();
+  const { t } = useLang();
   const [items, setItems] = React.useState(initial);
   const [deleting, setDeleting] = React.useState<string | null>(null);
 
@@ -614,9 +618,9 @@ function SavedSearches({ initial }: { initial: SavedSearchUI[] }) {
     return (
       <Card><CardBody className="text-center py-12">
         <Search size={28} className="text-gold-300 mx-auto" />
-        <h3 className="mt-3 text-lg font-semibold">Kayıtlı arama yok</h3>
-        <p className="mt-1 text-sm text-[color:var(--fg-muted)]">İlan ararken filtre uygulayıp "Aramayı Kaydet" ile ekle.</p>
-        <Link href="/listings"><Button variant="gold" size="md" className="mt-5">İlanları Filtrele</Button></Link>
+        <h3 className="mt-3 text-lg font-semibold">{t('dash.ss.emptyTitle')}</h3>
+        <p className="mt-1 text-sm text-[color:var(--fg-muted)]">{t('dash.ss.emptyDesc')}</p>
+        <Link href="/listings"><Button variant="gold" size="md" className="mt-5">{t('dash.ss.emptyButton')}</Button></Link>
       </CardBody></Card>
     );
   }
@@ -629,12 +633,12 @@ function SavedSearches({ initial }: { initial: SavedSearchUI[] }) {
             <div className="font-medium truncate">{s.name}</div>
             <div className="text-xs text-[color:var(--fg-muted)] mt-1 flex items-center gap-2">
               <span>{timeAgo(s.createdAt)}</span>
-              {s.newMatches > 0 && <Badge variant="success">{s.newMatches} yeni</Badge>}
+              {s.newMatches > 0 && <Badge variant="success">{s.newMatches} {t('dash.ss.newBadge')}</Badge>}
             </div>
           </div>
           <div className="flex gap-1.5 shrink-0">
             <Link href="/listings">
-              <Button variant="outline" size="sm" className="gap-1"><ExternalLink size={12} /> Aç</Button>
+              <Button variant="outline" size="sm" className="gap-1"><ExternalLink size={12} /> {t('dash.ss.open')}</Button>
             </Link>
             <Button
               variant="ghost"
@@ -654,6 +658,7 @@ function SavedSearches({ initial }: { initial: SavedSearchUI[] }) {
 
 function Notifications({ initial }: { initial: NotificationUI[] }) {
   const { toast } = useToast();
+  const { t } = useLang();
   const [items, setItems] = React.useState(initial);
   const unread = items.filter((n) => !n.read).length;
 
@@ -671,7 +676,7 @@ function Notifications({ initial }: { initial: NotificationUI[] }) {
     return (
       <Card><CardBody className="text-center py-12 text-[color:var(--fg-muted)]">
         <Bell size={28} className="mx-auto text-gold-300" />
-        <p className="mt-3">Bildirim yok.</p>
+        <p className="mt-3">{t('dash.notif.empty')}</p>
       </CardBody></Card>
     );
   }
@@ -679,9 +684,9 @@ function Notifications({ initial }: { initial: NotificationUI[] }) {
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between mb-2">
-        <div className="text-sm text-[color:var(--fg-muted)]">{unread} okunmamış bildirim</div>
+        <div className="text-sm text-[color:var(--fg-muted)]">{unread} {t('dash.notif.unread')}</div>
         {unread > 0 && (
-          <button onClick={markAll} className="text-xs text-gold-300 hover:text-gold-400">Tümünü okundu işaretle</button>
+          <button onClick={markAll} className="text-xs text-gold-300 hover:text-gold-400">{t('dash.notif.markAll')}</button>
         )}
       </div>
       {items.map((n) => (
@@ -693,9 +698,9 @@ function Notifications({ initial }: { initial: NotificationUI[] }) {
             <div className="text-[10px] text-[color:var(--fg-faint)] mt-1.5">{timeAgo(n.createdAt)}</div>
           </div>
           <div className="flex flex-col gap-1.5 shrink-0">
-            {n.link && <Link href={n.link}><Button variant="ghost" size="sm">Aç →</Button></Link>}
+            {n.link && <Link href={n.link}><Button variant="ghost" size="sm">{t('dash.notif.open')}</Button></Link>}
             {!n.read && (
-              <button onClick={() => markRead(n.id)} className="text-[11px] text-[color:var(--fg-muted)] hover:text-gold-300">İşaretle</button>
+              <button onClick={() => markRead(n.id)} className="text-[11px] text-[color:var(--fg-muted)] hover:text-gold-300">{t('dash.notif.mark')}</button>
             )}
           </div>
         </CardBody></Card>
@@ -706,6 +711,7 @@ function Notifications({ initial }: { initial: NotificationUI[] }) {
 
 function DailyBookingsTab({ initial }: { initial: DailyBookingUI[] }) {
   const { toast } = useToast();
+  const { t } = useLang();
   const [list, setList] = React.useState(initial);
   const [rejecting, setRejecting] = React.useState<string | null>(null);
   const [reason, setReason] = React.useState('');
@@ -747,17 +753,17 @@ function DailyBookingsTab({ initial }: { initial: DailyBookingUI[] }) {
     return (
       <Card glass><CardBody className="p-8 text-center text-sm text-[color:var(--fg-muted)]">
         <CalendarDays size={32} className="mx-auto text-gold-300 mb-3" />
-        Henüz günlük kira rezervasyon talebin yok. İlanlarında günlük kira aktifse misafirler buraya talep gönderir.
+        {t('dash.book.empty')}
       </CardBody></Card>
     );
   }
 
   const statusLabel: Record<DailyBookingUI['status'], { l: string; cls: string }> = {
-    pending:   { l: 'Bekliyor',  cls: 'bg-gold-400/15 text-gold-300' },
-    approved:  { l: 'Onaylandı', cls: 'bg-success/15 text-success' },
-    rejected:  { l: 'Reddedildi', cls: 'bg-danger/15 text-danger' },
-    cancelled: { l: 'İptal',     cls: 'bg-[color:var(--bg-card-hover)] text-[color:var(--fg-muted)]' },
-    completed: { l: 'Tamamlandı', cls: 'bg-navy-700/40 text-navy-200' },
+    pending:   { l: t('dash.book.pending'),   cls: 'bg-gold-400/15 text-gold-300' },
+    approved:  { l: t('dash.book.approved'),  cls: 'bg-success/15 text-success' },
+    rejected:  { l: t('dash.book.rejected'),  cls: 'bg-danger/15 text-danger' },
+    cancelled: { l: t('dash.book.cancelled'), cls: 'bg-[color:var(--bg-card-hover)] text-[color:var(--fg-muted)]' },
+    completed: { l: t('dash.book.completed'), cls: 'bg-navy-700/40 text-navy-200' },
   };
 
   return (
@@ -779,7 +785,7 @@ function DailyBookingsTab({ initial }: { initial: DailyBookingUI[] }) {
                     {new Date(b.checkIn).toLocaleDateString('tr-TR')} → {new Date(b.checkOut).toLocaleDateString('tr-TR')}
                   </div>
                   <div className="text-xs text-[color:var(--fg-muted)] mt-0.5">
-                    {b.nights} gece · {b.guestCount} misafir · {formatPrice(b.totalPrice, b.currency)}
+                    {b.nights} {t('dash.book.nights')} · {b.guestCount} {t('dash.book.guests')} · {formatPrice(b.totalPrice, b.currency)}
                   </div>
                   <div className="text-xs mt-2">
                     <strong>{b.guestName}</strong> · {b.guestEmail}{b.guestPhone ? ` · ${b.guestPhone}` : ''}
@@ -791,7 +797,7 @@ function DailyBookingsTab({ initial }: { initial: DailyBookingUI[] }) {
                   )}
                   {b.ownerResponseNote && (
                     <div className="mt-2 text-xs rounded bg-[color:var(--bg-elev)] p-2">
-                      <span className="text-[color:var(--fg-muted)]">Notum: </span>{b.ownerResponseNote}
+                      <span className="text-[color:var(--fg-muted)]">{t('dash.book.noteLabel')} </span>{b.ownerResponseNote}
                     </div>
                   )}
                 </div>
@@ -805,7 +811,7 @@ function DailyBookingsTab({ initial }: { initial: DailyBookingUI[] }) {
                       disabled={processing === b.id}
                       className="gap-1.5"
                     >
-                      <Check size={14} /> Onayla
+                      <Check size={14} /> {t('dash.book.approve')}
                     </Button>
                     <Button
                       variant="outline"
@@ -814,7 +820,7 @@ function DailyBookingsTab({ initial }: { initial: DailyBookingUI[] }) {
                       disabled={processing === b.id}
                       className="gap-1.5 !text-danger !border-danger/30"
                     >
-                      <X size={14} /> Reddet
+                      <X size={14} /> {t('dash.book.reject')}
                     </Button>
                   </div>
                 )}
@@ -822,18 +828,18 @@ function DailyBookingsTab({ initial }: { initial: DailyBookingUI[] }) {
 
               {rejecting === b.id && (
                 <div className="mt-4 rounded-lg border bg-[color:var(--bg-elev)] p-3 space-y-2">
-                  <div className="text-xs font-semibold">Red sebebi</div>
+                  <div className="text-xs font-semibold">{t('dash.book.reason')}</div>
                   <textarea
                     value={reason}
                     onChange={(e) => setReason(e.target.value)}
                     rows={2}
                     className="w-full rounded-md border bg-transparent p-2 text-sm"
-                    placeholder="Örn: Bu tarihler kişisel kullanım için tutulu."
+                    placeholder={t('dash.book.reasonPh')}
                   />
                   <div className="flex justify-end gap-2">
-                    <Button variant="ghost" size="sm" onClick={() => { setRejecting(null); setReason(''); }}>İptal</Button>
+                    <Button variant="ghost" size="sm" onClick={() => { setRejecting(null); setReason(''); }}>{t('dash.cancel')}</Button>
                     <Button variant="primary" size="sm" onClick={() => reject(b.id)} disabled={processing === b.id}>
-                      Reddi Gönder
+                      {t('dash.book.sendReject')}
                     </Button>
                   </div>
                 </div>
