@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { db } from '@/db/client';
-import { users, emailVerificationTokens, passwordResetTokens, type DbUser } from '@/db/schema';
+import { users, agents, emailVerificationTokens, passwordResetTokens, type DbUser } from '@/db/schema';
 import { eq, sql, and, gt, isNull, desc } from 'drizzle-orm';
 import { getSession } from './session';
 import {
@@ -139,6 +139,17 @@ export async function signUpAction(
         return { ok: false, error: 'Bu e-posta zaten kayıtlı. Giriş yap.' };
       }
       throw insertErr;
+    }
+
+    // Agent/ofis kaydı: `agents` profili oluştur. Tüm agent/ofis sorguları
+    // (property sayfası AgentCard, admin offices) `agents` tablosuna INNER JOIN
+    // attığından bu satır olmadan kullanıcı agent/ofis olarak GÖRÜNMEZ.
+    // Ofis ise `agency` = ad (ofis adı), bireysel agent ise null.
+    if (safeIntent === 'agent' || safeIntent === 'office') {
+      await db.insert(agents).values({
+        userId: created.id,
+        agency: safeIntent === 'office' ? name : null,
+      }).onConflictDoNothing();
     }
 
     // Auto sign-in YOK — kullanıcı önce e-postasını doğrulamalı, sonra login sayfasından girer.

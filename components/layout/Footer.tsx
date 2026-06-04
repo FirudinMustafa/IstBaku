@@ -12,10 +12,28 @@ export function Footer() {
         <div className="col-span-2 md:col-span-2">
           <Logo />
           <p className="mt-4 text-sm text-[color:var(--fg-muted)] max-w-sm">{t('footer.tagline')}</p>
+
+          <ul className="mt-5 space-y-1.5 text-sm text-[color:var(--fg-muted)]">
+            <li>
+              <a href="tel:+905528142417" className="hover:text-gold-300">+90 552 814 24 17</a>
+            </li>
+            <li>
+              <a href="tel:+994503631636" className="hover:text-gold-300">+994 50 363 16 36</a>
+            </li>
+            <li>
+              <a href="mailto:istbaku2025@gmail.com" className="hover:text-gold-300">istbaku2025@gmail.com</a>
+            </li>
+          </ul>
+
           <div className="mt-5 flex items-center gap-3">
-            <Link href="/coming-soon?topic=Instagram" className="text-xs text-[color:var(--fg-muted)] hover:text-gold-300">
+            <a
+              href="https://instagram.com/istbakucom"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-[color:var(--fg-muted)] hover:text-gold-300"
+            >
               Instagram
-            </Link>
+            </a>
             <Link href="/coming-soon?topic=LinkedIn" className="text-xs text-[color:var(--fg-muted)] hover:text-gold-300">
               LinkedIn
             </Link>
