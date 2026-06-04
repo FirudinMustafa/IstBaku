@@ -322,6 +322,24 @@ export function NewListingClient({ countries: countryList, prices }: NewListingC
     }
   }
 
+  // Konum belirlenince yakın çevreyi OTOMATİK hesapla (kullanıcı butona basmadan).
+  // Aynı konum için tek sefer; nearby zaten elle doldurulmuşsa dokunma. 1sn debounce
+  // ile harita pini oynatılırken tekrar tekrar Overpass'a gitmeyi önler.
+  const autoNearbyKeyRef = React.useRef<string | null>(null);
+  React.useEffect(() => {
+    if (!form.lat || !form.lng) return;
+    const key = `${form.lat.toFixed(5)},${form.lng.toFixed(5)}`;
+    if (autoNearbyKeyRef.current === key) return;
+    const n = form.nearby ?? {};
+    const hasNearby = Object.entries(n).some(([k, v]) =>
+      k === 'markets' ? Array.isArray(v) && v.length > 0 : !!(v && (v as { name?: string }).name),
+    );
+    if (hasNearby) return;
+    const id = setTimeout(() => { autoNearbyKeyRef.current = key; autoCalcNearby(); }, 1000);
+    return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.lat, form.lng]);
+
   if (!ready) {
     return <div className="mx-auto max-w-7xl px-4 py-12 text-center text-[color:var(--fg-muted)]">Yükleniyor…</div>;
   }
