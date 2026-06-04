@@ -14,6 +14,7 @@ import { Input, Label, Select } from '@/components/ui/Input';
 import { LocationSelector } from '@/components/ui/LocationSelector';
 import { LocationPicker } from '@/components/listings/LocationPicker';
 import { useToast } from '@/components/ui/Toast';
+import { useLang } from '@/components/layout/LangProvider';
 import { useUser } from '@/lib/user-auth';
 import { createListingAction } from '@/lib/listing-actions';
 import { createWizardExtrasPaymentAction, applyWizardPrivateAction } from '@/lib/listing-owner-actions';
@@ -26,7 +27,7 @@ import { ROOM_OPTIONS, HOUSING_TYPE_OPTIONS, ENERGY_CLASS_OPTIONS, FACADE_OPTION
 import { RichTextEditor } from '@/components/ui/RichTextEditor';
 import { kmToMinutes } from '@/lib/geo';
 
-const BASE_STEPS = ['Tür', 'Konum', 'Detay', 'Medya', 'Kapak', 'Bölge', 'Yakın Çevre', 'İlan Seçenekleri'] as const;
+const BASE_STEPS = ['wz.step.type', 'wz.step.location', 'wz.step.detail', 'wz.step.media', 'wz.step.cover', 'wz.step.region', 'wz.step.nearby', 'wz.step.options'] as const;
 
 /** HTML açıklamasının düz metin uzunluğu (etiketler hariç). */
 function plainTextLen(html: string): number {
@@ -77,6 +78,7 @@ export function NewListingClient({ countries: countryList, prices }: NewListingC
       ];
   const router = useRouter();
   const { toast } = useToast();
+  const { t } = useLang();
   const { user, ready, isAuthenticated } = useUser();
   const [step, setStep] = React.useState(0);
 
@@ -206,7 +208,7 @@ export function NewListingClient({ countries: countryList, prices }: NewListingC
   const set = (patch: Partial<typeof form>) => setForm((f) => ({ ...f, ...patch }));
   const cityCenter = CITY_CENTERS[form.city] ?? CITY_CENTERS['İstanbul'];
   const isDaily = form.purpose === 'daily_rent';
-  const STEPS = isDaily ? [...BASE_STEPS, 'Günlük Kira'] : [...BASE_STEPS];
+  const STEPS = isDaily ? [...BASE_STEPS, 'wz.step.daily'] : [...BASE_STEPS];
 
   /** Sayısal input yardımcısı: 0 → boş gösterilir; baştaki sıfır takılı kalmaz. */
   const numVal = (n: number) => (n === 0 ? '' : String(n));
@@ -638,7 +640,7 @@ export function NewListingClient({ countries: countryList, prices }: NewListingC
               i === step && 'bg-gold-400 border-gold-400 text-navy-900 font-bold',
               i > step && 'border-[color:var(--border)] text-[color:var(--fg-muted)]',
             )}>{i + 1}</div>
-            <div className={cn('text-[10px]', i === step ? 'text-gold-300 font-medium' : 'text-[color:var(--fg-muted)]')}>{s}</div>
+            <div className={cn('text-[10px]', i === step ? 'text-gold-300 font-medium' : 'text-[color:var(--fg-muted)]')}>{t(s)}</div>
           </div>
         ))}
       </div>
@@ -647,7 +649,7 @@ export function NewListingClient({ countries: countryList, prices }: NewListingC
         <CardBody className="p-5 md:p-8">
           {step === 0 && (
             <div>
-              <h2 className="text-lg font-semibold">Ne ilan veriyorsun?</h2>
+              <h2 className="text-lg font-semibold">{t('wz.h.whatListing')}</h2>
               <p className="mt-1 text-sm text-[color:var(--fg-muted)]">İki seçim de zorunlu — varsayılan yok.</p>
               <div className="mt-4 grid grid-cols-3 gap-2">
                 {[{ v: 'sale' as const, l: 'Satılık' }, { v: 'rent' as const, l: 'Kiralık' }, { v: 'daily_rent' as const, l: 'Günlük Kiralık' }].map((o) => (
@@ -656,7 +658,7 @@ export function NewListingClient({ countries: countryList, prices }: NewListingC
                   </button>
                 ))}
               </div>
-              <h2 className="text-lg font-semibold mt-7">Emlak türü</h2>
+              <h2 className="text-lg font-semibold mt-7">{t('wz.h.propertyType')}</h2>
               <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {[
                   { v: 'konut', l: 'Konut' }, { v: 'luks_konut', l: 'Lüks Konut' },
@@ -670,7 +672,7 @@ export function NewListingClient({ countries: countryList, prices }: NewListingC
               </div>
               {(!form.purpose || !form.type) && (
                 <p role="status" className="mt-4 text-xs text-[color:var(--fg-muted)]">
-                  İleri için Satılık/Kiralık <strong>ve</strong> emlak türü seç.
+                  {t('wz.step1Hint')}
                 </p>
               )}
             </div>
@@ -678,7 +680,7 @@ export function NewListingClient({ countries: countryList, prices }: NewListingC
 
           {step === 1 && (
             <div className="space-y-4">
-              <h2 className="text-lg font-semibold">Konum</h2>
+              <h2 className="text-lg font-semibold">{t('wz.h.location')}</h2>
               <div className="grid sm:grid-cols-2 gap-3">
                 <div>
                   <Label>Ülke</Label>
@@ -722,7 +724,7 @@ export function NewListingClient({ countries: countryList, prices }: NewListingC
 
           {step === 2 && (
             <div className="grid sm:grid-cols-2 gap-4">
-              <h2 className="sm:col-span-2 text-lg font-semibold">Detaylar</h2>
+              <h2 className="sm:col-span-2 text-lg font-semibold">{t('wz.h.details')}</h2>
               <div className="sm:col-span-2"><Label>İlan başlığı (opsiyonel)</Label>
                 <Input value={form.customTitle} onChange={(e) => set({ customTitle: e.target.value })} maxLength={200} placeholder="Boş bırakırsan otomatik oluşturulur" />
               </div>
@@ -893,7 +895,7 @@ export function NewListingClient({ countries: countryList, prices }: NewListingC
 
           {step === 3 && (
             <div>
-              <h2 className="text-lg font-semibold">Fotoğraflar</h2>
+              <h2 className="text-lg font-semibold">{t('wz.h.photos')}</h2>
               {/* PF-08: keep the server-side ≥3 requirement strict (image quality
                   is the #1 driver of inquiries), but update the copy so users
                   learn about it on first paint — not after a failed click. */}
@@ -975,7 +977,7 @@ export function NewListingClient({ countries: countryList, prices }: NewListingC
 
           {step === 4 && (
             <div>
-              <h2 className="text-lg font-semibold">Kart Kapağı</h2>
+              <h2 className="text-lg font-semibold">{t('wz.h.cardCover')}</h2>
               <p className="text-sm text-[color:var(--fg-muted)] mt-1">
                 İlan kartında ilk görünecek şey. Fotoğraf seçersen 1. foton kapak olur. Video seçersen kullanıcı mouse'u kartın üstüne getirince otomatik oynar.
               </p>
@@ -1087,7 +1089,7 @@ export function NewListingClient({ countries: countryList, prices }: NewListingC
 
           {step === 8 && (
             <div>
-              <h2 className="text-lg font-semibold">Günlük Kira</h2>
+              <h2 className="text-lg font-semibold">{t('wz.h.dailyRent')}</h2>
               <p className="text-sm text-[color:var(--fg-muted)] mt-1">
                 Misafirler takvim üzerinden rezervasyon talep eder, sen onaylar veya reddedersin.
                 Gecelik fiyat zorunludur.
@@ -1142,7 +1144,7 @@ export function NewListingClient({ countries: countryList, prices }: NewListingC
 
           {step === 7 && (
             <div>
-              <h2 className="text-lg font-semibold">İlan Seçenekleri</h2>
+              <h2 className="text-lg font-semibold">{t('wz.h.listingOptions')}</h2>
               <p className="text-sm text-[color:var(--fg-muted)] mt-1">İlanını öne çıkar veya gizli portföye al.</p>
 
               <div className="mt-4 grid sm:grid-cols-2 gap-3">
@@ -1260,7 +1262,7 @@ export function NewListingClient({ countries: countryList, prices }: NewListingC
             return (
               <div className="mt-8 hidden md:flex items-center justify-between">
                 <Button variant="ghost" onClick={() => setStep((s) => Math.max(0, s - 1))} disabled={step === 0}>
-                  <ArrowLeft size={14} /> Geri
+                  <ArrowLeft size={14} /> {t('wz.back')}
                 </Button>
                 {step < STEPS.length - 1 ? (
                   <Button
@@ -1271,9 +1273,9 @@ export function NewListingClient({ countries: countryList, prices }: NewListingC
                     data-testid="wizard-next"
                   >
                     {photosShort ? (
-                      'En az 3 fotoğraf yükleyin'
+                      t('wz.photosShort')
                     ) : (
-                      <>İleri <ArrowRight size={14} /></>
+                      <>{t('wz.next')} <ArrowRight size={14} /></>
                     )}
                   </Button>
                 ) : (
@@ -1285,7 +1287,7 @@ export function NewListingClient({ countries: countryList, prices }: NewListingC
                     aria-disabled={publishDisabled ? 'true' : undefined}
                     data-testid="wizard-publish"
                   >
-                    <CheckCircle2 size={14} /> Yayınla
+                    <CheckCircle2 size={14} /> {t('wz.publish')}
                   </Button>
                 )}
               </div>
@@ -1302,7 +1304,7 @@ export function NewListingClient({ countries: countryList, prices }: NewListingC
           <ArrowLeft size={16} />
         </Button>
         <div className="flex-1 text-center text-xs text-[color:var(--fg-muted)]">
-          <strong className="text-gold-300">{step + 1}</strong> / {STEPS.length} · {STEPS[step]}
+          <strong className="text-gold-300">{step + 1}</strong> / {STEPS.length} · {t(STEPS[step])}
         </div>
         {step < STEPS.length - 1 ? (
           <Button
@@ -1316,7 +1318,7 @@ export function NewListingClient({ countries: countryList, prices }: NewListingC
             }
             data-testid="wizard-next-mobile"
           >
-            İleri <ArrowRight size={16} />
+            {t('wz.next')} <ArrowRight size={16} />
           </Button>
         ) : (
           <Button
@@ -1328,7 +1330,7 @@ export function NewListingClient({ countries: countryList, prices }: NewListingC
             disabled={publishing}
             data-testid="wizard-publish-mobile"
           >
-            <CheckCircle2 size={16} /> Yayınla
+            <CheckCircle2 size={16} /> {t('wz.publish')}
           </Button>
         )}
       </div>
@@ -1368,6 +1370,7 @@ interface NearbyShape {
 }
 
 function NearbyStep({ value, onChange }: { value: NearbyShape; onChange: (v: NearbyShape) => void }) {
+  const { t } = useLang();
   type PoiKey = Exclude<keyof NearbyShape, 'markets'>;
   const FIELDS: { key: PoiKey; label: string; placeholder: string }[] = [
     { key: 'metro',   label: 'Metro / Toplu Taşıma', placeholder: 'Örn: Beşiktaş metro, M2 hattı' },
@@ -1399,7 +1402,7 @@ function NearbyStep({ value, onChange }: { value: NearbyShape; onChange: (v: Nea
   return (
     <div className="space-y-4">
       <div>
-        <h2 className="text-lg font-semibold">Yakın Çevre</h2>
+        <h2 className="text-lg font-semibold">{t('wz.h.nearby')}</h2>
         <p className="text-sm text-[color:var(--fg-muted)] mt-1">
           İlana yakın yerleri spesifik isimleriyle ve km uzaklığıyla gir — örneğin <strong>&ldquo;Bravo Süpermarket&rdquo;</strong>, <strong>&ldquo;Migros 5M&rdquo;</strong>.
           Yürüme süresi km&apos;den otomatik hesaplanır. Tümünü doldurman gerekmez, boş bırakırsan o POI gösterilmez.
@@ -1479,6 +1482,7 @@ function NearbyStep({ value, onChange }: { value: NearbyShape; onChange: (v: Nea
 }
 
 function RegionStep({ value, onChange }: { value: RegionShape; onChange: (v: RegionShape) => void }) {
+  const { t } = useLang();
   const total = value.aile + value.memur + value.ogrenci + value.yabanci;
   const other = Math.max(0, 100 - total);
 
@@ -1518,7 +1522,7 @@ function RegionStep({ value, onChange }: { value: RegionShape; onChange: (v: Reg
 
   return (
     <div>
-      <h2 className="text-lg font-semibold">Bölge Profili</h2>
+      <h2 className="text-lg font-semibold">{t('wz.h.regionProfile')}</h2>
       <p className="text-sm text-[color:var(--fg-muted)] mt-1">
         Bölgede genellikle kimler yaşıyor? Sliderları oynat — toplam otomatik 100'de tutulur, kalan kısım <strong>Diğer</strong> olarak işaretlenir. Yanlış yapamazsın 🙂
       </p>
