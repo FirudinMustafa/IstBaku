@@ -110,7 +110,7 @@ export interface CountryCode { iso: string; dial: string; name: string; flag: st
 
 export const COUNTRY_CODES: CountryCode[] = [
   { iso: 'TR', dial: '+90',  name: 'Türkiye',        flag: '🇹🇷' },
-  { iso: 'AZ', dial: '+994', name: 'Azərbaycan',     flag: '🇦🇿' },
+  { iso: 'AZ', dial: '+994', name: 'Azerbaycan',     flag: '🇦🇿' },
   { iso: 'RU', dial: '+7',   name: 'Россия',         flag: '🇷🇺' },
   { iso: 'IR', dial: '+98',  name: 'ایران',          flag: '🇮🇷' },
   { iso: 'AE', dial: '+971', name: 'UAE',            flag: '🇦🇪' },

@@ -126,7 +126,7 @@ export function UsersClient({ initial }: { initial: User[] }) {
                     </div>
                   </td>
                   <td className="px-4 py-3"><Badge variant={u.role.includes('admin') ? 'gold' : u.role === 'agent' ? 'ai' : 'outline'}>{u.role}</Badge></td>
-                  <td className="px-4 py-3 text-xs">{u.country === 'TR' ? '🇹🇷 Türkiye' : u.country === 'AZ' ? '🇦🇿 Azərbaycan' : '🌍 —'}</td>
+                  <td className="px-4 py-3 text-xs">{u.country === 'TR' ? '🇹🇷 Türkiye' : u.country === 'AZ' ? '🇦🇿 Azerbaycan' : '🌍 —'}</td>
                   <td className="px-4 py-3">
                     <span className={cn('inline-flex items-center gap-1 text-xs',
                       u.status === 'active' && 'text-success',

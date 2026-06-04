@@ -25,8 +25,8 @@ import {
 } from '@/lib/cross-border-actions';
 
 const NATIONALITIES: { v: Nationality; l: string }[] = [
-  { v: 'TR', l: 'Türk vatandaşı (TR)' },
-  { v: 'AZ', l: 'Azerbaycan vatandaşı (AZ)' },
+  { v: 'TR', l: 'Türk vatandaşı' },
+  { v: 'AZ', l: 'Azerbaycan vatandaşı' },
   { v: 'OTHER', l: 'Diğer / Yabancı' },
 ];
 const COUNTRIES: { v: Country; l: string }[] = [

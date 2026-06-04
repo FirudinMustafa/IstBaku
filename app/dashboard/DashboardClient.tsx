@@ -116,10 +116,24 @@ export function DashboardClient({ initialUser, myListings, favorites, savedSearc
     router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
   }, [pathname, router, sp]);
   const { unread } = useNotifications();
+  const { toast } = useToast();
   // Hydration: badge sadece client tarafında mount sonrası render olsun
   const [mounted, setMounted] = React.useState(false);
   React.useEffect(() => setMounted(true), []);
   const showUnread = mounted && unread > 0;
+  // Kapital Bank ödeme dönüşü (?payment=success|failed) — bir kez toast göster, paramı temizle.
+  const paymentToastRef = React.useRef(false);
+  React.useEffect(() => {
+    const pay = sp.get('payment');
+    if (!pay || paymentToastRef.current) return;
+    paymentToastRef.current = true;
+    if (pay === 'success') toast({ variant: 'success', title: 'Ödeme onaylandı', description: 'Ödemeniz başarıyla alındı.' });
+    else if (pay === 'failed') toast({ variant: 'error', title: 'Ödeme tamamlanmadı', description: 'Ödeme onaylanamadı. Lütfen tekrar deneyin.' });
+    const params = new URLSearchParams(sp.toString());
+    params.delete('payment');
+    const qs = params.toString();
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+  }, [sp, router, pathname]);
   const user = initialUser;
   const signOut = async () => {
     await signOutAction();
@@ -293,7 +307,7 @@ function MyListings({ listings, prices }: { listings: Property[]; prices: { rene
     setLoadingAction(null);
     if (!res.ok) { toast({ variant: 'error', title: 'Hata', description: res.error }); return; }
     ownerSuccessRef.current = { title: 'Tarih yenilendi', description: 'Ödeme onaylandı — ilanın tarihi tazelendi.' };
-    setPendingPayment({ paymentId: res.paymentId, amount: res.amount, currency: res.currency, title: 'Tarihi Yenile', description: 'İlanın yayın tarihi tazelenir ve listelerde öne çıkar.' });
+    setPendingPayment({ paymentId: res.paymentId, amount: res.amount, currency: res.currency, checkoutUrl: res.checkoutUrl, title: 'Tarihi Yenile', description: 'İlanın yayın tarihi tazelenir ve listelerde öne çıkar.' });
   }
 
   async function startApprove(p: Property) {
@@ -302,7 +316,7 @@ function MyListings({ listings, prices }: { listings: Property[]; prices: { rene
     setLoadingAction(null);
     if (!res.ok) { toast({ variant: 'error', title: 'Hata', description: res.error }); return; }
     ownerSuccessRef.current = { title: 'Ödeme onaylandı', description: 'İstBaku Onaylı başvurun admin onayına gönderildi.' };
-    setPendingPayment({ paymentId: res.paymentId, amount: res.amount, currency: res.currency, title: 'İstBaku Onaylı Rozet', description: 'İlan en üst sıralarda gösterilir ve İstBaku Onaylı sürecine girer.' });
+    setPendingPayment({ paymentId: res.paymentId, amount: res.amount, currency: res.currency, checkoutUrl: res.checkoutUrl, title: 'İstBaku Onaylı Rozet', description: 'İlan en üst sıralarda gösterilir ve İstBaku Onaylı sürecine girer.' });
   }
 
   if (listings.length === 0) {
@@ -330,6 +344,7 @@ function MyListings({ listings, prices }: { listings: Property[]; prices: { rene
         paymentId: res.paymentId,
         amount: res.amount,
         currency: res.currency,
+        checkoutUrl: res.checkoutUrl,
         title: tier === 'premium' ? 'Premium ilan (30 gün)' : 'Güçlü ilan (30 gün)',
         description: tier === 'premium' ? 'En üst sırada + İstBaku Onaylı süreci.' : 'Yüksek görünürlük, video kapak.',
       });

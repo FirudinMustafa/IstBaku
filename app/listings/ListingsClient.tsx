@@ -321,7 +321,7 @@ export function ListingsClient({ initialListings = [], countries = [] }: Listing
             onClick={() => setFilters({ ...filters, country: undefined })}
             className="shrink-0 h-9 px-3 rounded-full bg-gold-400/15 border border-gold-400/40 text-gold-300 text-xs inline-flex items-center gap-1"
           >
-            {filters.country === 'TR' ? '🇹🇷 Türkiye' : '🇦🇿 Azərbaycan'} <X size={11} />
+            {filters.country === 'TR' ? '🇹🇷 Türkiye' : '🇦🇿 Azerbaycan'} <X size={11} />
           </button>
         )}
         <button

@@ -5,6 +5,7 @@ import { listings, payments, approvalRequests, notifications, users } from '@/db
 import { eq } from 'drizzle-orm';
 import { getCurrentUser } from './auth-actions';
 import { getPrice } from './pricing';
+import { maybeStartCheckout } from './payment-provider';
 import { revalidatePath } from 'next/cache';
 
 // ============================================================
@@ -16,7 +17,7 @@ import { revalidatePath } from 'next/cache';
  *  NOT: 'use server' modülü yalnızca async fonksiyon export edebildiği için
  *  tip ve sabitler bu dosyada local tutulur (export edilmez). */
 type PendingPaymentResult =
-  | { ok: true; paymentId: string; amount: number; currency: 'USD' }
+  | { ok: true; paymentId: string; amount: number; currency: 'USD'; checkoutUrl?: string }
   | { ok: false; error: string };
 
 /**
@@ -50,7 +51,10 @@ export async function renewListingDateAction(
       status: 'pending',
     }).returning();
 
-    return { ok: true, paymentId: paymentRow.id, amount, currency: 'USD' };
+    const checkoutUrl = await maybeStartCheckout({
+      paymentId: paymentRow.id, amount, currency: 'USD', description: 'İlan tarih yenileme',
+    });
+    return { ok: true, paymentId: paymentRow.id, amount, currency: 'USD', checkoutUrl };
   } catch (err) {
     console.error('renewListingDate error', err);
     return { ok: false, error: 'Tarih yenileme başarısız. Lütfen tekrar dene.' };
@@ -99,7 +103,10 @@ export async function requestPremiumUpgradeAction(
       status: 'pending',
     });
 
-    return { ok: true, paymentId: paymentRow.id, amount, currency: 'USD' };
+    const checkoutUrl = await maybeStartCheckout({
+      paymentId: paymentRow.id, amount, currency: 'USD', description: 'İstBaku Onaylı rozet',
+    });
+    return { ok: true, paymentId: paymentRow.id, amount, currency: 'USD', checkoutUrl };
   } catch (err) {
     console.error('requestPremiumUpgrade error', err);
     return { ok: false, error: 'Premium başvurusu başarısız. Lütfen tekrar dene.' };
@@ -154,7 +161,10 @@ export async function createWizardExtrasPaymentAction(
       });
     }
 
-    return { ok: true, paymentId: paymentRow.id, amount, currency: 'USD' };
+    const checkoutUrl = await maybeStartCheckout({
+      paymentId: paymentRow.id, amount, currency: 'USD', description: 'İlan eklentileri',
+    });
+    return { ok: true, paymentId: paymentRow.id, amount, currency: 'USD', checkoutUrl };
   } catch (err) {
     console.error('createWizardExtrasPayment error', err);
     return { ok: false, error: 'Ödeme başlatılamadı. Lütfen tekrar dene.' };

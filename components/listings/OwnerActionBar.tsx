@@ -36,7 +36,7 @@ export function OwnerActionBar({ listingId, currentTier, isApproved, isPrivate, 
     setLoading(null);
     if (!res.ok) { toast({ variant: 'error', title: 'Hata', description: res.error }); return; }
     successRef.current = { title: 'Tarih yenilendi', description: 'Ödeme onaylandı — ilanın tarihi tazelendi.' };
-    setPending({ paymentId: res.paymentId, amount: res.amount, currency: res.currency, title: 'Tarihi Yenile', description: 'İlanın yayın tarihi tazelenir ve listelerde öne çıkar.' });
+    setPending({ paymentId: res.paymentId, amount: res.amount, currency: res.currency, checkoutUrl: res.checkoutUrl, title: 'Tarihi Yenile', description: 'İlanın yayın tarihi tazelenir ve listelerde öne çıkar.' });
   }
 
   async function startPremium() {
@@ -45,7 +45,7 @@ export function OwnerActionBar({ listingId, currentTier, isApproved, isPrivate, 
     setLoading(null);
     if (!res.ok) { toast({ variant: 'error', title: 'Hata', description: res.error }); return; }
     successRef.current = { title: 'Ödeme onaylandı', description: 'Premium başvurun admin onayına gönderildi.' };
-    setPending({ paymentId: res.paymentId, amount: res.amount, currency: res.currency, title: 'İstBaku Onaylı Rozet', description: 'İlan en üst sıralarda gösterilir ve İstBaku Onaylı sürecine girer.' });
+    setPending({ paymentId: res.paymentId, amount: res.amount, currency: res.currency, checkoutUrl: res.checkoutUrl, title: 'İstBaku Onaylı Rozet', description: 'İlan en üst sıralarda gösterilir ve İstBaku Onaylı sürecine girer.' });
   }
 
   async function handlePrivate() {

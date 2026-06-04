@@ -8,6 +8,7 @@ import { uploadDataUrl } from './storage';
 import { slugify } from './utils';
 import { sanitizeText, sanitizeHtml, sanitizeLat, sanitizeLng } from './sanitize';
 import { getPrice } from './pricing';
+import { maybeStartCheckout } from './payment-provider';
 
 export interface CreateListingInput {
   type: typeof s.listings.$inferInsert.type;
@@ -446,7 +447,7 @@ export async function deleteListingAction(id: string): Promise<{ ok: boolean; er
 export async function upgradeTierAction(
   id: string,
   tier: 'guclu' | 'premium',
-): Promise<{ ok: true; paymentId: string; amount: number; currency: 'USD' } | { ok: false; error?: string }> {
+): Promise<{ ok: true; paymentId: string; amount: number; currency: 'USD'; checkoutUrl?: string } | { ok: false; error?: string }> {
   const user = await getCurrentUser();
   if (!user) return { ok: false, error: 'Giriş yapmalısın.' };
   const target = await getEditableListing(id);
@@ -476,7 +477,10 @@ export async function upgradeTierAction(
       meta: { amount, currency: 'USD', paymentId: payment.id, status: 'pending' },
     });
 
-    return { ok: true, paymentId: payment.id, amount, currency: 'USD' };
+    const checkoutUrl = await maybeStartCheckout({
+      paymentId: payment.id, amount, currency: 'USD', description: `Tier yükseltme (${tier})`,
+    });
+    return { ok: true, paymentId: payment.id, amount, currency: 'USD', checkoutUrl };
   } catch (err) {
     console.error('upgradeTier', err);
     return { ok: false, error: 'Yükseltme başarısız.' };

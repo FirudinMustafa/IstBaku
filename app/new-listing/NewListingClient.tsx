@@ -574,6 +574,7 @@ export function NewListingClient({ countries: countryList, prices }: NewListingC
           paymentId: pay.paymentId,
           amount: pay.amount,
           currency: pay.currency,
+          checkoutUrl: 'checkoutUrl' in pay ? pay.checkoutUrl : undefined,
           title: 'İlan eklentileri',
           description: parts.join(' + '),
         });

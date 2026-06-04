@@ -297,7 +297,7 @@ const tr: Dict = {
   'legal.previous': 'Önceki',
   'legal.next': 'Sonraki',
   'legal.pdfTitle': 'PDF Rehber Kütüphanesi',
-  'legal.pdfSubtitle': 'Ülke bazlı PDF rehberleri — TR / AZ / EN.',
+  'legal.pdfSubtitle': 'Ülke bazlı PDF rehberleri — Türkçe, Azerbaycanca ve İngilizce.',
 
   // ---- KYC form ----
   'kyc.title': 'Kimlik Doğrulama (KYC)',

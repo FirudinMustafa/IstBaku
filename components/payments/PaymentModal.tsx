@@ -49,6 +49,7 @@ export function PaymentModal({ open, payment, onClose, onSuccess }: Props) {
   if (!payment) return null;
 
   const amountLabel = formatPrice(majorAmount(payment.amount), payment.currency);
+  const isLive = !!payment.checkoutUrl;
 
   async function handlePay(e: React.FormEvent) {
     e.preventDefault();
@@ -92,6 +93,25 @@ export function PaymentModal({ open, payment, onClose, onSuccess }: Props) {
           )}
         </div>
 
+        {isLive ? (
+          <div className="space-y-4">
+            <p className="text-sm text-[color:var(--fg-muted)]">
+              Ödeme, Kapital Bank’ın güvenli ödeme sayfasında tamamlanır. Devam etmek için aşağıdaki butona tıklayın.
+            </p>
+            <Button
+              type="button"
+              variant="gold"
+              className="w-full"
+              disabled={processing}
+              onClick={() => { setProcessing(true); window.location.href = payment!.checkoutUrl!; }}
+            >
+              {processing ? <><Loader2 size={16} className="animate-spin" /> Yönlendiriliyor…</> : <><Lock size={15} /> {amountLabel} — Bankaya geç</>}
+            </Button>
+            <p className="flex items-center justify-center gap-1.5 text-[11px] text-[color:var(--fg-faint)]">
+              <ShieldCheck size={12} /> Kapital Bank güvenli ödeme — kart bilgileriniz bankada girilir.
+            </p>
+          </div>
+        ) : (
         <form onSubmit={handlePay} className="space-y-3">
           <div>
             <Label>Kart üzerindeki isim</Label>
@@ -127,10 +147,13 @@ export function PaymentModal({ open, payment, onClose, onSuccess }: Props) {
             {processing ? <><Loader2 size={16} className="animate-spin" /> İşleniyor…</> : <><Lock size={15} /> {amountLabel} öde</>}
           </Button>
         </form>
+        )}
 
-        <p className="flex items-center justify-center gap-1.5 text-[11px] text-[color:var(--fg-faint)]">
-          <ShieldCheck size={12} /> Test (mock) ödeme — gerçek tahsilat yapılmaz.
-        </p>
+        {!isLive && (
+          <p className="flex items-center justify-center gap-1.5 text-[11px] text-[color:var(--fg-faint)]">
+            <ShieldCheck size={12} /> Test (mock) ödeme — gerçek tahsilat yapılmaz.
+          </p>
+        )}
       </div>
     </Modal>
   );

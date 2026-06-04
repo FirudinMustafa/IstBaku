@@ -168,12 +168,12 @@ const STEPS: Partial<Record<Lang, Record<GuideKey, { title: string; desc: string
 // `/api/country-guide?iso=...` endpoint that already serves a placeholder PDF.
 interface LegalPdf { title: string; slug: string; lang: Lang; iso: string }
 const LEGAL_PDFS: LegalPdf[] = [
-  { title: 'Türkiye Ev Alım Rehberi (TR)',         slug: 'tr-tr-guide', lang: 'tr', iso: 'TR' },
-  { title: 'Azərbaycan Ev Alım Rehberi (TR)',      slug: 'tr-az-guide', lang: 'tr', iso: 'AZ' },
-  { title: 'Türkiyədə Ev Alış Bələdçisi (AZ)',     slug: 'az-tr-guide', lang: 'az', iso: 'TR' },
-  { title: 'Azərbaycanda Ev Alış Bələdçisi (AZ)',  slug: 'az-az-guide', lang: 'az', iso: 'AZ' },
-  { title: 'Foreign Buyer Guide — Turkey (EN)',    slug: 'en-tr-guide', lang: 'en', iso: 'TR' },
-  { title: 'Foreign Buyer Guide — Azerbaijan (EN)', slug: 'en-az-guide', lang: 'en', iso: 'AZ' },
+  { title: 'Türkiye Ev Alım Rehberi',         slug: 'tr-tr-guide', lang: 'tr', iso: 'TR' },
+  { title: 'Azerbaycan Ev Alım Rehberi',      slug: 'tr-az-guide', lang: 'tr', iso: 'AZ' },
+  { title: 'Türkiyədə Ev Alış Bələdçisi',     slug: 'az-tr-guide', lang: 'az', iso: 'TR' },
+  { title: 'Azərbaycanda Ev Alış Bələdçisi',  slug: 'az-az-guide', lang: 'az', iso: 'AZ' },
+  { title: 'Foreign Buyer Guide — Turkey',    slug: 'en-tr-guide', lang: 'en', iso: 'TR' },
+  { title: 'Foreign Buyer Guide — Azerbaijan', slug: 'en-az-guide', lang: 'en', iso: 'AZ' },
 ];
 
 export default function LegalGuidePage() {
