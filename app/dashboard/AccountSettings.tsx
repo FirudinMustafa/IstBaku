@@ -7,6 +7,7 @@ import { Input, Label, Select } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { useToast } from '@/components/ui/Toast';
+import { useLang } from '@/components/layout/LangProvider';
 import { COUNTRY_CODES } from '@/lib/labels';
 import {
   getMyAccount, updateProfileAction, changePasswordAction, changeEmailAction,
@@ -16,6 +17,7 @@ import { verifyCodeAction } from '@/lib/auth-actions';
 
 export function AccountSettings() {
   const { toast } = useToast();
+  const { t } = useLang();
   const [acc, setAcc] = React.useState<MyAccount | null>(null);
   const [loading, setLoading] = React.useState(true);
 
@@ -109,27 +111,27 @@ export function AccountSettings() {
   }
 
   if (loading) {
-    return <div className="text-[color:var(--fg-muted)] py-10 text-center">Yükleniyor…</div>;
+    return <div className="text-[color:var(--fg-muted)] py-10 text-center">{t('dash.settings.loading')}</div>;
   }
   if (!acc) {
-    return <div className="text-[color:var(--fg-muted)] py-10 text-center">Hesap bilgisi yüklenemedi.</div>;
+    return <div className="text-[color:var(--fg-muted)] py-10 text-center">{t('dash.settings.loadError')}</div>;
   }
 
   return (
     <div className="space-y-6 max-w-2xl">
-      <h2 className="text-lg font-bold">Hesap Ayarları</h2>
+      <h2 className="text-lg font-bold">{t('dash.settings.heading')}</h2>
 
       {/* Profil */}
       <Card>
         <CardBody className="space-y-4">
-          <div className="flex items-center gap-2 font-semibold"><User size={16} className="text-gold-300" /> Profil Bilgileri</div>
+          <div className="flex items-center gap-2 font-semibold"><User size={16} className="text-gold-300" /> {t('dash.settings.profile')}</div>
           <div>
-            <Label>Ad Soyad</Label>
+            <Label>{t('dash.settings.fullName')}</Label>
             <Input value={name} onChange={(e) => setName(e.target.value)} maxLength={120} />
           </div>
           <div className="grid grid-cols-[120px_1fr] gap-2">
             <div>
-              <Label>Ülke kodu</Label>
+              <Label>{t('dash.settings.countryCode')}</Label>
               <Select value={phoneDial} onChange={(e) => setPhoneDial(e.target.value)}>
                 {COUNTRY_CODES.map((c) => (
                   <option key={c.iso} value={c.dial}>{c.flag} {c.dial}</option>
@@ -137,12 +139,12 @@ export function AccountSettings() {
               </Select>
             </div>
             <div>
-              <Label>Telefon</Label>
+              <Label>{t('dash.settings.phone')}</Label>
               <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="5xx xxx xx xx" inputMode="tel" />
             </div>
           </div>
           <div className="flex justify-end">
-            <Button variant="gold" onClick={saveProfile} loading={savingProfile}><Check size={14} /> Kaydet</Button>
+            <Button variant="gold" onClick={saveProfile} loading={savingProfile}><Check size={14} /> {t('dash.settings.save')}</Button>
           </div>
         </CardBody>
       </Card>
@@ -151,41 +153,41 @@ export function AccountSettings() {
       <Card>
         <CardBody className="space-y-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 font-semibold"><Mail size={16} className="text-gold-300" /> E-posta</div>
+            <div className="flex items-center gap-2 font-semibold"><Mail size={16} className="text-gold-300" /> {t('dash.settings.email')}</div>
             {acc.emailVerified
-              ? <Badge variant="success" className="!text-[10px]"><Check size={11} /> Doğrulanmış</Badge>
-              : <Badge variant="gold" className="!text-[10px]"><ShieldAlert size={11} /> Doğrulanmamış</Badge>}
+              ? <Badge variant="success" className="!text-[10px]"><Check size={11} /> {t('dash.settings.verified')}</Badge>
+              : <Badge variant="gold" className="!text-[10px]"><ShieldAlert size={11} /> {t('dash.settings.unverified')}</Badge>}
           </div>
-          <div className="text-sm text-[color:var(--fg-muted)]">Mevcut: <strong className="text-[color:var(--fg)]">{acc.email}</strong></div>
+          <div className="text-sm text-[color:var(--fg-muted)]">{t('dash.settings.current')} <strong className="text-[color:var(--fg)]">{acc.email}</strong></div>
 
           {emailStep === 'idle' ? (
             <>
               <div>
-                <Label>Yeni e-posta</Label>
+                <Label>{t('dash.settings.newEmail')}</Label>
                 <Input type="email" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} placeholder="yeni@eposta.com" />
               </div>
               <div>
-                <Label>Şifren (doğrulama için)</Label>
+                <Label>{t('dash.settings.passwordForVerify')}</Label>
                 <Input type="password" value={emailPassword} onChange={(e) => setEmailPassword(e.target.value)} />
               </div>
               <div className="flex justify-end">
                 <Button variant="outline" onClick={startEmailChange} loading={savingEmail} disabled={!newEmail || !emailPassword}>
-                  Doğrulama kodu gönder
+                  {t('dash.settings.sendCode')}
                 </Button>
               </div>
             </>
           ) : (
             <>
               <div className="text-sm text-[color:var(--fg-muted)]">
-                <strong className="text-[color:var(--fg)]">{newEmail}</strong> adresine gönderilen 6 haneli kodu gir.
+                <strong className="text-[color:var(--fg)]">{newEmail}</strong> {t('dash.settings.enterCode')}
               </div>
               <div>
-                <Label>Doğrulama kodu</Label>
+                <Label>{t('dash.settings.code')}</Label>
                 <Input value={emailCode} onChange={(e) => setEmailCode(e.target.value.replace(/\D/g, '').slice(0, 6))} inputMode="numeric" placeholder="______" />
               </div>
               <div className="flex justify-end gap-2">
-                <Button variant="ghost" onClick={() => { setEmailStep('idle'); setEmailCode(''); }}>Vazgeç</Button>
-                <Button variant="gold" onClick={verifyNewEmail} loading={savingEmail} disabled={emailCode.length !== 6}>Doğrula</Button>
+                <Button variant="ghost" onClick={() => { setEmailStep('idle'); setEmailCode(''); }}>{t('dash.settings.cancel')}</Button>
+                <Button variant="gold" onClick={verifyNewEmail} loading={savingEmail} disabled={emailCode.length !== 6}>{t('dash.settings.verify')}</Button>
               </div>
             </>
           )}
@@ -195,24 +197,24 @@ export function AccountSettings() {
       {/* Şifre */}
       <Card>
         <CardBody className="space-y-4">
-          <div className="flex items-center gap-2 font-semibold"><Lock size={16} className="text-gold-300" /> Şifre Değiştir</div>
+          <div className="flex items-center gap-2 font-semibold"><Lock size={16} className="text-gold-300" /> {t('dash.settings.changePassword')}</div>
           <div>
-            <Label>Mevcut şifre</Label>
+            <Label>{t('dash.settings.currentPassword')}</Label>
             <Input type="password" value={curPw} onChange={(e) => setCurPw(e.target.value)} />
           </div>
           <div className="grid sm:grid-cols-2 gap-3">
             <div>
-              <Label>Yeni şifre</Label>
+              <Label>{t('dash.settings.newPassword')}</Label>
               <Input type="password" value={newPw} onChange={(e) => setNewPw(e.target.value)} />
             </div>
             <div>
-              <Label>Yeni şifre (tekrar)</Label>
+              <Label>{t('dash.settings.newPasswordRepeat')}</Label>
               <Input type="password" value={newPw2} onChange={(e) => setNewPw2(e.target.value)} />
             </div>
           </div>
           <div className="flex justify-end">
             <Button variant="gold" onClick={savePassword} loading={savingPw} disabled={!curPw || newPw.length < 8}>
-              <Check size={14} /> Şifreyi Güncelle
+              <Check size={14} /> {t('dash.settings.updatePassword')}
             </Button>
           </div>
         </CardBody>

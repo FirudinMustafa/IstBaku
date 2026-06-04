@@ -847,12 +847,13 @@ function DailyBookingsTab({ initial }: { initial: DailyBookingUI[] }) {
 }
 
 function PaymentsTab({ payments }: { payments: PaymentUI[] }) {
+  const { t } = useLang();
   if (payments.length === 0) {
     return (
       <Card><CardBody className="text-center py-12 text-[color:var(--fg-muted)]">
         <CreditCard size={28} className="mx-auto text-gold-300 mb-3" />
-        <p className="font-medium">Henüz ödeme yok</p>
-        <p className="text-xs mt-1">İlan yükseltme, tarih yenileme gibi işlemler burada görünecek.</p>
+        <p className="font-medium">{t('dash.payments.emptyTitle')}</p>
+        <p className="text-xs mt-1">{t('dash.payments.emptyDesc')}</p>
       </CardBody></Card>
     );
   }
@@ -862,9 +863,9 @@ function PaymentsTab({ payments }: { payments: PaymentUI[] }) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-bold">Ödeme Geçmişi</h2>
+        <h2 className="text-lg font-bold">{t('dash.payments.history')}</h2>
         <div className="text-sm text-[color:var(--fg-muted)]">
-          Toplam: <span className="font-bold text-[color:var(--fg)]">${(total / 100).toFixed(2)}</span>
+          {t('dash.payments.total')} <span className="font-bold text-[color:var(--fg)]">${(total / 100).toFixed(2)}</span>
         </div>
       </div>
       <Card className="overflow-hidden">
@@ -872,10 +873,10 @@ function PaymentsTab({ payments }: { payments: PaymentUI[] }) {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b text-left text-xs text-[color:var(--fg-muted)]">
-                <th className="px-4 py-3 font-medium">İşlem</th>
-                <th className="px-4 py-3 font-medium">Tutar</th>
-                <th className="px-4 py-3 font-medium">Durum</th>
-                <th className="px-4 py-3 font-medium hidden sm:table-cell">Tarih</th>
+                <th className="px-4 py-3 font-medium">{t('dash.payments.colTransaction')}</th>
+                <th className="px-4 py-3 font-medium">{t('dash.payments.colAmount')}</th>
+                <th className="px-4 py-3 font-medium">{t('dash.payments.colStatus')}</th>
+                <th className="px-4 py-3 font-medium hidden sm:table-cell">{t('dash.payments.colDate')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[color:var(--border)]">
@@ -883,9 +884,9 @@ function PaymentsTab({ payments }: { payments: PaymentUI[] }) {
                 const st = PAYMENT_STATUS_LABELS[p.status] ?? { l: p.status, v: 'default' as const };
                 return (
                   <tr key={p.id} className="hover:bg-[color:var(--bg-card-hover)]">
-                    <td className="px-4 py-3 font-medium">{PAYMENT_TYPE_LABELS[p.type] ?? p.type}</td>
+                    <td className="px-4 py-3 font-medium">{t(`enums.paymentType.${p.type}`)}</td>
                     <td className="px-4 py-3">${(p.amount / 100).toFixed(2)} {p.currency}</td>
-                    <td className="px-4 py-3"><Badge variant={st.v}>{st.l}</Badge></td>
+                    <td className="px-4 py-3"><Badge variant={st.v}>{t(`enums.paymentStatus.${p.status}`)}</Badge></td>
                     <td className="px-4 py-3 text-[color:var(--fg-muted)] hidden sm:table-cell">
                       {new Date(p.createdAt).toLocaleDateString('tr-TR', { day: '2-digit', month: 'short', year: 'numeric' })}
                     </td>
