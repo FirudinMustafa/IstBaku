@@ -25,7 +25,6 @@ import type { PropertyType } from '@/lib/types';
 import { createListingSchema, fieldErrors } from '@/lib/schemas';
 import { ROOM_OPTIONS, HOUSING_TYPE_OPTIONS, ENERGY_CLASS_OPTIONS, FACADE_OPTIONS, BUILDING_STATUS_OPTIONS, STRUCTURE_TYPE_OPTIONS } from '@/lib/constants/listing-options';
 import { RichTextEditor } from '@/components/ui/RichTextEditor';
-import { kmToMinutes } from '@/lib/geo';
 
 const BASE_STEPS = ['wz.step.type', 'wz.step.location', 'wz.step.detail', 'wz.step.media', 'wz.step.cover', 'wz.step.region', 'wz.step.nearby', 'wz.step.options'] as const;
 
@@ -1078,12 +1077,12 @@ export function NewListingClient({ countries: countryList, prices }: NewListingC
           {step === 6 && (
             <div>
               <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
-                <p className="text-sm text-[color:var(--fg-muted)]">Konuma göre yakın çevre mesafelerini otomatik hesaplayabilirsin.</p>
+                <p className="text-sm text-[color:var(--fg-muted)]">Yakın çevre mesafeleri konuma göre otomatik hesaplanır.</p>
                 <Button type="button" variant="gold" size="sm" onClick={autoCalcNearby} loading={nearbyLoading}>
-                  <SparklesIcon size={14} /> Otomatik hesapla
+                  <SparklesIcon size={14} /> Yeniden hesapla
                 </Button>
               </div>
-              <NearbyStep value={form.nearby} onChange={(nearby) => set({ nearby })} />
+              <NearbyStep value={form.nearby} />
             </div>
           )}
 
@@ -1369,114 +1368,64 @@ interface NearbyShape {
   markets: { name: string; minutes: number; km: number }[];
 }
 
-function NearbyStep({ value, onChange }: { value: NearbyShape; onChange: (v: NearbyShape) => void }) {
+function NearbyStep({ value }: { value: NearbyShape }) {
   const { t } = useLang();
   type PoiKey = Exclude<keyof NearbyShape, 'markets'>;
-  const FIELDS: { key: PoiKey; label: string; placeholder: string }[] = [
-    { key: 'metro',   label: 'Metro / Toplu Taşıma', placeholder: 'Örn: Beşiktaş metro, M2 hattı' },
-    { key: 'okul',    label: 'Okul',                 placeholder: 'Örn: İlköğretim okulu' },
-    { key: 'hastane', label: 'Hastane',              placeholder: 'Örn: Özel Acıbadem' },
-    { key: 'avm',     label: 'AVM',                  placeholder: 'Örn: Zorlu Center' },
-    { key: 'park',    label: 'Park / Yeşil Alan',    placeholder: 'Örn: Macka Parkı' },
-    { key: 'eczane',  label: 'Eczane',               placeholder: 'Örn: Mahalle eczanesi' },
-    { key: 'eglence', label: 'Restoran / Cafe',      placeholder: 'Örn: Cafe sokağı' },
+  const FIELDS: { key: PoiKey; label: string }[] = [
+    { key: 'metro',   label: 'Metro / Toplu Taşıma' },
+    { key: 'okul',    label: 'Okul' },
+    { key: 'hastane', label: 'Hastane' },
+    { key: 'avm',     label: 'AVM' },
+    { key: 'park',    label: 'Park / Yeşil Alan' },
+    { key: 'eczane',  label: 'Eczane' },
+    { key: 'eglence', label: 'Restoran / Cafe' },
   ];
 
-  const updateField = (key: PoiKey, patch: Partial<NearbyShape[PoiKey]>) => {
-    onChange({ ...value, [key]: { ...value[key], ...patch } });
-  };
-
-  const addMarket = () => {
-    onChange({ ...value, markets: [...value.markets, { name: '', minutes: 0, km: 0 }] });
-  };
-  const updateMarket = (idx: number, patch: Partial<NearbyShape['markets'][number]>) => {
-    const next = value.markets.map((m, i) => (i === idx ? { ...m, ...patch } : m));
-    onChange({ ...value, markets: next });
-  };
-  const removeMarket = (idx: number) => {
-    // Never remove the first market row — it's always visible by default
-    if (idx === 0) return;
-    onChange({ ...value, markets: value.markets.filter((_, i) => i !== idx) });
-  };
+  // Salt-okunur: mesafeler sunucuda koordinattan hesaplanır (anti-fraud).
+  type Entry = { name: string; minutes: number; km: number };
+  const rows: { label: string; entry: Entry }[] = [
+    ...FIELDS
+      .filter((f) => value[f.key]?.name?.trim())
+      .map((f) => ({ label: f.label, entry: value[f.key] })),
+    ...(value.markets ?? [])
+      .filter((m) => m.name?.trim())
+      .map((m) => ({ label: 'Market', entry: m })),
+  ];
 
   return (
     <div className="space-y-4">
       <div>
         <h2 className="text-lg font-semibold">{t('wz.h.nearby')}</h2>
         <p className="text-sm text-[color:var(--fg-muted)] mt-1">
-          İlana yakın yerleri spesifik isimleriyle ve km uzaklığıyla gir — örneğin <strong>&ldquo;Bravo Süpermarket&rdquo;</strong>, <strong>&ldquo;Migros 5M&rdquo;</strong>.
-          Yürüme süresi km&apos;den otomatik hesaplanır. Tümünü doldurman gerekmez, boş bırakırsan o POI gösterilmez.
+          Yakın çevre mesafeleri konumuna göre <strong>otomatik</strong> hesaplanır ve elle
+          değiştirilemez — böylece ilanlardaki mesafe bilgileri herkes için doğru ve
+          karşılaştırılabilir kalır.
         </p>
       </div>
 
-      {FIELDS.map((f) => (
-        <div key={f.key} className="rounded-xl border p-3 bg-[color:var(--bg-elev)]">
-          <Label className="!text-xs !font-semibold">{f.label}</Label>
-          <div className="grid grid-cols-1 sm:grid-cols-[2fr_1fr_auto] gap-2 mt-1.5 items-center">
-            <Input
-              value={value[f.key].name}
-              onChange={(e) => updateField(f.key, { name: e.target.value })}
-              placeholder={f.placeholder}
-            />
-            <Input
-              type="number"
-              min={0}
-              step="0.1"
-              value={value[f.key].km || ''}
-              onChange={(e) => updateField(f.key, { km: +e.target.value, minutes: kmToMinutes(+e.target.value) })}
-              placeholder="Km"
-            />
-            <span className="text-xs text-[color:var(--fg-muted)] tabular-nums whitespace-nowrap px-1">
-              {value[f.key].km > 0 ? `≈ ${value[f.key].minutes} dk yürüme` : '— dk'}
-            </span>
-          </div>
+      {rows.length === 0 ? (
+        <div className="rounded-xl border border-dashed p-4 text-center text-sm text-[color:var(--fg-muted)]">
+          Konumu “Konum” adımında haritada işaretle; yakın çevre otomatik dolacak. Dilersen
+          yukarıdaki <strong>Yeniden hesapla</strong> ile güncelleyebilirsin.
         </div>
-      ))}
-
-      {/* Marketler — birden çok */}
-      <div className="rounded-xl border p-3 bg-[color:var(--bg-elev)]">
-        <div className="flex items-center justify-between">
-          <Label className="!text-xs !font-semibold !mb-0">Marketler (Bravo, Migros, A101, vb.)</Label>
-          <Button type="button" variant="ghost" size="sm" onClick={addMarket} className="!h-8">
-            + Market ekle
-          </Button>
-        </div>
-        <div className="mt-2 space-y-2">
-          {value.markets.map((m, idx) => (
-            <div key={idx} className="grid grid-cols-1 sm:grid-cols-[2fr_1fr_auto_auto] gap-2 items-center">
-              <Input
-                value={m.name}
-                onChange={(e) => updateMarket(idx, { name: e.target.value })}
-                placeholder="Örn: Bravo Süpermarket"
-              />
-              <Input
-                type="number"
-                min={0}
-                step="0.1"
-                value={m.km || ''}
-                onChange={(e) => updateMarket(idx, { km: +e.target.value, minutes: kmToMinutes(+e.target.value) })}
-                placeholder="Km"
-              />
-              <span className="text-xs text-[color:var(--fg-muted)] tabular-nums whitespace-nowrap px-1">
-                {m.km > 0 ? `≈ ${m.minutes} dk` : '— dk'}
-              </span>
-              {/* First market row is always visible — only show remove for additional rows */}
-              {idx > 0 ? (
-                <button
-                  type="button"
-                  onClick={() => removeMarket(idx)}
-                  className="size-9 rounded-lg border hover:bg-danger/10 hover:text-danger hover:border-danger/30 flex items-center justify-center"
-                  aria-label="Marketi kaldır"
-                >
-                  ✕
-                </button>
-              ) : (
-                <div className="size-9" />
-              )}
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          {rows.map((r, idx) => (
+            <div
+              key={`${r.label}-${idx}`}
+              className="rounded-xl border p-3 bg-[color:var(--bg-elev)] flex items-center justify-between gap-3"
+            >
+              <div className="min-w-0">
+                <div className="text-[10px] uppercase tracking-wider text-[color:var(--fg-muted)]">{r.label}</div>
+                <div className="text-sm font-semibold truncate">{r.entry.name}</div>
+              </div>
+              <div className="text-xs text-[color:var(--fg-faint)] tabular-nums whitespace-nowrap">
+                {r.entry.minutes} dk · {r.entry.km.toFixed(1)} km
+              </div>
             </div>
           ))}
         </div>
-      </div>
+      )}
     </div>
   );
 }

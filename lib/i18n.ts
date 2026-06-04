@@ -15,6 +15,28 @@ export const LANG_LABELS: Record<Lang, string> = {
 type Dict = Record<string, string>;
 
 const tr: Dict = {
+  // ---- İlan kartı + toast ----
+  'card.aiReviewed': 'AI ile gözden geçirildi',
+  'common.video': 'Video',
+  'card.favAdd': 'Favorilere ekle',
+  'card.favRemove': 'Favorilerden çıkar',
+  'card.cmpAdd': 'Karşılaştırmaya ekle',
+  'card.cmpRemove': 'Karşılaştırmadan çıkar',
+  'toast.loginRequired.title': 'Giriş yapmalısın',
+  'toast.loginRequired.fav': 'Favoriler için hesap gerekli.',
+  'toast.compareFull.title': 'Karşılaştırma dolu',
+  'toast.compareFull.desc': 'En fazla {n} ilan karşılaştırılabilir.',
+  'toast.compareAdded.title': 'Karşılaştırmaya eklendi',
+  'toast.compareAdded.desc': 'Sağ alt kutudan kıyasla.',
+  // ---- İletişim sayfası ----
+  'contact.title': 'İletişim',
+  'contact.subtitle': 'Sorularınız için buradayız — bize ulaşın.',
+  'contact.phone': 'Telefon',
+  'contact.email': 'E-posta',
+  'contact.social': 'Sosyal medya',
+  'contact.hours': 'Çalışma saatleri',
+  'contact.hoursValue': 'Hafta içi 09:00–18:00',
+  'contact.cta': 'E-posta gönder',
   'nav.listings': 'İlanlar',
   // ---- Ödeme (Kapital Bank) ----
   'pay.modal.title': 'Ödeme',
@@ -749,6 +771,26 @@ const tr: Dict = {
 };
 
 const az: Dict = {
+  'card.aiReviewed': 'AI ilə yoxlanıldı',
+  'common.video': 'Video',
+  'card.favAdd': 'Sevimlilərə əlavə et',
+  'card.favRemove': 'Sevimlilərdən sil',
+  'card.cmpAdd': 'Müqayisəyə əlavə et',
+  'card.cmpRemove': 'Müqayisədən sil',
+  'toast.loginRequired.title': 'Daxil olmalısan',
+  'toast.loginRequired.fav': 'Sevimlilər üçün hesab lazımdır.',
+  'toast.compareFull.title': 'Müqayisə doludur',
+  'toast.compareFull.desc': 'Ən çox {n} elan müqayisə edilə bilər.',
+  'toast.compareAdded.title': 'Müqayisəyə əlavə edildi',
+  'toast.compareAdded.desc': 'Sağ alt qutudan müqayisə et.',
+  'contact.title': 'Əlaqə',
+  'contact.subtitle': 'Suallarınız üçün buradayıq — bizimlə əlaqə saxlayın.',
+  'contact.phone': 'Telefon',
+  'contact.email': 'E-poçt',
+  'contact.social': 'Sosial media',
+  'contact.hours': 'İş saatları',
+  'contact.hoursValue': 'Həftəiçi 09:00–18:00',
+  'contact.cta': 'E-poçt göndər',
   'nav.listings': 'Elanlar',
   // ---- Ödəniş (Kapital Bank) ----
   'pay.modal.title': 'Ödəniş',
@@ -1476,6 +1518,26 @@ const az: Dict = {
 };
 
 const en: Dict = {
+  'card.aiReviewed': 'Reviewed by AI',
+  'common.video': 'Video',
+  'card.favAdd': 'Add to favorites',
+  'card.favRemove': 'Remove from favorites',
+  'card.cmpAdd': 'Add to compare',
+  'card.cmpRemove': 'Remove from compare',
+  'toast.loginRequired.title': 'Sign in required',
+  'toast.loginRequired.fav': 'An account is required for favorites.',
+  'toast.compareFull.title': 'Compare list is full',
+  'toast.compareFull.desc': 'You can compare up to {n} listings.',
+  'toast.compareAdded.title': 'Added to compare',
+  'toast.compareAdded.desc': 'Compare from the bottom-right box.',
+  'contact.title': 'Contact',
+  'contact.subtitle': 'We are here for your questions — get in touch.',
+  'contact.phone': 'Phone',
+  'contact.email': 'Email',
+  'contact.social': 'Social media',
+  'contact.hours': 'Working hours',
+  'contact.hoursValue': 'Weekdays 09:00–18:00',
+  'contact.cta': 'Send email',
   'nav.listings': 'Listings',
   // ---- Payment (Kapital Bank) ----
   'pay.modal.title': 'Payment',
@@ -2203,6 +2265,26 @@ const en: Dict = {
 };
 
 const ru: Dict = {
+  'card.aiReviewed': 'Проверено ИИ',
+  'common.video': 'Видео',
+  'card.favAdd': 'В избранное',
+  'card.favRemove': 'Убрать из избранного',
+  'card.cmpAdd': 'Добавить к сравнению',
+  'card.cmpRemove': 'Убрать из сравнения',
+  'toast.loginRequired.title': 'Требуется вход',
+  'toast.loginRequired.fav': 'Для избранного нужен аккаунт.',
+  'toast.compareFull.title': 'Список сравнения заполнен',
+  'toast.compareFull.desc': 'Можно сравнить до {n} объявлений.',
+  'toast.compareAdded.title': 'Добавлено к сравнению',
+  'toast.compareAdded.desc': 'Сравните в окне справа внизу.',
+  'contact.title': 'Контакты',
+  'contact.subtitle': 'Мы здесь, чтобы ответить на ваши вопросы — свяжитесь с нами.',
+  'contact.phone': 'Телефон',
+  'contact.email': 'Эл. почта',
+  'contact.social': 'Соцсети',
+  'contact.hours': 'Часы работы',
+  'contact.hoursValue': 'Будни 09:00–18:00',
+  'contact.cta': 'Написать письмо',
   'nav.listings': 'Объявления',
   // ---- Оплата (Kapital Bank) ----
   'pay.modal.title': 'Оплата',
@@ -2928,6 +3010,26 @@ const ru: Dict = {
 };
 
 const de: Dict = {
+  'card.aiReviewed': 'Von KI geprüft',
+  'common.video': 'Video',
+  'card.favAdd': 'Zu Favoriten hinzufügen',
+  'card.favRemove': 'Aus Favoriten entfernen',
+  'card.cmpAdd': 'Zum Vergleich hinzufügen',
+  'card.cmpRemove': 'Aus Vergleich entfernen',
+  'toast.loginRequired.title': 'Anmeldung erforderlich',
+  'toast.loginRequired.fav': 'Für Favoriten ist ein Konto erforderlich.',
+  'toast.compareFull.title': 'Vergleichsliste voll',
+  'toast.compareFull.desc': 'Sie können bis zu {n} Anzeigen vergleichen.',
+  'toast.compareAdded.title': 'Zum Vergleich hinzugefügt',
+  'toast.compareAdded.desc': 'Vergleichen Sie über das Feld unten rechts.',
+  'contact.title': 'Kontakt',
+  'contact.subtitle': 'Wir sind für Ihre Fragen da — kontaktieren Sie uns.',
+  'contact.phone': 'Telefon',
+  'contact.email': 'E-Mail',
+  'contact.social': 'Soziale Medien',
+  'contact.hours': 'Öffnungszeiten',
+  'contact.hoursValue': 'Wochentags 09:00–18:00',
+  'contact.cta': 'E-Mail senden',
   'nav.listings': 'Anzeigen',
   // ---- Zahlung (Kapital Bank) ----
   'pay.modal.title': 'Zahlung',
@@ -3653,6 +3755,26 @@ const de: Dict = {
 };
 
 const zh: Dict = {
+  'card.aiReviewed': 'AI 已审核',
+  'common.video': '视频',
+  'card.favAdd': '加入收藏',
+  'card.favRemove': '取消收藏',
+  'card.cmpAdd': '加入比较',
+  'card.cmpRemove': '移出比较',
+  'toast.loginRequired.title': '需要登录',
+  'toast.loginRequired.fav': '收藏需要账户。',
+  'toast.compareFull.title': '比较列表已满',
+  'toast.compareFull.desc': '最多可比较 {n} 个房源。',
+  'toast.compareAdded.title': '已加入比较',
+  'toast.compareAdded.desc': '在右下角的框中比较。',
+  'contact.title': '联系我们',
+  'contact.subtitle': '我们随时为您解答 — 请联系我们。',
+  'contact.phone': '电话',
+  'contact.email': '电子邮件',
+  'contact.social': '社交媒体',
+  'contact.hours': '工作时间',
+  'contact.hoursValue': '工作日 09:00–18:00',
+  'contact.cta': '发送邮件',
   'nav.listings': '房源',
   // ---- 支付 (Kapital Bank) ----
   'pay.modal.title': '支付',

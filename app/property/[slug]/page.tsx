@@ -25,7 +25,8 @@ import { OwnerActionBarWrapper } from '@/components/listings/OwnerActionBarWrapp
 import { getAllPrices } from '@/lib/pricing';
 import { ViewTracker } from '@/components/listings/ViewTracker';
 import { timeAgo } from '@/lib/utils';
-import { formatFloor, showsField, HEATING_LABEL } from '@/lib/labels';
+import { showsField } from '@/lib/labels';
+import { FloorText, HeatingText } from '@/components/i18n/Fmt';
 import { T } from '@/components/i18n/T';
 import { E } from '@/components/i18n/E';
 
@@ -155,12 +156,12 @@ export default async function PropertyPage({ params }: { params: Promise<{ slug:
                 <DetailRow l={<T k="property.netArea" />} v={`${property.area.net} m²`} />
                 {showsField(property.type, 'floor') && (
                   <>
-                    <DetailRow l={<T k="property.floor" />} v={formatFloor(property.floor)} />
+                    <DetailRow l={<T k="property.floor" />} v={<FloorText n={property.floor} />} />
                     <DetailRow l={<T k="property.totalFloors" />} v={property.totalFloors} />
                   </>
                 )}
                 {showsField(property.type, 'buildingAge') && (
-                  <DetailRow l={<T k="property.heating" />} v={HEATING_LABEL(property.heating)} />
+                  <DetailRow l={<T k="property.heating" />} v={<HeatingText v={property.heating} />} />
                 )}
                 <DetailRow l={<T k="property.parking" />} v={<E g="parking" v={property.parking} />} />
                 {showsField(property.type, 'furnished') && (

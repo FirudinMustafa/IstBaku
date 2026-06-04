@@ -63,7 +63,7 @@ export function Footer() {
           <ul className="space-y-2 text-sm">
             <li><Link href="/hakkimizda" className="hover:text-gold-300">Hakkımızda</Link></li>
             <li><Link href="/coming-soon?topic=Kariyer" className="hover:text-gold-300">Kariyer</Link></li>
-            <li><Link href="/coming-soon?topic=%C4%B0leti%C5%9Fim" className="hover:text-gold-300">İletişim</Link></li>
+            <li><Link href="/contact" className="hover:text-gold-300">İletişim</Link></li>
             <li><Link href="/legal-guide#kvkk" className="hover:text-gold-300">KVKK / GDPR</Link></li>
           </ul>
         </div>

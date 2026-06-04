@@ -14,6 +14,7 @@ import { ScoreRing } from './ScoreRing';
 import { useCompare, MAX_COMPARE } from '@/lib/compare-store';
 import { useFavorites } from '@/lib/favorites-store';
 import { useToast } from '@/components/ui/Toast';
+import { useLang } from '@/components/layout/LangProvider';
 import * as React from 'react';
 
 interface Props {
@@ -23,6 +24,7 @@ interface Props {
 
 export function ListingCard({ property: p, compact }: Props) {
   const { toast } = useToast();
+  const { t } = useLang();
   const compare = useCompare();
   const favorites = useFavorites();
   const { currency: displayCurrency } = useCurrency();
@@ -44,7 +46,7 @@ export function ListingCard({ property: p, compact }: Props) {
     e.stopPropagation();
     const r = await favorites.toggle(p.id);
     if (!r.ok) {
-      toast({ variant: 'error', title: 'Giriş yapmalısın', description: 'Favoriler için hesap gerekli.' });
+      toast({ variant: 'error', title: t('toast.loginRequired.title'), description: t('toast.loginRequired.fav') });
     }
   }
   function handleCompareToggle(e: React.MouseEvent | React.KeyboardEvent) {
@@ -52,9 +54,9 @@ export function ListingCard({ property: p, compact }: Props) {
     e.stopPropagation();
     const r = compare.toggle(p.id);
     if (!r.added && r.reason === 'full') {
-      toast({ variant: 'error', title: 'Karşılaştırma dolu', description: `En fazla ${MAX_COMPARE} ilan karşılaştırılabilir.` });
+      toast({ variant: 'error', title: t('toast.compareFull.title'), description: t('toast.compareFull.desc').replace('{n}', String(MAX_COMPARE)) });
     } else if (r.added) {
-      toast({ variant: 'success', title: 'Karşılaştırmaya eklendi', description: 'Sağ alt kutudan kıyasla.' });
+      toast({ variant: 'success', title: t('toast.compareAdded.title'), description: t('toast.compareAdded.desc') });
     }
   }
 
@@ -140,10 +142,10 @@ export function ListingCard({ property: p, compact }: Props) {
             {/* Tek birleşik rozet: premium VEYA onaylı → "İstBaku Onaylı" */}
             {(p.istbakuApproved || p.tier === 'premium') && (
               <Badge variant="success" className="bg-success/25">
-                <ShieldCheck size={11} aria-hidden="true" /> İstBaku Onaylı
+                <ShieldCheck size={11} aria-hidden="true" /> {t('home.premium.badge')}
               </Badge>
             )}
-            {p.tier === 'guclu' && <Badge variant="ai">Güçlü</Badge>}
+            {p.tier === 'guclu' && <Badge variant="ai">{t('enums.tier.guclu')}</Badge>}
           </div>
           {/* Z-index above the stretched Link so clicks register on these buttons. */}
           <div className="flex flex-col gap-1.5 relative z-10 pointer-events-auto">
@@ -155,7 +157,7 @@ export function ListingCard({ property: p, compact }: Props) {
               // aria-pressed exposes toggle state; data-testid pins the button
               // so persona-7's heart-spam scenario can locate it deterministic-
               // ally instead of falling back to a heuristic first-button match.
-              aria-label={fav ? 'Favorilerden çıkar' : 'Favorilere ekle'}
+              aria-label={fav ? t('card.favRemove') : t('card.favAdd')}
               aria-pressed={fav}
               data-testid="favorite-toggle"
               data-favorite-state={fav ? 'on' : 'off'}
@@ -166,7 +168,7 @@ export function ListingCard({ property: p, compact }: Props) {
             <button
               type="button"
               onClick={handleCompareToggle}
-              aria-label={isInCompare ? 'Karşılaştırmadan çıkar' : 'Karşılaştırmaya ekle'}
+              aria-label={isInCompare ? t('card.cmpRemove') : t('card.cmpAdd')}
               aria-pressed={isInCompare}
               className={cn(
                 'touch-target min-h-11 min-w-11 size-11 rounded-full backdrop-blur-sm flex items-center justify-center transition-all active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-400',
@@ -190,7 +192,7 @@ export function ListingCard({ property: p, compact }: Props) {
           <div className="flex items-center gap-1 text-[11px] text-white opacity-90">
             {p.cover.kind === 'video' && (
               <span className="inline-flex items-center gap-0.5 rounded bg-black/50 px-1.5 py-0.5 backdrop-blur">
-                <Play size={11} aria-hidden="true" /> Video
+                <Play size={11} aria-hidden="true" /> {t('common.video')}
               </span>
             )}
             {p.video && p.cover.kind !== 'video' && <Video size={12} aria-hidden="true" />}
@@ -219,7 +221,7 @@ export function ListingCard({ property: p, compact }: Props) {
         {!compact && (
           <div className="mt-3 flex items-center justify-between text-[11px] text-[color:var(--fg-faint)] pt-3 border-t">
             <span className="inline-flex items-center gap-1">
-              <Sparkles size={11} aria-hidden="true" className="text-gold-300" /> AI ile gözden geçirildi
+              <Sparkles size={11} aria-hidden="true" className="text-gold-300" /> {t('card.aiReviewed')}
             </span>
             <span>{timeAgo(p.publishedAt)}</span>
           </div>

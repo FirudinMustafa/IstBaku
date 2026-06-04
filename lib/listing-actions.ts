@@ -9,6 +9,7 @@ import { slugify } from './utils';
 import { sanitizeText, sanitizeHtml, sanitizeLat, sanitizeLng } from './sanitize';
 import { getPrice } from './pricing';
 import { maybeStartCheckout } from './payment-provider';
+import { fetchNearbyPOIs } from './geocode';
 
 export interface CreateListingInput {
   type: typeof s.listings.$inferInsert.type;
@@ -79,27 +80,6 @@ export interface CreateListingInput {
   dailyRentalCurrency?: 'USD' | 'EUR' | 'TRY' | 'AZN';
   dailyRentalMinNights?: number;
   dailyRentalNotes?: string;
-}
-
-/** UI'dan gelen nearby input'unu DB'nin jsonb şemasına çevirir. Boş alanlar atlanır. */
-function buildNearbyFromInput(input: CreateListingInput['nearby']): Record<string, { name: string; minutes: number; km: number } | { name: string; minutes: number; km: number }[]> {
-  if (!input) return {};
-  const out: Record<string, { name: string; minutes: number; km: number } | { name: string; minutes: number; km: number }[]> = {};
-  for (const key of ['metro', 'okul', 'hastane', 'avm', 'park', 'eczane', 'eglence'] as const) {
-    const v = input[key];
-    if (v && v.name && v.name.trim().length > 0) {
-      out[key] = { name: v.name.trim().slice(0, 200), minutes: Math.max(0, Math.round(v.minutes)), km: Math.max(0, Number(v.km.toFixed(2))) };
-    }
-  }
-  const markets = (input.markets ?? []).filter((m) => m.name && m.name.trim().length > 0);
-  if (markets.length > 0) {
-    out.market = markets.map((m) => ({
-      name: m.name.trim().slice(0, 200),
-      minutes: Math.max(0, Math.round(m.minutes)),
-      km: Math.max(0, Number(m.km.toFixed(2))),
-    }));
-  }
-  return out;
 }
 
 function shortScore(c: { lat: number; lng: number; price: number; netArea: number }) {
@@ -181,6 +161,12 @@ export async function createListingAction(
     const isDaily = input.purpose === 'daily_rent';
     const regionDiger = Math.max(0, 100 - (input.region.aile + input.region.memur + input.region.ogrenci + input.region.yabanci));
 
+    // 4b) Yakın çevre mesafelerini SUNUCUDA, doğrulanmış koordinattan otomatik
+    // hesapla. Emlakçının elle "5 dk / 200 m" gibi sahte değer girmesini engeller
+    // — istemciden gelen input.nearby kasıtlı olarak yok sayılır. Overpass'a
+    // ulaşılamazsa boş bırakılır (sahte veri yerine hiç veri).
+    const autoNearby = await fetchNearbyPOIs({ lat, lng }).catch(() => ({}));
+
     // 5) DB insert. MC-19: ALL new listings start as 'pending'. Premium just gets queue priority.
     const [created] = await db.insert(s.listings).values({
       slug,
@@ -246,7 +232,7 @@ export async function createListingAction(
         yabanci: input.region.yabanci,
         diger: regionDiger,
       },
-      nearby: buildNearbyFromInput(input.nearby),
+      nearby: autoNearby,
       // Günlük kira — purpose 'daily_rent' ise otomatik aktif
       dailyRentalEnabled: isDaily,
       dailyRentalPricePerNight: isDaily ? (input.dailyRentalPricePerNight ?? null) : null,

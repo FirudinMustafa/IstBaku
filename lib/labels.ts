@@ -1,5 +1,7 @@
 // Tek noktadan TR etiketler — enum değerleri ham gösterilmesin.
 
+import type { Lang } from './types';
+
 export const PROPERTY_TYPE_LABEL: Record<string, string> = {
   konut: 'Konut',
   luks_konut: 'Lüks Konut',
@@ -41,10 +43,22 @@ export const PARKING_LABEL: Record<string, string> = {
 
 export const HEATING_LABEL = (raw: string) => (raw === 'yok' ? 'Yok' : raw);
 
-export function formatFloor(n: number): string {
-  if (n === 0) return 'Zemin';
-  if (n < 0) return `${Math.abs(n)}. Bodrum`;
-  return `${n}. Kat`;
+// Kat etiketini dile göre üretir. Sözlükte tutmak yerine burada — çünkü kat
+// numarası (n) metne gömülü ve dile göre kelime sırası değişir.
+const FLOOR_WORDS: Record<Lang, { ground: string; floor: (n: number) => string; basement: (n: number) => string }> = {
+  tr: { ground: 'Zemin', floor: (n) => `${n}. Kat`, basement: (n) => `${n}. Bodrum` },
+  az: { ground: 'Zirzəmi üstü', floor: (n) => `${n}. Mərtəbə`, basement: (n) => `${n}. Zirzəmi` },
+  en: { ground: 'Ground floor', floor: (n) => `Floor ${n}`, basement: (n) => `Basement ${n}` },
+  ru: { ground: 'Цокольный этаж', floor: (n) => `${n}-й этаж`, basement: (n) => `Подвал ${n}` },
+  de: { ground: 'Erdgeschoss', floor: (n) => `${n}. Etage`, basement: (n) => `${n}. Untergeschoss` },
+  zh: { ground: '地面层', floor: (n) => `${n}层`, basement: (n) => `地下${n}层` },
+};
+
+export function formatFloor(n: number, lang: Lang = 'tr'): string {
+  const w = FLOOR_WORDS[lang] ?? FLOOR_WORDS.tr;
+  if (n === 0) return w.ground;
+  if (n < 0) return w.basement(Math.abs(n));
+  return w.floor(n);
 }
 
 export const PURPOSE_LABEL: Record<string, string> = {
