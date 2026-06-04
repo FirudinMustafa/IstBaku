@@ -10,6 +10,7 @@ import { BottomSheet } from '@/components/ui/BottomSheet';
 import { FilterSidebar } from '@/components/listings/FilterSidebar';
 import { ListingCard } from '@/components/listings/ListingCard';
 import { MapView } from '@/components/listings/MapView';
+import { useLang } from '@/components/layout/LangProvider';
 import type { FilterState, Property } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
@@ -122,6 +123,7 @@ interface ListingsClientProps {
 }
 
 export function ListingsClient({ initialListings = [], countries = [] }: ListingsClientProps) {
+  const { t } = useLang();
   const sp = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
@@ -183,9 +185,9 @@ export function ListingsClient({ initialListings = [], countries = [] }: Listing
       {/* Üst başlık */}
       <div className="flex items-end justify-between flex-wrap gap-3 md:gap-4">
         <div>
-          <h1 className="text-xl md:text-3xl font-bold tracking-tight">Tüm İlanlar</h1>
+          <h1 className="text-xl md:text-3xl font-bold tracking-tight">{t('listings.heading')}</h1>
           <p className="text-xs md:text-sm text-[color:var(--fg-muted)] mt-0.5 md:mt-1">
-            {results.length.toLocaleString('tr-TR')} sonuç{filterCount > 0 ? ` · ${filterCount} aktif filtre` : ''}
+            {results.length.toLocaleString('tr-TR')} {t('listings.results')}{filterCount > 0 ? ` · ${filterCount} ${t('listings.activeFilter')}` : ''}
           </p>
         </div>
 
@@ -194,8 +196,8 @@ export function ListingsClient({ initialListings = [], countries = [] }: Listing
             <input
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              placeholder="Doğal dilde ara…"
-              aria-label="İlanlarda doğal dilde ara"
+              placeholder={t('listings.searchPlaceholder')}
+              aria-label={t('listings.searchPlaceholder')}
               maxLength={200}
               className="h-10 w-72 max-w-full pl-9 pr-3 rounded-xl bg-[color:var(--bg-elev)] border focus:outline-none focus:ring-2 focus:ring-[color:var(--ring)]"
             />
@@ -205,7 +207,7 @@ export function ListingsClient({ initialListings = [], countries = [] }: Listing
             type="button"
             onClick={() => setFilters({ ...filters, istbakuApproved: !filters.istbakuApproved })}
             aria-pressed={!!filters.istbakuApproved}
-            title="Yalnızca İstBaku Onaylı ilanlar"
+            title={t('listings.approvedOnly')}
             className={cn(
               'h-10 px-3 inline-flex items-center gap-1.5 rounded-xl border text-sm font-medium transition-colors',
               filters.istbakuApproved
@@ -213,19 +215,19 @@ export function ListingsClient({ initialListings = [], countries = [] }: Listing
                 : 'bg-[color:var(--bg-elev)] text-[color:var(--fg-muted)] hover:border-gold-400/40',
             )}
           >
-            <ShieldCheck size={15} /> İstBaku Onaylı
+            <ShieldCheck size={15} /> {t('home.premium.badge')}
           </button>
           <Select value={filters.sort ?? 'newest'} onChange={(e) => setFilters({ ...filters, sort: e.target.value as FilterState['sort'] })} className="w-44">
-            <option value="newest">En yeni</option>
-            <option value="price_asc">Fiyat: Artan</option>
-            <option value="price_desc">Fiyat: Azalan</option>
-            <option value="score_desc">AI Skor: Yüksek</option>
+            <option value="newest">{t('listings.sortNewest')}</option>
+            <option value="price_asc">{t('listings.sortPriceAsc')}</option>
+            <option value="price_desc">{t('listings.sortPriceDesc')}</option>
+            <option value="score_desc">{t('listings.sortScoreDesc')}</option>
           </Select>
           <div className="hidden md:flex items-center rounded-xl border bg-[color:var(--bg-elev)] p-1">
             {[
-              { k: 'list', i: List, l: 'Liste' },
-              { k: 'split', i: Columns, l: 'Bölünmüş' },
-              { k: 'map', i: MapIcon, l: 'Harita' },
+              { k: 'list', i: List, l: t('listings.viewList') },
+              { k: 'split', i: Columns, l: t('listings.viewSplit') },
+              { k: 'map', i: MapIcon, l: t('listings.viewMap') },
             ].map((v) => (
               <button
                 key={v.k}
@@ -256,7 +258,7 @@ export function ListingsClient({ initialListings = [], countries = [] }: Listing
           {q && (
             <button
               onClick={() => setQ('')}
-              aria-label="Aramayı temizle"
+              aria-label={t('listings.clearSearch')}
               className="absolute right-2 top-2 size-7 rounded-lg flex items-center justify-center text-[color:var(--fg-muted)] hover:bg-[color:var(--bg-card-hover)]"
             >
               <X size={14} />
@@ -282,7 +284,7 @@ export function ListingsClient({ initialListings = [], countries = [] }: Listing
               : 'border-[color:var(--border-strong)] bg-[color:var(--bg-elev)]',
           )}
         >
-          <SlidersHorizontal size={14} /> Filtrele
+          <SlidersHorizontal size={14} /> {t('listings.filter')}
           {filterCount > 0 && (
             <span className="size-5 rounded-full bg-gold-400 text-navy-900 text-[10px] font-bold flex items-center justify-center">
               {filterCount}
@@ -295,10 +297,10 @@ export function ListingsClient({ initialListings = [], countries = [] }: Listing
           onChange={(e) => setFilters({ ...filters, sort: e.target.value as FilterState['sort'] })}
           className="!h-9 !w-auto shrink-0 !pr-8"
         >
-          <option value="newest">En yeni</option>
-          <option value="price_asc">Fiyat ↑</option>
-          <option value="price_desc">Fiyat ↓</option>
-          <option value="score_desc">AI Skor</option>
+          <option value="newest">{t('listings.sortNewest')}</option>
+          <option value="price_asc">{t('listings.sortPriceUp')}</option>
+          <option value="price_desc">{t('listings.sortPriceDown')}</option>
+          <option value="score_desc">{t('listings.sortScore')}</option>
         </Select>
 
         {/* Hızlı İstBaku Onaylı toggle */}
@@ -312,7 +314,7 @@ export function ListingsClient({ initialListings = [], countries = [] }: Listing
               : 'border-[color:var(--border-strong)] bg-[color:var(--bg-elev)]',
           )}
         >
-          <ShieldCheck size={13} /> Onaylı
+          <ShieldCheck size={13} /> {t('listings.approvedShort')}
         </button>
 
         {/* Hızlı chip'ler */}
@@ -329,7 +331,7 @@ export function ListingsClient({ initialListings = [], countries = [] }: Listing
           className="shrink-0 h-9 px-3 rounded-full border border-[color:var(--border-strong)] bg-[color:var(--bg-elev)] text-xs inline-flex items-center gap-1.5"
         >
           {view === 'map' ? <List size={13} /> : <MapIcon size={13} />}
-          {view === 'map' ? 'Liste' : 'Harita'}
+          {view === 'map' ? t('listings.viewList') : t('listings.viewMap')}
         </button>
       </div>
 
@@ -381,7 +383,7 @@ export function ListingsClient({ initialListings = [], countries = [] }: Listing
       <BottomSheet
         open={filterSheetOpen}
         onClose={() => setFilterSheetOpen(false)}
-        title="Filtreler"
+        title={t('listings.filtersTitle')}
         footer={
           <div className="flex gap-2">
             <Button
@@ -390,7 +392,7 @@ export function ListingsClient({ initialListings = [], countries = [] }: Listing
               className="flex-1"
               onClick={() => setFilters({ sort: filters.sort })}
             >
-              Sıfırla
+              {t('listings.reset')}
             </Button>
             <Button
               variant="gold"
@@ -398,7 +400,7 @@ export function ListingsClient({ initialListings = [], countries = [] }: Listing
               className="flex-[2]"
               onClick={() => setFilterSheetOpen(false)}
             >
-              {results.length.toLocaleString('tr-TR')} ilanı göster
+              {results.length.toLocaleString('tr-TR')} {t('listings.showListings')}
             </Button>
           </div>
         }
@@ -410,10 +412,11 @@ export function ListingsClient({ initialListings = [], countries = [] }: Listing
 }
 
 function EmptyState() {
+  const { t } = useLang();
   return (
     <div className="col-span-full rounded-2xl border bg-[color:var(--bg-card)] p-10 text-center">
-      <Badge variant="outline">Sonuç yok</Badge>
-      <p className="mt-3 text-[color:var(--fg-muted)]">Filtrelerini gevşet ya da farklı bir bölge dene.</p>
+      <Badge variant="outline">{t('listings.noResults')}</Badge>
+      <p className="mt-3 text-[color:var(--fg-muted)]">{t('listings.noResultsHint')}</p>
     </div>
   );
 }

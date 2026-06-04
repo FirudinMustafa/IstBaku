@@ -1,17 +1,18 @@
 'use client';
 
 import { Train, GraduationCap, Building2, ShoppingBag, Trees, Store, Pill, UtensilsCrossed } from 'lucide-react';
+import { useLang } from '@/components/layout/LangProvider';
 import type { NearbyPOI as POI, POIEntry } from '@/lib/types';
 
 const ICONS = {
-  metro:   { i: Train,            l: 'Metro',   color: 'text-navy-300' },
-  okul:    { i: GraduationCap,    l: 'Okul',    color: 'text-success' },
-  hastane: { i: Building2,        l: 'Hastane', color: 'text-danger' },
-  avm:     { i: ShoppingBag,      l: 'AVM',     color: 'text-gold-300' },
-  park:    { i: Trees,            l: 'Park',    color: 'text-success' },
-  market:  { i: Store,            l: 'Market',  color: 'text-navy-300' },
-  eczane:  { i: Pill,             l: 'Eczane',  color: 'text-danger' },
-  eglence: { i: UtensilsCrossed,  l: 'Restoran/Cafe', color: 'text-gold-300' },
+  metro:   { i: Train,            lk: 'poi.metro',   color: 'text-navy-300' },
+  okul:    { i: GraduationCap,    lk: 'poi.okul',    color: 'text-success' },
+  hastane: { i: Building2,        lk: 'poi.hastane', color: 'text-danger' },
+  avm:     { i: ShoppingBag,      lk: 'poi.avm',     color: 'text-gold-300' },
+  park:    { i: Trees,            lk: 'poi.park',    color: 'text-success' },
+  market:  { i: Store,            lk: 'poi.market',  color: 'text-navy-300' },
+  eczane:  { i: Pill,             lk: 'poi.eczane',  color: 'text-danger' },
+  eglence: { i: UtensilsCrossed,  lk: 'poi.eglence', color: 'text-gold-300' },
 } as const;
 
 type Key = keyof typeof ICONS;
@@ -22,6 +23,7 @@ function asArray(v: POIEntry | POIEntry[] | undefined): POIEntry[] {
 }
 
 export function NearbyPOIList({ nearby }: { nearby: POI }) {
+  const { t } = useLang();
   type Item = { k: Key; idx?: number; data: POIEntry };
   const items: Item[] = [];
   (Object.keys(ICONS) as Key[]).forEach((k) => {
@@ -46,10 +48,10 @@ export function NearbyPOIList({ nearby }: { nearby: POI }) {
               <meta.i size={16} />
             </div>
             <div className="min-w-0 flex-1">
-              <div className="text-[10px] uppercase tracking-wider text-[color:var(--fg-muted)]">{meta.l}</div>
+              <div className="text-[10px] uppercase tracking-wider text-[color:var(--fg-muted)]">{t(meta.lk)}</div>
               <div className="text-sm font-semibold truncate">{data.name}</div>
               <div className="text-[11px] text-[color:var(--fg-faint)]">
-                {data.minutes} dk · {data.km.toFixed(1)} km
+                {data.minutes} {t('unit.min')} · {data.km.toFixed(1)} km
               </div>
             </div>
           </div>
