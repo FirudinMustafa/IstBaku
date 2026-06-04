@@ -25,11 +25,9 @@ import { OwnerActionBarWrapper } from '@/components/listings/OwnerActionBarWrapp
 import { getAllPrices } from '@/lib/pricing';
 import { ViewTracker } from '@/components/listings/ViewTracker';
 import { timeAgo } from '@/lib/utils';
-import {
-  OWNER_TYPE_LABEL, TITLE_DEED_LABEL, STATUS_LABEL, PARKING_LABEL,
-  PROPERTY_TYPE_LABEL, PURPOSE_LABEL, formatFloor, showsField, HEATING_LABEL,
-  HOUSING_TYPE_LABEL, ENERGY_CLASS_LABEL, FACADE_LABEL, BUILDING_STATUS_LABEL, STRUCTURE_TYPE_LABEL,
-} from '@/lib/labels';
+import { formatFloor, showsField, HEATING_LABEL } from '@/lib/labels';
+import { T } from '@/components/i18n/T';
+import { E } from '@/components/i18n/E';
 
 export async function generateStaticParams() {
   try {
@@ -66,9 +64,9 @@ export default async function PropertyPage({ params }: { params: Promise<{ slug:
           iOS safe-area enough headroom so the agent's "Mesaj gönder" CTA at the end
           of the page is never visually clipped behind the sticky CTA. */}
       <nav className="text-xs text-[color:var(--fg-muted)] mb-4 flex items-center gap-1.5 flex-wrap">
-        <Link href="/" className="hover:text-gold-300">Ana Sayfa</Link>
+        <Link href="/" className="hover:text-gold-300"><T k="common.home" /></Link>
         <span>/</span>
-        <Link href="/listings" className="hover:text-gold-300">İlanlar</Link>
+        <Link href="/listings" className="hover:text-gold-300"><T k="nav.listings" /></Link>
         <span>/</span>
         <Link href={`/listings?q=${encodeURIComponent(property.city)}`} className="hover:text-gold-300">{property.city}</Link>
         <span>/</span>
@@ -78,21 +76,21 @@ export default async function PropertyPage({ params }: { params: Promise<{ slug:
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <div className="flex flex-wrap items-center gap-2 mb-2">
-            <Badge variant="outline">{PURPOSE_LABEL[property.purpose]}</Badge>
-            <Badge variant="outline">{PROPERTY_TYPE_LABEL[property.type]}</Badge>
+            <Badge variant="outline"><E g="purpose" v={property.purpose} /></Badge>
+            <Badge variant="outline"><E g="type" v={property.type} /></Badge>
             {(property.istbakuApproved || property.tier === 'premium') && (
               <Badge variant="success">
-                <ShieldCheck size={11} /> İstBaku Onaylı{property.istbakuApproved ? ` (Seviye ${property.approvalLevel})` : ''}
+                <ShieldCheck size={11} /> <T k="property.approved" />{property.istbakuApproved ? <> (<T k="property.level" /> {property.approvalLevel})</> : ''}
               </Badge>
             )}
-            {property.tier === 'guclu' && <Badge variant="ai">Güçlü</Badge>}
-            {property.has360 && <Badge variant="navy">360° Tur</Badge>}
+            {property.tier === 'guclu' && <Badge variant="ai"><E g="tier" v="guclu" /></Badge>}
+            {property.has360 && <Badge variant="navy"><T k="property.tour360" /></Badge>}
           </div>
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight max-w-3xl">{property.title}</h1>
           <div className="mt-2 flex items-center gap-3 text-sm text-[color:var(--fg-muted)] flex-wrap">
             <span className="inline-flex items-center gap-1"><MapPin size={13} /> {property.city} / {property.district}{property.neighborhood ? ` / ${property.neighborhood}` : ''}</span>
             <span>·</span>
-            <span className="inline-flex items-center gap-1"><Eye size={13} /> {property.views.toLocaleString('tr-TR')} görüntülenme</span>
+            <span className="inline-flex items-center gap-1"><Eye size={13} /> {property.views.toLocaleString('tr-TR')} <T k="property.views" /></span>
             <span>·</span>
             <span>{timeAgo(property.publishedAt)}</span>
           </div>
@@ -116,14 +114,14 @@ export default async function PropertyPage({ params }: { params: Promise<{ slug:
             <CardBody>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {[
-                  showsField(property.type, 'rooms') && { i: BedDouble, l: 'Oda', v: property.rooms },
-                  showsField(property.type, 'bathrooms') && { i: Bath, l: 'Banyo', v: property.bathrooms },
-                  { i: Maximize2, l: 'Net m²', v: `${property.area.net} m²` },
-                  showsField(property.type, 'buildingAge') && { i: Building2, l: 'Bina Yaşı', v: property.buildingAge === 0 ? 'Sıfır' : property.buildingAge },
-                ].filter(Boolean).map((m) => {
-                  const M = m as { i: typeof BedDouble; l: string; v: React.ReactNode };
+                  showsField(property.type, 'rooms') && { i: BedDouble, l: <T k="property.rooms" />, v: property.rooms },
+                  showsField(property.type, 'bathrooms') && { i: Bath, l: <T k="property.bathrooms" />, v: property.bathrooms },
+                  { i: Maximize2, l: <T k="property.netArea" />, v: `${property.area.net} m²` },
+                  showsField(property.type, 'buildingAge') && { i: Building2, l: <T k="property.buildingAge" />, v: property.buildingAge === 0 ? <T k="property.brandNew" /> : property.buildingAge },
+                ].filter(Boolean).map((m, mi) => {
+                  const M = m as { i: typeof BedDouble; l: React.ReactNode; v: React.ReactNode };
                   return (
-                    <div key={M.l} className="rounded-xl bg-[color:var(--bg-elev)] border p-3">
+                    <div key={mi} className="rounded-xl bg-[color:var(--bg-elev)] border p-3">
                       <M.i size={14} className="text-gold-300" />
                       <div className="text-[10px] uppercase mt-1 text-[color:var(--fg-muted)]">{M.l}</div>
                       <div className="font-bold mt-0.5">{M.v}</div>
@@ -137,13 +135,13 @@ export default async function PropertyPage({ params }: { params: Promise<{ slug:
           {/* Açıklama */}
           <Card>
             <CardBody>
-              <h3 className="font-semibold mb-3">Açıklama</h3>
+              <h3 className="font-semibold mb-3"><T k="property.description" /></h3>
               <div
                 className="tiptap-content text-[color:var(--fg-muted)] leading-relaxed text-pretty"
                 dangerouslySetInnerHTML={{ __html: sanitizeHtml(property.description) }}
               />
               <div className="mt-4 inline-flex items-center gap-1.5 text-xs text-[color:var(--fg-faint)]">
-                <Sparkles size={12} className="text-gold-300" /> Bu açıklama ISTBAKU AI ile gözden geçirilmiştir.
+                <Sparkles size={12} className="text-gold-300" /> <T k="property.aiNote" />
               </div>
             </CardBody>
           </Card>
@@ -151,68 +149,68 @@ export default async function PropertyPage({ params }: { params: Promise<{ slug:
           {/* Bina ve daire detayları */}
           <Card>
             <CardBody>
-              <h3 className="font-bold mb-4">Bina ve Daire Detayları</h3>
+              <h3 className="font-bold mb-4"><T k="property.details" /></h3>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-3 text-sm font-bold">
-                <DetailRow l="Brüt m²" v={`${property.area.gross} m²`} />
-                <DetailRow l="Net m²" v={`${property.area.net} m²`} />
+                <DetailRow l={<T k="property.grossArea" />} v={`${property.area.gross} m²`} />
+                <DetailRow l={<T k="property.netArea" />} v={`${property.area.net} m²`} />
                 {showsField(property.type, 'floor') && (
                   <>
-                    <DetailRow l="Bulunduğu kat" v={formatFloor(property.floor)} />
-                    <DetailRow l="Kat sayısı" v={property.totalFloors} />
+                    <DetailRow l={<T k="property.floor" />} v={formatFloor(property.floor)} />
+                    <DetailRow l={<T k="property.totalFloors" />} v={property.totalFloors} />
                   </>
                 )}
                 {showsField(property.type, 'buildingAge') && (
-                  <DetailRow l="Isıtma" v={HEATING_LABEL(property.heating)} />
+                  <DetailRow l={<T k="property.heating" />} v={HEATING_LABEL(property.heating)} />
                 )}
-                <DetailRow l="Otopark" v={PARKING_LABEL[property.parking]} />
+                <DetailRow l={<T k="property.parking" />} v={<E g="parking" v={property.parking} />} />
                 {showsField(property.type, 'furnished') && (
-                  <DetailRow l="Eşyalı" v={property.furnished ? 'Evet' : 'Hayır'} />
+                  <DetailRow l={<T k="property.furnished" />} v={<T k={property.furnished ? 'common.yes' : 'common.no'} />} />
                 )}
                 {showsField(property.type, 'elevator') && (
-                  <DetailRow l="Asansör" v={property.elevator ? 'Var' : 'Yok'} />
+                  <DetailRow l={<T k="property.elevator" />} v={<T k={property.elevator ? 'common.exists' : 'common.none'} />} />
                 )}
-                <DetailRow l="Balkon" v={property.balcony ? 'Var' : 'Yok'} />
-                <DetailRow l="Site içi" v={property.inSite ? 'Evet' : 'Hayır'} />
-                <DetailRow l="Tapu" v={TITLE_DEED_LABEL[property.titleDeed] ?? property.titleDeed} />
-                <DetailRow l="Durum" v={STATUS_LABEL[property.status] ?? property.status} />
-                <DetailRow l="Sahip" v={OWNER_TYPE_LABEL[property.ownerType] ?? property.ownerType} />
-                <DetailRow l="Takas" v={property.swappable ? 'Düşünülür' : 'Hayır'} />
+                <DetailRow l={<T k="property.balcony" />} v={<T k={property.balcony ? 'common.exists' : 'common.none'} />} />
+                <DetailRow l={<T k="property.inSite" />} v={<T k={property.inSite ? 'common.yes' : 'common.no'} />} />
+                <DetailRow l={<T k="property.titleDeed" />} v={<E g="titleDeed" v={property.titleDeed} />} />
+                <DetailRow l={<T k="property.status" />} v={<E g="status" v={property.status} />} />
+                <DetailRow l={<T k="property.owner" />} v={<E g="ownerType" v={property.ownerType} />} />
+                <DetailRow l={<T k="property.swappable" />} v={property.swappable ? <T k="property.swappableYes" /> : <T k="common.no" />} />
                 {property.purpose === 'sale' && property.loanEligible && (
-                  <DetailRow l="Krediye uygun" v="Evet" />
+                  <DetailRow l={<T k="property.loanEligible" />} v={<T k="common.yes" />} />
                 )}
                 {property.deposit != null && property.deposit > 0 && (
-                  <DetailRow l="Depozito" v={`${property.deposit.toLocaleString('tr-TR')} ${property.currency}`} />
+                  <DetailRow l={<T k="property.deposit" />} v={`${property.deposit.toLocaleString('tr-TR')} ${property.currency}`} />
                 )}
                 {property.housingType && property.housingType !== 'belirtilmemis' && (
-                  <DetailRow l="Konut tipi" v={HOUSING_TYPE_LABEL[property.housingType] ?? property.housingType} />
+                  <DetailRow l={<T k="property.housingType" />} v={<E g="housingType" v={property.housingType} />} />
                 )}
                 {property.energyClass && property.energyClass !== 'belirsiz' && (
-                  <DetailRow l="Enerji sınıfı" v={ENERGY_CLASS_LABEL[property.energyClass] ?? property.energyClass} />
+                  <DetailRow l={<T k="property.energyClass" />} v={<E g="energyClass" v={property.energyClass} />} />
                 )}
                 {property.facade && property.facade !== 'belirtilmemis' && (
-                  <DetailRow l="Cephe" v={FACADE_LABEL[property.facade] ?? property.facade} />
+                  <DetailRow l={<T k="property.facade" />} v={<E g="facade" v={property.facade} />} />
                 )}
                 {property.buildingStatus && property.buildingStatus !== 'belirtilmemis' && (
-                  <DetailRow l="Yapı durumu" v={BUILDING_STATUS_LABEL[property.buildingStatus] ?? property.buildingStatus} />
+                  <DetailRow l={<T k="property.buildingStatus" />} v={<E g="buildingStatus" v={property.buildingStatus} />} />
                 )}
                 {property.structureType && property.structureType !== 'belirtilmemis' && (
-                  <DetailRow l="Yapı tipi" v={STRUCTURE_TYPE_LABEL[property.structureType] ?? property.structureType} />
+                  <DetailRow l={<T k="property.structureType" />} v={<E g="structureType" v={property.structureType} />} />
                 )}
                 {property.dues != null && property.dues > 0 && (
-                  <DetailRow l="Aidat" v={`${property.dues.toLocaleString('tr-TR')} ₺`} />
+                  <DetailRow l={<T k="property.dues" />} v={`${property.dues.toLocaleString('tr-TR')} ₺`} />
                 )}
                 {property.inSite && property.siteName && (
-                  <DetailRow l="Site adı" v={property.siteName} />
+                  <DetailRow l={<T k="property.siteName" />} v={property.siteName} />
                 )}
-                {property.permitNo && <DetailRow l="İzin belge no" v={property.permitNo} />}
-                {property.parcelNo && <DetailRow l="Taşınmaz no" v={property.parcelNo} />}
+                {property.permitNo && <DetailRow l={<T k="property.permitNo" />} v={property.permitNo} />}
+                {property.parcelNo && <DetailRow l={<T k="property.parcelNo" />} v={property.parcelNo} />}
               </div>
 
               <div className="mt-5 pt-5 border-t flex flex-wrap gap-2">
-                {property.pool && <Feature i={Waves} l="Havuz" />}
-                {property.gym && <Feature i={Dumbbell} l="Spor salonu" />}
-                {property.sauna && <Feature i={Trees} l="Sauna" />}
-                {property.parking !== 'yok' && <Feature i={Car} l={`${PARKING_LABEL[property.parking]} Otopark`} />}
+                {property.pool && <Feature i={Waves} l={<T k="property.pool" />} />}
+                {property.gym && <Feature i={Dumbbell} l={<T k="property.gym" />} />}
+                {property.sauna && <Feature i={Trees} l={<T k="property.sauna" />} />}
+                {property.parking !== 'yok' && <Feature i={Car} l={<><E g="parking" v={property.parking} /> <T k="property.parking" /></>} />}
               </div>
             </CardBody>
           </Card>
@@ -220,7 +218,7 @@ export default async function PropertyPage({ params }: { params: Promise<{ slug:
           {/* Konum + harita + POI */}
           <Card>
             <CardBody>
-              <h3 className="font-semibold mb-3 inline-flex items-center gap-2"><MapPin size={15} className="text-gold-300" /> Konum</h3>
+              <h3 className="font-semibold mb-3 inline-flex items-center gap-2"><MapPin size={15} className="text-gold-300" /> <T k="property.location" /></h3>
               <div className="w-full h-[420px] rounded-2xl overflow-hidden border">
                 <MapView properties={[property]} />
               </div>
@@ -228,7 +226,7 @@ export default async function PropertyPage({ params }: { params: Promise<{ slug:
                 {property.address}, {property.district}, {property.city}
               </p>
               <div className="mt-4">
-                <div className="text-xs uppercase tracking-wider text-[color:var(--fg-muted)] mb-2">Yakın çevre</div>
+                <div className="text-xs uppercase tracking-wider text-[color:var(--fg-muted)] mb-2"><T k="property.nearby" /></div>
                 <NearbyPOIList nearby={property.nearby} />
               </div>
             </CardBody>
@@ -243,7 +241,7 @@ export default async function PropertyPage({ params }: { params: Promise<{ slug:
           {/* Benzer ilanlar */}
           {similar.length > 0 && (
             <div>
-              <h3 className="font-semibold mb-4">Benzer İlanlar</h3>
+              <h3 className="font-semibold mb-4"><T k="property.similar" /></h3>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 {similar.map((p) => <ListingCard key={p.id} property={p} compact />)}
               </div>
@@ -282,7 +280,7 @@ export default async function PropertyPage({ params }: { params: Promise<{ slug:
   );
 }
 
-function DetailRow({ l, v }: { l: string; v: React.ReactNode }) {
+function DetailRow({ l, v }: { l: React.ReactNode; v: React.ReactNode }) {
   return (
     <div className="flex items-center justify-between gap-2 border-b border-dashed py-1">
       <span className="text-[color:var(--fg-muted)] text-xs font-bold">{l}</span>
@@ -291,7 +289,7 @@ function DetailRow({ l, v }: { l: string; v: React.ReactNode }) {
   );
 }
 
-function Feature({ i: I, l }: { i: typeof MapPin; l: string }) {
+function Feature({ i: I, l }: { i: typeof MapPin; l: React.ReactNode }) {
   return (
     <span className="inline-flex items-center gap-1.5 rounded-full border bg-[color:var(--bg-elev)] px-3 py-1.5 text-xs font-bold">
       <I size={13} className="text-gold-300" /> {l}
