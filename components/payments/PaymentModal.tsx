@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/Button';
 import { Input, Label } from '@/components/ui/Input';
 import { formatPrice } from '@/lib/currency';
 import { useToast } from '@/components/ui/Toast';
+import { useLang } from '@/components/layout/LangProvider';
 import type { Currency } from '@/lib/types';
 
 export interface PendingPayment {
@@ -33,6 +34,7 @@ function majorAmount(minor: number): number {
 
 export function PaymentModal({ open, payment, onClose, onSuccess }: Props) {
   const { toast } = useToast();
+  const { t } = useLang();
   const [processing, setProcessing] = React.useState(false);
   const [card, setCard] = React.useState('');
   const [name, setName] = React.useState('');
@@ -68,20 +70,20 @@ export function PaymentModal({ open, payment, onClose, onSuccess }: Props) {
       });
       const data = await res.json().catch(() => ({ ok: false }));
       if (!res.ok || !data.ok) {
-        toast({ variant: 'error', title: 'Ödeme başarısız', description: data.error ?? 'Lütfen tekrar deneyin.' });
+        toast({ variant: 'error', title: t('pay.fail.title'), description: data.error ?? t('pay.fail.generic') });
         setProcessing(false);
         return;
       }
-      toast({ variant: 'success', title: 'Ödeme alındı', description: `${amountLabel} ödemeniz onaylandı.` });
+      toast({ variant: 'success', title: t('pay.success.title'), description: t('pay.success.desc') });
       await onSuccess();
     } catch {
-      toast({ variant: 'error', title: 'Ödeme başarısız', description: 'Bağlantı hatası. Lütfen tekrar deneyin.' });
+      toast({ variant: 'error', title: t('pay.fail.title'), description: t('pay.conn.error') });
       setProcessing(false);
     }
   }
 
   return (
-    <Modal open={open} onClose={processing ? () => {} : onClose} title="Ödeme" size="sm">
+    <Modal open={open} onClose={processing ? () => {} : onClose} title={t('pay.modal.title')} size="sm">
       <div className="space-y-5">
         <div className="rounded-xl border bg-[color:var(--bg-elev)] p-4">
           <div className="flex items-center justify-between">
@@ -96,7 +98,7 @@ export function PaymentModal({ open, payment, onClose, onSuccess }: Props) {
         {isLive ? (
           <div className="space-y-4">
             <p className="text-sm text-[color:var(--fg-muted)]">
-              Ödeme, Kapital Bank’ın güvenli ödeme sayfasında tamamlanır. Devam etmek için aşağıdaki butona tıklayın.
+              {t('pay.redirect.desc')}
             </p>
             <Button
               type="button"
@@ -105,20 +107,20 @@ export function PaymentModal({ open, payment, onClose, onSuccess }: Props) {
               disabled={processing}
               onClick={() => { setProcessing(true); window.location.href = payment!.checkoutUrl!; }}
             >
-              {processing ? <><Loader2 size={16} className="animate-spin" /> Yönlendiriliyor…</> : <><Lock size={15} /> {amountLabel} — Bankaya geç</>}
+              {processing ? <><Loader2 size={16} className="animate-spin" /> {t('pay.redirecting')}</> : <><Lock size={15} /> {amountLabel} — {t('pay.redirect.button')}</>}
             </Button>
             <p className="flex items-center justify-center gap-1.5 text-[11px] text-[color:var(--fg-faint)]">
-              <ShieldCheck size={12} /> Kapital Bank güvenli ödeme — kart bilgileriniz bankada girilir.
+              <ShieldCheck size={12} /> {t('pay.secure.bank')}
             </p>
           </div>
         ) : (
         <form onSubmit={handlePay} className="space-y-3">
           <div>
-            <Label>Kart üzerindeki isim</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ad Soyad" required autoComplete="cc-name" />
+            <Label>{t('pay.card.name')}</Label>
+            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder={t('pay.card.name.ph')} required autoComplete="cc-name" />
           </div>
           <div>
-            <Label>Kart numarası</Label>
+            <Label>{t('pay.card.number')}</Label>
             <div className="relative">
               <Input
                 value={card}
@@ -134,24 +136,24 @@ export function PaymentModal({ open, payment, onClose, onSuccess }: Props) {
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label>Son kullanma</Label>
+              <Label>{t('pay.card.expiry')}</Label>
               <Input value={exp} onChange={(e) => setExp(e.target.value.replace(/[^\d/]/g, '').slice(0, 5))} placeholder="AA/YY" inputMode="numeric" autoComplete="cc-exp" required />
             </div>
             <div>
-              <Label>CVC</Label>
+              <Label>{t('pay.card.cvc')}</Label>
               <Input value={cvc} onChange={(e) => setCvc(e.target.value.replace(/\D/g, '').slice(0, 4))} placeholder="123" inputMode="numeric" autoComplete="cc-csc" required />
             </div>
           </div>
 
           <Button type="submit" variant="gold" className="w-full" disabled={processing}>
-            {processing ? <><Loader2 size={16} className="animate-spin" /> İşleniyor…</> : <><Lock size={15} /> {amountLabel} öde</>}
+            {processing ? <><Loader2 size={16} className="animate-spin" /> {t('pay.processing')}</> : <><Lock size={15} /> {amountLabel} {t('pay.action')}</>}
           </Button>
         </form>
         )}
 
         {!isLive && (
           <p className="flex items-center justify-center gap-1.5 text-[11px] text-[color:var(--fg-faint)]">
-            <ShieldCheck size={12} /> Test (mock) ödeme — gerçek tahsilat yapılmaz.
+            <ShieldCheck size={12} /> {t('pay.mock.note')}
           </p>
         )}
       </div>

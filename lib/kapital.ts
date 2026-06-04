@@ -149,3 +149,81 @@ export function parseKapitalRef(providerRef: string | null): { orderId: string; 
   }
   return null;
 }
+
+// ---- Hata / decline sınıflandırması -------------------------------------
+// Başarısız ödemelerde kullanıcıya KESIN sebep göstermek için. Order durumu
+// (Cancelled/Expired…) + son işlemin PmoDecline kodunu (51/59/81…) okuyup
+// i18n anahtarı olan bir kategoriye eşleriz.
+
+export interface KapitalOrderOutcome {
+  status: string;
+  /** Son transaction'ın PmoDecline kodu (varsa). */
+  pmoResultCode?: string;
+}
+
+/** GET /order/{id}?tranDetailLevel=2 — durum + son işlemin pmoResultCode'u. */
+export async function getKapitalOrderOutcome(id: number | string): Promise<KapitalOrderOutcome> {
+  const res = await fetch(`${BASE_URL}/order/${id}?tranDetailLevel=2`, {
+    method: 'GET',
+    headers: { Authorization: authHeader() },
+    cache: 'no-store',
+  });
+  const text = await res.text();
+  if (!res.ok) {
+    throw new Error(`Kapital getOrderOutcome ${res.status}: ${text.slice(0, 300)}`);
+  }
+  const data = JSON.parse(text) as {
+    order?: { status?: string; trans?: Array<{ pmoResultCode?: string | number }> };
+  };
+  const order = data.order ?? {};
+  let pmoResultCode: string | undefined;
+  if (Array.isArray(order.trans) && order.trans.length) {
+    const last = order.trans[order.trans.length - 1];
+    if (last?.pmoResultCode != null) pmoResultCode = String(last.pmoResultCode);
+  }
+  return { status: order.status ?? 'Unknown', pmoResultCode };
+}
+
+/** Kullanıcıya gösterilecek başarısızlık sebebi (i18n anahtarı kategorisi). */
+export type PaymentFailReason =
+  | 'cancelled'    // kullanıcı vazgeçti / reddetti
+  | 'expired'      // ödeme süresi doldu
+  | 'insufficient' // yetersiz bakiye
+  | 'expired_card' // kartın süresi dolmuş
+  | 'invalid_card' // geçersiz / kısıtlı kart
+  | 'bad_cvv'      // hatalı CVV
+  | 'bad_pin'      // hatalı PIN
+  | 'auth_failed'  // 3D Secure / kimlik doğrulama başarısız
+  | 'limit'        // limit aşıldı
+  | 'generic';     // diğer / bilinmeyen
+
+/**
+ * Order durumu + PmoDecline kodunu kullanıcı dostu bir sebep kategorisine eşler.
+ * Kodlar Kapital Bank "PmoDecline Codes" tablosundan.
+ */
+export function classifyKapitalFailure(status: string, pmoResultCode?: string): PaymentFailReason {
+  if (status === 'Cancelled' || status === 'Refused' || status === 'Rejected') return 'cancelled';
+  if (status === 'Expired') return 'expired';
+
+  const c = pmoResultCode != null ? parseInt(pmoResultCode, 10) : NaN;
+  switch (c) {
+    case 24: case 51:
+      return 'expired_card';
+    case 59: case 61: case 63: case 64: case 95:
+      return 'insufficient';
+    case 22: case 60: case 65:
+      return 'limit';
+    case 80: case 81:
+      return 'bad_cvv';
+    case 53: case 62: case 83:
+      return 'bad_pin';
+    case 75: case 84: case 85:
+      return 'auth_failed';
+    case 14: case 29: case 30: case 40: case 41: case 49: case 50: case 52: case 56: case 57: case 58:
+      return 'invalid_card';
+    default:
+      // 3DS reddi order seviyesinde "Declined" olarak da gelebilir.
+      if (status === 'Declined') return 'auth_failed';
+      return 'generic';
+  }
+}

@@ -3,7 +3,12 @@ import { db } from '@/db/client';
 import { payments } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { confirmPayment } from '@/lib/payment-confirm';
-import { getKapitalOrder, parseKapitalRef, isPaidStatus } from '@/lib/kapital';
+import {
+  getKapitalOrderOutcome,
+  parseKapitalRef,
+  isPaidStatus,
+  classifyKapitalFailure,
+} from '@/lib/kapital';
 import { APP_URL } from '@/lib/email';
 
 /**
@@ -21,11 +26,13 @@ export async function GET(req: NextRequest) {
   const url = new URL(req.url);
   const paymentId = url.searchParams.get('paymentId');
 
-  const dashboard = (state: 'success' | 'failed' | 'pending') =>
-    NextResponse.redirect(`${APP_URL}/dashboard?tab=listings&payment=${state}`);
+  const dashboard = (state: 'success' | 'failed' | 'pending', reason?: string) =>
+    NextResponse.redirect(
+      `${APP_URL}/dashboard?tab=listings&payment=${state}${reason ? `&reason=${reason}` : ''}`,
+    );
 
   if (!paymentId) {
-    return dashboard('failed');
+    return dashboard('failed', 'generic');
   }
 
   try {
@@ -36,26 +43,27 @@ export async function GET(req: NextRequest) {
       .where(eq(payments.id, paymentId))
       .limit(1);
 
-    if (!payment) return dashboard('failed');
+    if (!payment) return dashboard('failed', 'generic');
     // Zaten onaylanmışsa (örn. kullanıcı geri butonuna bastı) tekrar işleme.
     if (payment.status === 'paid') return dashboard('success');
 
     const ref = parseKapitalRef(payment.providerRef);
-    if (!ref) return dashboard('failed');
+    if (!ref) return dashboard('failed', 'generic');
 
-    // 2. Bankadan gerçek durumu doğrula.
-    const order = await getKapitalOrder(ref.orderId);
+    // 2. Bankadan gerçek durumu + decline kodunu doğrula.
+    const outcome = await getKapitalOrderOutcome(ref.orderId);
 
-    if (!isPaidStatus(order.status)) {
-      // Ödeme tamamlanmadı / reddedildi — pending bırak, kullanıcıyı bilgilendir.
-      return dashboard('failed');
+    if (!isPaidStatus(outcome.status)) {
+      // Ödeme tamamlanmadı — pending bırak, KESIN sebebi kullanıcıya ilet.
+      const reason = classifyKapitalFailure(outcome.status, outcome.pmoResultCode);
+      return dashboard('failed', reason);
     }
 
     // 3. Doğrulandı → ödemeyi onayla (ilan güncelleme + bildirim + e-posta).
     const result = await confirmPayment(paymentId);
-    return dashboard(result.ok ? 'success' : 'failed');
+    return dashboard(result.ok ? 'success' : 'failed', result.ok ? undefined : 'generic');
   } catch (err) {
     console.error('kapital callback error', err);
-    return dashboard('failed');
+    return dashboard('failed', 'generic');
   }
 }

@@ -27,6 +27,7 @@ import { useFavorites } from '@/lib/favorites-store';
 import { formatPrice } from '@/lib/currency';
 import { timeAgo, cn } from '@/lib/utils';
 import { useToast } from '@/components/ui/Toast';
+import { useLang } from '@/components/layout/LangProvider';
 import type { Property } from '@/lib/types';
 
 const TABS = [
@@ -117,6 +118,7 @@ export function DashboardClient({ initialUser, myListings, favorites, savedSearc
   }, [pathname, router, sp]);
   const { unread } = useNotifications();
   const { toast } = useToast();
+  const { t } = useLang();
   // Hydration: badge sadece client tarafında mount sonrası render olsun
   const [mounted, setMounted] = React.useState(false);
   React.useEffect(() => setMounted(true), []);
@@ -127,13 +129,19 @@ export function DashboardClient({ initialUser, myListings, favorites, savedSearc
     const pay = sp.get('payment');
     if (!pay || paymentToastRef.current) return;
     paymentToastRef.current = true;
-    if (pay === 'success') toast({ variant: 'success', title: 'Ödeme onaylandı', description: 'Ödemeniz başarıyla alındı.' });
-    else if (pay === 'failed') toast({ variant: 'error', title: 'Ödeme tamamlanmadı', description: 'Ödeme onaylanamadı. Lütfen tekrar deneyin.' });
+    if (pay === 'success') {
+      toast({ variant: 'success', title: t('pay.success.title'), description: t('pay.success.desc') });
+    } else if (pay === 'failed') {
+      // Bankadan gelen KESIN sebep (?reason=insufficient|expired_card|…) → i18n mesajı.
+      const reason = sp.get('reason') || 'generic';
+      toast({ variant: 'error', title: t('pay.fail.title'), description: t(`pay.fail.${reason}`) });
+    }
     const params = new URLSearchParams(sp.toString());
     params.delete('payment');
+    params.delete('reason');
     const qs = params.toString();
     router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
-  }, [sp, router, pathname]);
+  }, [sp, router, pathname, t]);
   const user = initialUser;
   const signOut = async () => {
     await signOutAction();
