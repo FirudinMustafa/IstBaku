@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { Newspaper, ArrowRight, Calendar, User } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
 import { Card, CardBody } from '@/components/ui/Card';
+import { useLang } from '@/components/layout/LangProvider';
 
 interface BlogPost {
   id: string;
@@ -45,18 +46,19 @@ function formatDate(iso: string | null): string {
 }
 
 export function BlogNews({ posts }: Props) {
+  const { t } = useLang();
   if (posts.length === 0) return null;
 
   return (
     <section className="w-full px-4 py-6 sm:py-10">
       {/* Header */}
       <div className="text-center max-w-2xl mx-auto">
-        <Badge variant="navy"><Newspaper size={11} /> Blog &amp; Haberler</Badge>
+        <Badge variant="navy"><Newspaper size={11} /> {t('home.blog.badge')}</Badge>
         <h2 className="font-display mt-3 text-3xl sm:text-4xl font-bold tracking-tight text-balance">
-          Emlak Dunyasindan Guncel
+          {t('home.blog.title')}
         </h2>
         <p className="mt-3 text-[color:var(--fg-muted)] text-pretty">
-          Piyasa analizleri, yatirim rehberleri ve sektordeki son gelismeler.
+          {t('home.blog.sub')}
         </p>
       </div>
 
