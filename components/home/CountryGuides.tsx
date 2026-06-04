@@ -7,10 +7,12 @@ import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import type { CountryGuide } from '@/lib/data/country-guides';
 import { useToast } from '@/components/ui/Toast';
+import { useLang } from '@/components/layout/LangProvider';
 import { cn } from '@/lib/utils';
 
 export function CountryGuides({ initial }: { initial: CountryGuide[] }) {
   const { toast } = useToast();
+  const { t } = useLang();
   const guides = initial;
   const [active, setActive] = React.useState<string>(initial[0]?.iso ?? 'TR');
 
@@ -18,19 +20,18 @@ export function CountryGuides({ initial }: { initial: CountryGuide[] }) {
 
   function download(g: CountryGuide) {
     window.open(g.pdfUrl, '_blank');
-    toast({ variant: 'success', title: 'Rehber indirme başlatıldı', description: `${g.flag} ${g.name} — ${g.pages} sayfa` });
+    toast({ variant: 'success', title: t('guides.toastTitle'), description: `${g.flag} ${g.name} — ${g.pages} ${t('guides.pagesLabel')}` });
   }
 
   return (
     <section className="w-full px-4 py-6 sm:py-10">
       <div className="text-center max-w-2xl mx-auto">
-        <Badge variant="navy"><Globe2 size={11} /> Ülke Bazlı Rehber</Badge>
+        <Badge variant="navy"><Globe2 size={11} /> {t('guides.badge')}</Badge>
         <h2 className="font-display mt-3 text-3xl sm:text-4xl font-bold tracking-tight text-balance">
-          Hangi ülkeye yatırım yapmak istiyorsun?
+          {t('guides.title')}
         </h2>
         <p className="mt-3 text-[color:var(--fg-muted)] text-pretty">
-          Hedef ülkenin <strong>ev alım sürecini A'dan Z'ye anlatan PDF rehberini</strong> indir.
-          Vergi, tapu, oturum izni, döviz girişi — hepsi tek belgede.
+          {t('guides.sub')}
         </p>
       </div>
 
@@ -63,13 +64,13 @@ export function CountryGuides({ initial }: { initial: CountryGuide[] }) {
                   {selected.flag}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="text-xl font-bold">{selected.name} — Ev Alım Rehberi</h3>
+                  <h3 className="text-xl font-bold">{selected.name} — {t('guides.cardTitleSuffix')}</h3>
                   <div className="mt-1 flex items-center gap-3 text-xs text-[color:var(--fg-muted)] flex-wrap">
-                    <span className="inline-flex items-center gap-1"><FileText size={11} /> {selected.pages} sayfa</span>
+                    <span className="inline-flex items-center gap-1"><FileText size={11} /> {selected.pages} {t('guides.pagesLabel')}</span>
                     <span>·</span>
-                    <span>Dil: <strong className="uppercase">{selected.language}</strong></span>
+                    <span>{t('guides.langLabel')}: <strong className="uppercase">{selected.language}</strong></span>
                     <span>·</span>
-                    <span>Son güncelleme: {new Date(selected.updatedAt).toLocaleDateString('tr-TR')}</span>
+                    <span>{t('guides.updatedLabel')}: {new Date(selected.updatedAt).toLocaleDateString('tr-TR')}</span>
                   </div>
                 </div>
               </div>
@@ -77,19 +78,19 @@ export function CountryGuides({ initial }: { initial: CountryGuide[] }) {
               <p className="mt-5 text-sm text-[color:var(--fg-muted)] leading-relaxed">{selected.description}</p>
 
               <div className="mt-5 grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
-                {['Vergi no', 'Tapu süreci', 'Vize/Oturum', 'Döviz'].map((t) => (
-                  <div key={t} className="rounded-lg border bg-[color:var(--bg-elev)] px-2.5 py-1.5 inline-flex items-center gap-1.5">
-                    <BookOpen size={11} className="text-gold-300" /> {t}
+                {['guides.chip.tax', 'guides.chip.deed', 'guides.chip.visa', 'guides.chip.fx'].map((k) => (
+                  <div key={k} className="rounded-lg border bg-[color:var(--bg-elev)] px-2.5 py-1.5 inline-flex items-center gap-1.5">
+                    <BookOpen size={11} className="text-gold-300" /> {t(k)}
                   </div>
                 ))}
               </div>
 
               <Button variant="gold" size="lg" className="w-full mt-6 gap-2" onClick={() => download(selected)}>
-                <Download size={15} /> PDF Olarak İndir
+                <Download size={15} /> {t('guides.download')}
               </Button>
 
               <p className="mt-3 text-[10px] text-[color:var(--fg-faint)] text-center">
-                Rehberler ISTBAKU hukuk ekibi ve partner avukatlar tarafından hazırlanır. Bilgi amaçlıdır; bağlayıcı hukuki tavsiye için bir avukatla görüşün.
+                {t('guides.disclaimer')}
               </p>
             </CardBody>
           </Card>
