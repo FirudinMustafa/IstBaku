@@ -45,11 +45,11 @@ export function Hero() {
 
       <div className="relative w-full px-4 pt-12 pb-16 sm:pt-20 sm:pb-24 text-center">
         <h1 className="font-display text-balance text-[2rem] sm:text-5xl lg:text-7xl font-bold tracking-tight leading-[1.08]">
-          İlan değil, <br className="hidden sm:block" />
+          {t('hero.title.pre')} <br className="hidden sm:block" />
           <span className="bg-gradient-to-r from-gold-300 via-gold-400 to-gold-300 bg-clip-text text-transparent">
-            yatırım kararı
+            {t('hero.title.accent')}
           </span>{' '}
-          sunuyoruz.
+          {t('hero.title.post')}
         </h1>
 
         <p className="mt-4 sm:mt-6 mx-auto max-w-2xl text-sm sm:text-lg text-[color:var(--fg-muted)] text-pretty">

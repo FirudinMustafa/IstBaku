@@ -58,21 +58,26 @@ export default async function HomePage() {
       <div className="-mt-8 sm:-mt-12 relative z-10">
         <CurrencyConverter />
       </div>
-      {/* Hero sonrası bölümler için ince marka renk dokusu — büyük, bulanık ve
-          düşük opaklıkta tan/navy lekeleri (boş beyaz zemini yumuşatır). */}
+      {/* Hero sonrası bölümler için ince marka renk dokusu — büyük, bulanık
+          tan/navy lekeleri + çok hafif grid dokusu (boş zemini canlandırır). */}
       <div className="relative">
         <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+          <div className="absolute inset-0 grid-bg opacity-[0.04]" />
           <div
-            className="absolute top-[6%] -left-40 w-[460px] h-[460px] rounded-full blur-3xl opacity-[0.10]"
+            className="absolute top-[4%] -left-40 w-[520px] h-[520px] rounded-full blur-3xl opacity-[0.16]"
             style={{ background: 'radial-gradient(circle, #CAAE99 0%, transparent 70%)' }}
           />
           <div
-            className="absolute top-[38%] -right-48 w-[560px] h-[560px] rounded-full blur-3xl opacity-[0.07]"
+            className="absolute top-[30%] -right-48 w-[600px] h-[600px] rounded-full blur-3xl opacity-[0.12]"
             style={{ background: 'radial-gradient(circle, #121F30 0%, transparent 70%)' }}
           />
           <div
-            className="absolute bottom-[10%] left-[18%] w-[400px] h-[400px] rounded-full blur-3xl opacity-[0.08]"
+            className="absolute top-[58%] left-[22%] w-[440px] h-[440px] rounded-full blur-3xl opacity-[0.13]"
             style={{ background: 'radial-gradient(circle, #CAAE99 0%, transparent 70%)' }}
+          />
+          <div
+            className="absolute bottom-[6%] -right-24 w-[420px] h-[420px] rounded-full blur-3xl opacity-[0.10]"
+            style={{ background: 'radial-gradient(circle, #8AA0BE 0%, transparent 70%)' }}
           />
         </div>
         <div className="relative z-10">
