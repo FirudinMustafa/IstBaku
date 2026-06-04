@@ -7,6 +7,7 @@ import { Mail, Lock, ArrowRight, AlertCircle, CheckCircle2 } from 'lucide-react'
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { useToast } from '@/components/ui/Toast';
+import { useLang } from '@/components/layout/LangProvider';
 import { signInAction } from '@/lib/auth-actions';
 import { signInSchema, fieldErrors } from '@/lib/schemas';
 
@@ -14,6 +15,7 @@ export function SignInForm() {
   const sp = useSearchParams();
   const initialEmail = sp.get('email') ?? '';
   const { toast } = useToast();
+  const { t } = useLang();
   const [email, setEmail] = React.useState(initialEmail);
   const [password, setPassword] = React.useState('');
   const [busy, setBusy] = React.useState(false);
@@ -46,7 +48,7 @@ export function SignInForm() {
       {initialEmail && (
         <div role="status" className="mt-5 rounded-lg border border-success/40 bg-success/10 px-3 py-2 text-sm text-success flex items-start gap-2">
           <CheckCircle2 size={14} className="mt-0.5 shrink-0" aria-hidden="true" />
-          <span>E-posta adresin doğrulandı. Şifrenle giriş yap.</span>
+          <span>{t('auth.emailVerifiedHint')}</span>
         </div>
       )}
 
@@ -55,12 +57,12 @@ export function SignInForm() {
           <Mail size={15} className="absolute left-3 top-[34px] text-[color:var(--fg-muted)] pointer-events-none z-10" aria-hidden="true" />
           <Input
             id="signin-email"
-            label="E-posta"
+            label={t('auth.email')}
             className="pl-9"
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="seninadres@ornek.com"
+            placeholder={t('auth.emailPh')}
             autoComplete="email"
             required
             error={errors.email}
@@ -71,7 +73,7 @@ export function SignInForm() {
           <Lock size={15} className="absolute left-3 top-[34px] text-[color:var(--fg-muted)] pointer-events-none z-10" aria-hidden="true" />
           <Input
             id="signin-password"
-            label="Şifre"
+            label={t('auth.password')}
             className="pl-9"
             type="password"
             value={password}
@@ -90,19 +92,19 @@ export function SignInForm() {
         )}
 
         <Button type="submit" variant="gold" size="lg" className="w-full" loading={busy}>
-          Giriş Yap <ArrowRight size={14} aria-hidden="true" />
+          {t('auth.signIn')} <ArrowRight size={14} aria-hidden="true" />
         </Button>
       </form>
 
       <div className="mt-4 text-right">
         <Link href="/auth/forgot-password" className="text-sm text-gold-300 hover:text-gold-400">
-          Şifreni mi unuttun?
+          {t('auth.forgot')}
         </Link>
       </div>
 
       <div className="mt-6 text-center text-sm">
-        <span className="text-[color:var(--fg-muted)]">Hesabın yok mu? </span>
-        <Link href="/auth/sign-up" className="text-gold-300 hover:text-gold-400">Kayıt ol</Link>
+        <span className="text-[color:var(--fg-muted)]">{t('auth.noAccount')} </span>
+        <Link href="/auth/sign-up" className="text-gold-300 hover:text-gold-400">{t('auth.signUpLink')}</Link>
       </div>
     </>
   );

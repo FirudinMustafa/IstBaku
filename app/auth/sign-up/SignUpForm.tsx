@@ -10,6 +10,7 @@ import {
 import { Button } from '@/components/ui/Button';
 import { Input, Label } from '@/components/ui/Input';
 import { useToast } from '@/components/ui/Toast';
+import { useLang } from '@/components/layout/LangProvider';
 import { COUNTRY_CODES } from '@/lib/labels';
 import { signUpAction, verifyCodeAction, resendVerificationCodeAction } from '@/lib/auth-actions';
 import { signUpSchema, verifyCodeSchema, fieldErrors } from '@/lib/schemas';
@@ -17,15 +18,16 @@ import { cn } from '@/lib/utils';
 
 // PB-03: public sign-up role chooser. Whitelist matches lib/schemas.ts.
 type PublicSignUpRole = 'user' | 'agent' | 'office';
-const ROLE_OPTIONS: { v: PublicSignUpRole; label: string; hint: string; Icon: typeof UsersIcon }[] = [
-  { v: 'user', label: 'Alıcı / Satıcı', hint: 'Bireysel hesap — favori ve mesaj.', Icon: UsersIcon },
-  { v: 'agent', label: 'Emlakçı', hint: 'Bireysel profesyonel — ilan ve randevu.', Icon: Briefcase },
-  { v: 'office', label: 'Ofis', hint: 'Emlak ofisi — ekip ilanları (yakında).', Icon: Building2 },
+const ROLE_OPTIONS: { v: PublicSignUpRole; labelKey: string; hintKey: string; Icon: typeof UsersIcon }[] = [
+  { v: 'user', labelKey: 'auth.role.user', hintKey: 'auth.role.userHint', Icon: UsersIcon },
+  { v: 'agent', labelKey: 'auth.role.agent', hintKey: 'auth.role.agentHint', Icon: Briefcase },
+  { v: 'office', labelKey: 'auth.role.office', hintKey: 'auth.role.officeHint', Icon: Building2 },
 ];
 
 export function SignUpForm() {
   const router = useRouter();
   const { toast } = useToast();
+  const { t } = useLang();
   const [step, setStep] = React.useState<'form' | 'verify' | 'done'>('form');
   const [busy, setBusy] = React.useState(false);
   const [serverError, setServerError] = React.useState('');
@@ -143,19 +145,19 @@ export function SignUpForm() {
     return (
       <>
         <p className="text-sm text-[color:var(--fg-muted)] mt-1 text-center">
-          {createdEmail} adresine 6 haneli doğrulama kodu gönderdik.
+          {createdEmail} {t('auth.codeSentTo')}
         </p>
         <form onSubmit={submitCode} noValidate className="mt-6 space-y-4">
           <div className="size-16 rounded-2xl bg-gold-400/15 text-gold-300 flex items-center justify-center mx-auto">
             <MailCheck size={28} aria-hidden="true" />
           </div>
           <p className="text-sm text-[color:var(--fg-muted)] text-center">
-            <strong className="text-[color:var(--fg)] break-all">{createdEmail}</strong> adresine 6 haneli kod gönderdik. Kodu aşağıya gir.
+            <strong className="text-[color:var(--fg)] break-all">{createdEmail}</strong> {t('auth.codeSentBody')}
           </p>
 
           <Input
             id="signup-code"
-            label="Doğrulama Kodu"
+            label={t('auth.codeLabel')}
             labelClassName="text-center"
             type="text"
             inputMode="numeric"
@@ -167,7 +169,7 @@ export function SignUpForm() {
             onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
             placeholder="––––––"
             className="!h-14 text-center text-2xl tracking-[0.6em] font-mono font-bold !pr-3"
-            hint="Kod 15 dakika geçerli."
+            hint={t('auth.codeHint')}
           />
 
           {serverError && (
@@ -177,14 +179,14 @@ export function SignUpForm() {
           )}
 
           <Button type="submit" variant="gold" size="lg" className="w-full" loading={busy} disabled={code.length !== 6}>
-            <CheckCircle2 size={15} aria-hidden="true" /> Doğrula ve Giriş Sayfasına Geç
+            <CheckCircle2 size={15} aria-hidden="true" /> {t('auth.verifyBtn')}
           </Button>
 
           {/* PF-04: "Resend code" — addresses the dev/test pain point where the
               user can't read their OTP. Mirrors the production resend path
               (rate-limited 3/hour by `resend:<email>`). */}
           <div className="text-center text-xs text-[color:var(--fg-muted)]">
-            Kod gelmedi mi?{' '}
+            {t('auth.noCode')}{' '}
             <button
               type="button"
               onClick={resend}
@@ -192,10 +194,10 @@ export function SignUpForm() {
               disabled={resendBusy}
               className="text-gold-300 hover:underline disabled:opacity-50"
             >
-              {resendBusy ? 'Yeniden gönderiliyor…' : 'Yeniden gönder'}
+              {resendBusy ? t('auth.resending') : t('auth.resend')}
             </button>
             {resendOk && (
-              <span className="ml-2 text-success">Gönderildi.</span>
+              <span className="ml-2 text-success">{t('auth.sent')}</span>
             )}
           </div>
         </form>
@@ -209,7 +211,7 @@ export function SignUpForm() {
         <div className="size-16 rounded-2xl bg-success/15 text-success flex items-center justify-center mx-auto">
           <CheckCircle2 size={32} aria-hidden="true" />
         </div>
-        <p className="text-sm text-[color:var(--fg-muted)]">Tebrikler {name}! Oturumun açıldı, panele yönlendiriliyorsun.</p>
+        <p className="text-sm text-[color:var(--fg-muted)]">{t('auth.congrats')} {name}! {t('auth.congratsBody')}</p>
       </div>
     );
   }
@@ -220,11 +222,11 @@ export function SignUpForm() {
         <User size={15} className="absolute left-3 top-[34px] text-[color:var(--fg-muted)] pointer-events-none z-10" aria-hidden="true" />
         <Input
           id="signup-name"
-          label="Ad Soyad"
+          label={t('auth.name')}
           className="pl-9"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="Firudin Mustafayev"
+          placeholder={t('auth.namePh')}
           required
           autoComplete="name"
           error={errors.name}
@@ -235,12 +237,12 @@ export function SignUpForm() {
         <Mail size={15} className="absolute left-3 top-[34px] text-[color:var(--fg-muted)] pointer-events-none z-10" aria-hidden="true" />
         <Input
           id="signup-email"
-          label="E-posta"
+          label={t('auth.email')}
           className="pl-9"
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          placeholder="seninadres@ornek.com"
+          placeholder={t('auth.emailPh')}
           required
           autoComplete="email"
           error={errors.email}
@@ -249,7 +251,7 @@ export function SignUpForm() {
       </div>
 
       <div>
-        <Label htmlFor="signup-phone">Telefon</Label>
+        <Label htmlFor="signup-phone">{t('auth.phone')}</Label>
         <div ref={pickerRef} className="flex gap-2 relative">
           <button
             type="button"
@@ -304,7 +306,7 @@ export function SignUpForm() {
           <p role="alert" className="text-[11px] text-danger mt-1">{errors.phone}</p>
         ) : (
           <p className="text-[11px] text-[color:var(--fg-muted)] mt-1">
-            Numarana doğrulama göndermeyeceğiz — yalnızca emlakçılarla iletişim için kullanılır.
+            {t('auth.phoneNote')}
           </p>
         )}
       </div>
@@ -313,12 +315,12 @@ export function SignUpForm() {
         <Lock size={15} className="absolute left-3 top-[34px] text-[color:var(--fg-muted)] pointer-events-none z-10" aria-hidden="true" />
         <Input
           id="signup-password"
-          label="Şifre"
+          label={t('auth.password')}
           className="pl-9"
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          placeholder="min. 8 karakter"
+          placeholder={t('auth.passwordPh')}
           required
           autoComplete="new-password"
           error={errors.password}
@@ -329,8 +331,8 @@ export function SignUpForm() {
       {/* PB-03: role chooser. Whitelist enforced both client-side (zod) and
           server-side (signUpAction re-validates and falls back to 'user'). */}
       <div>
-        <Label>Hesap türü</Label>
-        <div role="radiogroup" aria-label="Hesap türü" className="mt-1 grid grid-cols-1 sm:grid-cols-3 gap-2">
+        <Label>{t('auth.accountType')}</Label>
+        <div role="radiogroup" aria-label={t('auth.accountType')} className="mt-1 grid grid-cols-1 sm:grid-cols-3 gap-2">
           {ROLE_OPTIONS.map((o) => {
             const active = role === o.v;
             const Icon = o.Icon;
@@ -350,8 +352,8 @@ export function SignUpForm() {
                 )}
               >
                 <Icon size={15} aria-hidden="true" />
-                <div className="mt-1 text-sm font-semibold">{o.label}</div>
-                <div className="text-[11px] text-[color:var(--fg-muted)] leading-snug mt-0.5">{o.hint}</div>
+                <div className="mt-1 text-sm font-semibold">{t(o.labelKey)}</div>
+                <div className="text-[11px] text-[color:var(--fg-muted)] leading-snug mt-0.5">{t(o.hintKey)}</div>
               </button>
             );
           })}
@@ -378,9 +380,9 @@ export function SignUpForm() {
             aria-label="Kullanım şartlarını ve KVKK aydınlatma metnini kabul ediyorum"
           />
           <span className="leading-snug">
-            <Link href="/legal-guide#terms" className="text-gold-300 hover:underline">Kullanım Şartları</Link> ve{' '}
-            <Link href="/legal-guide#kvkk" className="text-gold-300 hover:underline">KVKK Aydınlatma</Link>{' '}
-            metnini kabul ediyorum.
+            <Link href="/legal-guide#terms" className="text-gold-300 hover:underline">{t('auth.terms.use')}</Link> {t('auth.terms.and')}{' '}
+            <Link href="/legal-guide#kvkk" className="text-gold-300 hover:underline">{t('auth.terms.kvkk')}</Link>{' '}
+            {t('auth.terms.accept')}
           </span>
         </label>
         {errors.acceptedTerms && (
@@ -395,12 +397,12 @@ export function SignUpForm() {
       )}
 
       <Button type="submit" variant="gold" size="lg" className="w-full mt-1" loading={busy}>
-        Hesap Oluştur <ArrowRight size={14} aria-hidden="true" />
+        {t('auth.createAccount')} <ArrowRight size={14} aria-hidden="true" />
       </Button>
 
       <div className="text-center text-sm pt-2">
-        <span className="text-[color:var(--fg-muted)]">Hesabın var mı? </span>
-        <Link href="/auth/sign-in" className="text-gold-300 hover:text-gold-400">Giriş yap</Link>
+        <span className="text-[color:var(--fg-muted)]">{t('auth.haveAccount')} </span>
+        <Link href="/auth/sign-in" className="text-gold-300 hover:text-gold-400">{t('auth.signInLink')}</Link>
       </div>
     </form>
   );
