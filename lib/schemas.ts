@@ -217,6 +217,13 @@ export const createListingSchema = z.object({
   dues: z.number().int().min(0).max(1_000_000).optional(),
   deposit: z.number().int().min(0).max(1_000_000_000).optional(),
   loanEligible: z.boolean().optional(),
+  groundSurvey: z.boolean().optional(),                 // Zemin etüdü (var/yok)
+  /* Arsa (type='arsa') alanları */
+  imarDurumu: z.string().trim().max(64).optional(),
+  paftaNo: z.string().trim().max(64).optional(),
+  adaNo: z.string().trim().max(64).optional(),
+  kaks: z.number().min(0).max(100).optional(),
+  gabari: z.string().trim().max(32).optional(),
   ownerType: listingOwnerType.optional(),
   titleDeed: listingTitleDeed.optional(),
   occupancy: listingStatus.optional(),

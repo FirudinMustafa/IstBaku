@@ -46,6 +46,13 @@ export interface CreateListingInput {
   dues?: number;
   deposit?: number;
   loanEligible?: boolean;
+  groundSurvey?: boolean;
+  /** Arsa (type='arsa') alanları */
+  imarDurumu?: string;
+  paftaNo?: string;
+  adaNo?: string;
+  kaks?: number;
+  gabari?: string;
   ownerType?: typeof s.listings.$inferInsert.ownerType;
   titleDeed?: typeof s.listings.$inferInsert.titleDeed;
   occupancy?: 'bos' | 'kiracili' | 'mulk_sahibi';
@@ -205,6 +212,13 @@ export async function createListingAction(
       dues: Number.isFinite(input.dues) && (input.dues ?? 0) > 0 ? input.dues : null,
       deposit: input.purpose !== 'sale' && Number.isFinite(input.deposit) && (input.deposit ?? 0) > 0 ? input.deposit : null,
       loanEligible: input.purpose === 'sale' ? (input.loanEligible ?? false) : false,
+      groundSurvey: input.groundSurvey ?? false,
+      // Arsa alanları (yalnız type='arsa' için anlamlı; diğer tiplerde null)
+      imarDurumu: input.type === 'arsa' ? (input.imarDurumu?.trim() || null) : null,
+      paftaNo: input.type === 'arsa' ? (input.paftaNo?.trim() || null) : null,
+      adaNo: input.type === 'arsa' ? (input.adaNo?.trim() || null) : null,
+      kaks: input.type === 'arsa' && Number.isFinite(input.kaks) ? input.kaks : null,
+      gabari: input.type === 'arsa' ? (input.gabari?.trim() || null) : null,
       ownerType: input.ownerType ?? 'sahibi',
       titleDeed: input.titleDeed ?? 'belirsiz',
       status: input.occupancy ?? 'bos',

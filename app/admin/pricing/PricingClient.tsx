@@ -9,13 +9,14 @@ import { useToast } from '@/components/ui/Toast';
 import { updatePricingAction } from '@/lib/pricing-actions';
 
 // İç anahtar listesi + etiketler (server'dan bağımsız; db import etmeden).
-type PriceKey = 'date_renewal' | 'istbaku_badge' | 'private' | 'tier_guclu' | 'tier_premium';
+type PriceKey = 'date_renewal' | 'istbaku_badge' | 'private' | 'tier_guclu' | 'tier_premium' | 'rpa_report';
 const FIELDS: { key: PriceKey; label: string; hint: string }[] = [
   { key: 'date_renewal', label: 'Tarih yenileme', hint: 'İlan tarihini tazeleme ücreti' },
   { key: 'istbaku_badge', label: 'İstBaku Onaylı rozet', hint: 'Onaylı rozet / premium başvuru ücreti' },
   { key: 'private', label: 'Gizli portföy', hint: 'İlanı gizli portföye alma ücreti' },
   { key: 'tier_guclu', label: 'Tier yükseltme — Güçlü', hint: 'Güçlü pakete yükseltme ücreti' },
   { key: 'tier_premium', label: 'Tier yükseltme — Premium', hint: 'Premium pakete yükseltme ücreti' },
+  { key: 'rpa_report', label: 'RPA Raporu', hint: 'İlan(lar) için RPA rapor talebi ücreti' },
 ];
 
 export function PricingClient({ initial }: { initial: Record<PriceKey, number> }) {

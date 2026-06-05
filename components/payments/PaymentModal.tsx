@@ -5,9 +5,10 @@ import { CreditCard, Lock, ShieldCheck, Loader2 } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { Input, Label } from '@/components/ui/Input';
-import { formatPrice } from '@/lib/currency';
+import { formatPrice, convert } from '@/lib/currency';
 import { useToast } from '@/components/ui/Toast';
 import { useLang } from '@/components/layout/LangProvider';
+import { useCurrency } from '@/lib/currency-store';
 import type { Currency } from '@/lib/types';
 
 export interface PendingPayment {
@@ -35,6 +36,7 @@ function majorAmount(minor: number): number {
 export function PaymentModal({ open, payment, onClose, onSuccess }: Props) {
   const { toast } = useToast();
   const { t } = useLang();
+  const { currency: displayCurrency } = useCurrency();
   const [processing, setProcessing] = React.useState(false);
   const [card, setCard] = React.useState('');
   const [name, setName] = React.useState('');
@@ -50,7 +52,11 @@ export function PaymentModal({ open, payment, onClose, onSuccess }: Props) {
 
   if (!payment) return null;
 
-  const amountLabel = formatPrice(majorAmount(payment.amount), payment.currency);
+  // Ücret USD olarak saklanır; kullanıcının seçtiği para biriminde göster (Madde 10).
+  const amountLabel = formatPrice(
+    convert(majorAmount(payment.amount), payment.currency, displayCurrency),
+    displayCurrency,
+  );
   const isLive = !!payment.checkoutUrl;
 
   async function handlePay(e: React.FormEvent) {

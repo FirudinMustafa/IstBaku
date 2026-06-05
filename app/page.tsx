@@ -62,7 +62,12 @@ export default async function HomePage() {
           tan/navy lekeleri + çok hafif grid dokusu (boş zemini canlandırır). */}
       <div className="relative">
         <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
-          <div className="absolute inset-0 grid-bg opacity-[0.06]" />
+          {/* Hafif dikey marka gradyanı — boş zemine renk derinliği katar (Madde 4) */}
+          <div
+            className="absolute inset-0"
+            style={{ background: 'linear-gradient(180deg, rgba(202,174,153,0.05) 0%, transparent 22%, transparent 78%, rgba(138,160,190,0.05) 100%)' }}
+          />
+          <div className="absolute inset-0 grid-bg opacity-[0.08]" />
           <div
             className="absolute top-[4%] -left-40 w-[560px] h-[560px] rounded-full blur-3xl opacity-[0.24]"
             style={{ background: 'radial-gradient(circle, #CAAE99 0%, transparent 70%)' }}

@@ -13,17 +13,29 @@ interface Ctx {
 const LangCtx = React.createContext<Ctx>({ lang: DEFAULT_LANG, setLang: () => {}, t: (k) => k });
 export const useLang = () => React.useContext(LangCtx);
 
-export function LangProvider({ children }: { children: React.ReactNode }) {
-  const [lang, setLangState] = React.useState<Lang>(DEFAULT_LANG);
+function readCookieLang(): Lang | null {
+  if (typeof document === 'undefined') return null;
+  const m = document.cookie.match(/(?:^|; )istbaku-lang=([^;]+)/);
+  return (m?.[1] as Lang) || null;
+}
+
+export function LangProvider({ children, initialLang }: { children: React.ReactNode; initialLang?: Lang }) {
+  // initialLang server'da cookie'den (ülke tespiti) gelir → SSR doğru dilde,
+  // hidrasyon uyumlu. Mount sonrası kullanıcının açık tercihi (localStorage) öncelikli.
+  const [lang, setLangState] = React.useState<Lang>(initialLang ?? DEFAULT_LANG);
 
   React.useEffect(() => {
-    const stored = (localStorage.getItem('istbaku-lang') as Lang) || DEFAULT_LANG;
-    setLangState(stored);
+    // Öncelik: localStorage (kullanıcı seçimi) > cookie (ülke) > initial.
+    const stored = (localStorage.getItem('istbaku-lang') as Lang) || readCookieLang();
+    if (stored && stored !== lang) setLangState(stored);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const setLang = React.useCallback((l: Lang) => {
     setLangState(l);
     localStorage.setItem('istbaku-lang', l);
+    // Cookie'yi de yaz ki sonraki SSR isteği doğru dilde gelsin.
+    document.cookie = `istbaku-lang=${l}; path=/; max-age=${60 * 60 * 24 * 365}; samesite=lax`;
     document.documentElement.setAttribute('lang', l);
   }, []);
 

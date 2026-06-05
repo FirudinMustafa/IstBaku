@@ -77,6 +77,8 @@ export interface SignUpInput {
   // for now (kept as an agent variant until the office-specific profile
   // table lands; we tag the audit log so the segment stays queryable).
   role?: 'user' | 'agent' | 'office';
+  /** Ofis kaydında zorunlu — ofisin bulunduğu ülke (ISO kodu). */
+  country?: string;
 }
 
 export async function signUpAction(
@@ -118,6 +120,10 @@ export async function signUpAction(
       : 'user';
     const persistedRole: DbUser['role'] = safeIntent === 'user' ? 'user' : 'agent';
     const officeMarker = safeIntent === 'office' ? '[office]' : null;
+    // Ofis kaydında ülke (ISO kodu, en fazla 8 karakter). Diğer rollerde yok sayılır.
+    const officeCountry = safeIntent === 'office'
+      ? (input.country ?? '').trim().slice(0, 8) || null
+      : null;
 
     // MH-26: rely on the DB unique index for atomic duplicate detection;
     // pre-check + insert is TOCTOU racy. The catch below translates 23505.
@@ -127,6 +133,7 @@ export async function signUpAction(
         name, email, passwordHash,
         phoneDial: input.phoneDial,
         phone: normalizedPhone.replace(/^\+/, ''),
+        country: officeCountry,
         avatar,
         role: persistedRole,
         bio: officeMarker,
@@ -149,6 +156,8 @@ export async function signUpAction(
       await db.insert(agents).values({
         userId: created.id,
         agency: safeIntent === 'office' ? name : null,
+        officeCountry,
+        companyName: safeIntent === 'office' ? name : null,
       }).onConflictDoNothing();
     }
 

@@ -8,6 +8,7 @@ export function rowToProperty(r: DbListing): Property {
   };
   return {
     id: r.id,
+    listingNumber: r.listingNumber,
     slug: r.slug,
     title: r.title,
     description: r.description,
@@ -43,6 +44,7 @@ export function rowToProperty(r: DbListing): Property {
     swappable: r.swappable,
     loanEligible: r.loanEligible,
     deposit: r.deposit ?? undefined,
+    groundSurvey: r.groundSurvey,
     housingType: r.housingType,
     energyClass: r.energyClass,
     facade: r.facade,
@@ -52,6 +54,11 @@ export function rowToProperty(r: DbListing): Property {
     parcelNo: r.parcelNo ?? undefined,
     siteName: r.siteName ?? undefined,
     dues: r.dues ?? undefined,
+    imarDurumu: r.imarDurumu ?? undefined,
+    paftaNo: r.paftaNo ?? undefined,
+    adaNo: r.adaNo ?? undefined,
+    kaks: r.kaks ?? undefined,
+    gabari: r.gabari ?? undefined,
     images: r.images,
     video: r.video ?? undefined,
     has360: r.has360,
@@ -100,5 +107,8 @@ export function rowsToAgent(u: DbUser, a: DbAgent): Agent {
     language: (a.languages ?? []) as Agent['language'],
     memberSince: a.memberSince.toISOString(),
     bio: u.bio ?? undefined,
+    isOffice: (u.bio ?? '').includes('[office]'),
+    about: a.about ?? undefined,
+    photos: a.photos ?? [],
   };
 }

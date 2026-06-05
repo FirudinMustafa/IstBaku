@@ -13,12 +13,18 @@ import { MapView } from '@/components/listings/MapView';
 import { useLang } from '@/components/layout/LangProvider';
 import type { FilterState, Property } from '@/lib/types';
 import { cn } from '@/lib/utils';
+import { formatListingNumber, parseListingNumber } from '@/lib/listing-number';
 
 function applyFilters(list: Property[], f: FilterState, q?: string): Property[] {
   let out = list.filter((p) => !p.isPrivate);
   if (q) {
     const ql = q.toLowerCase();
+    // İlan numarasıyla arama: "12", "00012" veya "#00012" hepsi çalışır.
+    const qNum = parseListingNumber(q);
+    const qDigits = q.trim().replace(/^#/, '');
     out = out.filter((p) =>
+      (qNum != null && p.listingNumber === qNum) ||
+      (/^\d+$/.test(qDigits) && formatListingNumber(p.listingNumber).includes(qDigits)) ||
       [p.title, p.description, p.city, p.district, p.neighborhood ?? ''].some((s) => s.toLowerCase().includes(ql)),
     );
   }

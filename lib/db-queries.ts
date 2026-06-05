@@ -120,6 +120,21 @@ export async function getListingBySlug(
   return row ? rowToProperty(row) : null;
 }
 
+/** Public ilan numarası ile çözer (URL /property/00012). */
+export async function getListingByNumber(
+  num: number,
+  { requireApproved = true }: { requireApproved?: boolean } = {},
+): Promise<Property | null> {
+  const conds = [eq(listings.listingNumber, num), isNull(listings.deletedAt)];
+  if (requireApproved) {
+    conds.push(eq(listings.approvalStatus, 'approved'));
+  }
+  const [row] = await db.select().from(listings)
+    .where(and(...conds))
+    .limit(1);
+  return row ? rowToProperty(row) : null;
+}
+
 export async function getListingById(id: string): Promise<Property | null> {
   const [row] = await db.select().from(listings)
     .where(and(eq(listings.id, id), isNull(listings.deletedAt)))

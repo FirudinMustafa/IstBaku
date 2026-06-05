@@ -7,6 +7,7 @@ import { getMyFavoritesAction } from '@/lib/favorite-actions';
 import { getMyNotifications } from '@/lib/notification-actions';
 import { getOwnerDailyBookings } from '@/lib/daily-booking-actions';
 import { getAllPrices } from '@/lib/pricing';
+import { getMyRpaReports } from '@/lib/rpa-actions';
 import { rowToProperty } from '@/lib/db-mappers';
 
 export const dynamic = 'force-dynamic';
@@ -15,7 +16,7 @@ export default async function DashboardPage() {
   const user = await getCurrentUser();
   if (!user) redirect('/auth/sign-in?next=/dashboard');
 
-  const [myListings, favorites, savedSearches, notifications, dailyBookings, payments, prices] = await Promise.all([
+  const [myListings, favorites, savedSearches, notifications, dailyBookings, payments, prices, rpaReports] = await Promise.all([
     getMyListings(),
     getMyFavoritesAction(),
     getMySavedSearchesAction(),
@@ -23,6 +24,7 @@ export default async function DashboardPage() {
     getOwnerDailyBookings(user.id).catch(() => []),
     getMyPayments(),
     getAllPrices(),
+    getMyRpaReports(),
   ]);
 
   return (
@@ -71,11 +73,13 @@ export default async function DashboardPage() {
           ownerResponseNote: b.ownerResponseNote,
           createdAt: b.createdAt.toISOString(),
         }))}
+        rpaReports={rpaReports}
         prices={{
           renewal: prices.date_renewal,
           badge: prices.istbaku_badge,
           guclu: prices.tier_guclu,
           premium: prices.tier_premium,
+          rpaReport: prices.rpa_report,
         }}
       />
     </Suspense>

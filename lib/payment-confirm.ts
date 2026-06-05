@@ -38,6 +38,28 @@ export async function confirmPayment(
       })
       .where(eq(payments.id, paymentId));
 
+    // 3a. RPA rapor talebi (Madde 7): ilan değişikliği yok. Kullanıcıya "birkaç
+    //     saat içinde mail" notu gönder; rapor 'pending' kalır, ekip elle hazırlar.
+    if (payment.type === 'report_purchase') {
+      const [u] = await db.select().from(users).where(eq(users.id, payment.userId)).limit(1);
+      await db.insert(notifications).values({
+        userId: payment.userId,
+        type: 'payment',
+        title: 'RPA Rapor Talebiniz Alındı',
+        body: 'Raporunuz birkaç saat içerisinde mail hesabınıza gönderilecektir.',
+        link: '/dashboard?tab=rpa-reports',
+      });
+      if (u) {
+        sendEmail({
+          to: u.email,
+          subject: 'RPA rapor talebiniz alındı — ISTBAKU',
+          html: `<p>Merhaba ${u.name},</p><p>RPA rapor talebiniz ve ödemeniz alındı. <strong>Raporunuz birkaç saat içerisinde mail hesabınıza gönderilecektir.</strong></p><p>ISTBAKU</p>`,
+          silent: true,
+        }).catch((e) => console.warn('[rpa-confirm mail]', e));
+      }
+      return { ok: true };
+    }
+
     // 3. Apply listing changes based on payment type
     if (payment.listingId) {
       const [listing] = await db

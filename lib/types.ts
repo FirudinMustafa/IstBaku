@@ -63,6 +63,12 @@ export interface Agent {
   language: Lang[];
   memberSince: string;  // ISO date
   bio?: string;
+  /** Ofis hesabı mı? (users.bio '[office]' işareti) — public ofis sayfası sadece ofisler için. */
+  isOffice?: boolean;
+  /** Ofis Hakkımızda metni (agents.about) */
+  about?: string;
+  /** Ofis fotoğrafları (agents.photos) */
+  photos?: string[];
 }
 
 /** Bölgede yaşayan profil dağılımı (% toplam ≈ 100). İlan veren bunu seçer. */
@@ -93,6 +99,8 @@ export interface ListingCover { kind: CoverKind; src: string; }
 
 export interface Property {
   id: string;
+  /** Herkese açık ilan numarası (otomatik artan). Gösterimde sıfır-dolgulu (#00012). */
+  listingNumber: number;
   slug: string;
   title: string;
   description: string;
@@ -128,6 +136,7 @@ export interface Property {
   swappable: boolean;
   loanEligible?: boolean;
   deposit?: number;
+  groundSurvey?: boolean;       // Zemin etüdü (var/yok)
   housingType?: string;
   energyClass?: string;
   facade?: string;
@@ -137,6 +146,12 @@ export interface Property {
   parcelNo?: string;
   siteName?: string;
   dues?: number;
+  // Arsa (type='arsa') alanları
+  imarDurumu?: string;
+  paftaNo?: string;
+  adaNo?: string;
+  kaks?: number;
+  gabari?: string;
   images: string[];
   video?: string;
   has360: boolean;

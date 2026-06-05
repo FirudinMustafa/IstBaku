@@ -254,7 +254,7 @@ function buildRows(items: Property[], display: Currency): RowSpec[] {
   rows.push({ label: 'Tapu', values: items.map((p) => TITLE_DEED_LABEL[p.titleDeed] ?? p.titleDeed) });
   rows.push({ label: 'Durum', values: items.map((p) => STATUS_LABEL[p.status] ?? p.status) });
   rows.push({ label: 'Sahibi', values: items.map((p) => OWNER_TYPE_LABEL[p.ownerType] ?? p.ownerType) });
-  rows.push({ label: 'ISTBAKU Onaylı', values: items.map((p) => p.istbakuApproved ? <Badge variant="success">Seviye {p.approvalLevel}</Badge> : '—') });
+  rows.push({ label: 'ISTBAKU Onaylı', values: items.map((p) => p.istbakuApproved ? <Badge variant="success">✓ Onaylı</Badge> : '—') });
 
   // Kira yield
   rows.push({
@@ -346,7 +346,7 @@ function MobileCompareCard({ property: p, displayCurrency, onRemove }: { propert
             <Row k="Bina yaşı" v={p.buildingAge === 0 ? 'Sıfır' : `${p.buildingAge} yıl`} />
             <Row k="m² fiyatı" v={`${CURRENCY_SYMBOLS[displayCurrency]}${formatNumber(shownSqm)}/m²`} />
             <Row k="AI Skor" v={<strong className="text-gold-300">{(p.score.total / 10).toFixed(1)}/10</strong>} />
-            <Row k="ISTBAKU Onaylı" v={p.istbakuApproved ? '✓ Seviye ' + p.approvalLevel : '—'} />
+            <Row k="ISTBAKU Onaylı" v={p.istbakuApproved ? '✓ Onaylı' : '—'} />
             <Row k="Isıtma" v={p.heating} />
             <Row k="Otopark" v={PARKING_LABEL[p.parking]} />
             <Row k="Tapu" v={TITLE_DEED_LABEL[p.titleDeed] ?? p.titleDeed} />

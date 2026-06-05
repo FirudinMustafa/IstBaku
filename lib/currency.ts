@@ -100,3 +100,13 @@ export function formatPrice(amount: number, currency: Currency, locale = 'tr-TR'
 export function formatMinorUnits(minor: number, currency: Currency, locale = 'tr-TR'): string {
   return formatPrice(fromMinorUnits(minor, currency), currency, locale);
 }
+
+/**
+ * Platform ücretleri `app_settings`/`lib/pricing.ts` içinde USD CENT olarak
+ * saklanır. Kullanıcı arayüzde bunları seçtiği para biriminde görmeli (Madde 10).
+ * USD cent → seçili para biriminde biçimlendirilmiş string.
+ */
+export function formatUsdCents(usdCents: number, to: Currency, locale = 'tr-TR'): string {
+  const converted = convert(usdCents / 100, 'USD', to);
+  return formatPrice(converted, to, locale);
+}

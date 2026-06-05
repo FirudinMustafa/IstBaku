@@ -1,10 +1,13 @@
 import type { Metadata, Viewport } from 'next';
+import { cookies } from 'next/headers';
 import { Comfortaa, Playfair_Display } from 'next/font/google';
 import { ThemeProvider } from '@/components/layout/ThemeProvider';
 import { LangProvider } from '@/components/layout/LangProvider';
 import { CurrencyProvider } from '@/lib/currency-store';
 import { SiteChrome } from '@/components/layout/SiteChrome';
 import { ToastProvider } from '@/components/ui/Toast';
+import { SUPPORTED_LANGS, DEFAULT_LANG } from '@/lib/i18n';
+import type { Lang } from '@/lib/types';
 import './globals.css';
 
 const comfortaa = Comfortaa({ subsets: ['latin', 'latin-ext'], weight: ['400', '700'], display: 'swap', variable: '--font-sans' });
@@ -53,19 +56,26 @@ export const viewport: Viewport = {
   ],
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  // Ülkeye göre dil (Madde 1): middleware ziyaretçinin ülkesinden `istbaku-lang`
+  // cookie'sini set eder (AZ→az, TR→tr, diğer→en). SSR'ı doğru dilde başlatmak
+  // için cookie'yi burada okuyup provider'a initialLang olarak geçiyoruz.
+  const cookieLang = (await cookies()).get('istbaku-lang')?.value;
+  const initialLang: Lang = (SUPPORTED_LANGS as readonly string[]).includes(cookieLang ?? '')
+    ? (cookieLang as Lang)
+    : DEFAULT_LANG;
   return (
-    <html lang="tr" suppressHydrationWarning className={`${comfortaa.variable} ${playfair.variable}`}>
+    <html lang={initialLang} suppressHydrationWarning className={`${comfortaa.variable} ${playfair.variable}`}>
       <head>
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem('istbaku-theme')||'light';if(t==='dark')document.documentElement.classList.add('dark');var l=localStorage.getItem('istbaku-lang')||'tr';document.documentElement.setAttribute('lang',l);}catch(e){}})();`,
+            __html: `(function(){try{var t=localStorage.getItem('istbaku-theme')||'light';if(t==='dark')document.documentElement.classList.add('dark');var m=document.cookie.match(/(?:^|; )istbaku-lang=([^;]+)/);var l=localStorage.getItem('istbaku-lang')||(m&&m[1])||'tr';document.documentElement.setAttribute('lang',l);}catch(e){}})();`,
           }}
         />
       </head>
       <body className="min-h-screen antialiased">
         <ThemeProvider>
-          <LangProvider>
+          <LangProvider initialLang={initialLang}>
             <CurrencyProvider>
               <ToastProvider>
                 <SiteChrome>{children}</SiteChrome>

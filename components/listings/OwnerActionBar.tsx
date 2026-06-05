@@ -8,6 +8,8 @@ import { Card, CardBody } from '@/components/ui/Card';
 import { useToast } from '@/components/ui/Toast';
 import { PaymentModal, type PendingPayment } from '@/components/payments/PaymentModal';
 import { renewListingDateAction, requestPremiumUpgradeAction, convertToPrivateAction } from '@/lib/listing-owner-actions';
+import { useCurrency } from '@/lib/currency-store';
+import { formatUsdCents } from '@/lib/currency';
 
 interface Props {
   listingId: string;
@@ -20,11 +22,12 @@ interface Props {
   prices: { renewal: number; badge: number };
 }
 
-const usd = (cents: number) => `$${Math.round(cents / 100)}`;
-
 export function OwnerActionBar({ listingId, currentTier, isApproved, isPrivate, price, userKycStatus, prices }: Props) {
   const { toast } = useToast();
   const router = useRouter();
+  const { currency } = useCurrency();
+  // Admin fiyatları USD cent — kullanıcının seçtiği para biriminde göster.
+  const fee = (cents: number) => formatUsdCents(cents, currency);
   const [loading, setLoading] = React.useState<string | null>(null);
   const [pending, setPending] = React.useState<PendingPayment | null>(null);
   // Ödeme başarıyla onaylanınca gösterilecek mesaj.
@@ -70,13 +73,13 @@ export function OwnerActionBar({ listingId, currentTier, isApproved, isPrivate, 
 
         <Button variant="outline" size="sm" className="w-full justify-start gap-2" onClick={startRenew} disabled={loading !== null}>
           {loading === 'renew' ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
-          Tarihi Yenile ({usd(prices.renewal)})
+          Tarihi Yenile ({fee(prices.renewal)})
         </Button>
 
         {!isApproved && (
           <Button variant="outline" size="sm" className="w-full justify-start gap-2" onClick={startPremium} disabled={loading !== null}>
             {loading === 'premium' ? <Loader2 size={14} className="animate-spin" /> : <ShieldCheck size={14} className="text-gold-300" />}
-            İstBaku Onaylı Rozet Al ({usd(prices.badge)})
+            İstBaku Onaylı Rozet Al ({fee(prices.badge)})
           </Button>
         )}
 

@@ -21,7 +21,7 @@ const poi = (n: Partial<NearbyPOI>): NearbyPOI => n;
 const coverPhoto = (src: string): ListingCover => ({ kind: 'photo', src });
 const coverVideo = (src: string): ListingCover => ({ kind: 'video', src });
 
-type RawProperty = Omit<Property, 'cover' | 'regionProfile' | 'nearby'>;
+type RawProperty = Omit<Property, 'cover' | 'regionProfile' | 'nearby' | 'listingNumber'>;
 
 const RAW_PROPERTIES: RawProperty[] = [
   {
@@ -641,8 +641,9 @@ function defaultPOI(p: RawProperty): NearbyPOI {
   };
 }
 
-export const PROPERTIES: Property[] = RAW_PROPERTIES.map((p) => ({
+export const PROPERTIES: Property[] = RAW_PROPERTIES.map((p, i) => ({
   ...p,
+  listingNumber: i + 1,
   cover: COVERS[p.id] ?? coverPhoto(p.images[0]),
   regionProfile:
     REGION_PROFILES[p.district] ??

@@ -7,9 +7,11 @@ import {
   Home, Heart, GitCompare, Bell, Sparkles, Search,
   Eye, MapPin, ArrowUpRight, BadgeCheck, Pencil, Trash2,
   Zap, Star, AlertTriangle, ExternalLink, CalendarDays, Check, X,
-  CreditCard, Settings, Crown, RefreshCw, ShieldCheck, Loader2,
+  CreditCard, Settings, Crown, RefreshCw, ShieldCheck, Loader2, FileText,
 } from 'lucide-react';
 import { AccountSettings } from './AccountSettings';
+import { RpaReportTab } from './RpaReportTab';
+import type { MyRpaReport } from '@/lib/rpa-actions';
 import { Card, CardBody } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -24,7 +26,8 @@ import { renewListingDateAction, requestPremiumUpgradeAction } from '@/lib/listi
 import { markNotificationReadAction, markAllNotificationsReadAction } from '@/lib/notification-actions';
 import { useCompare } from '@/lib/compare-store';
 import { useFavorites } from '@/lib/favorites-store';
-import { formatPrice } from '@/lib/currency';
+import { formatPrice, formatUsdCents } from '@/lib/currency';
+import { useCurrency } from '@/lib/currency-store';
 import { timeAgo, cn } from '@/lib/utils';
 import { useToast } from '@/components/ui/Toast';
 import { useLang } from '@/components/layout/LangProvider';
@@ -39,6 +42,7 @@ const TABS = [
   { k: 'matches', lk: 'dash.tab.matches', i: Sparkles },
   { k: 'searches', lk: 'dash.tab.searches', i: Search },
   { k: 'payments', lk: 'dash.tab.payments', i: CreditCard },
+  { k: 'rpa-reports', lk: 'dash.tab.rpaReports', i: FileText },
   { k: 'notifications', lk: 'dash.tab.notifications', i: Bell },
   { k: 'settings', lk: 'dash.tab.settings', i: Settings },
 ] as const;
@@ -83,8 +87,9 @@ interface Props {
   notifications: NotificationUI[];
   dailyBookings: DailyBookingUI[];
   payments: PaymentUI[];
+  rpaReports: MyRpaReport[];
   /** Admin'den ayarlanabilir platform fiyatları (USD cent). */
-  prices: { renewal: number; badge: number; guclu: number; premium: number };
+  prices: { renewal: number; badge: number; guclu: number; premium: number; rpaReport: number };
 }
 
 const PAYMENT_TYPE_LABELS: Record<string, string> = {
@@ -102,7 +107,7 @@ const PAYMENT_STATUS_LABELS: Record<string, { l: string; v: 'success' | 'gold' |
   refunded: { l: 'İade', v: 'default' },
 };
 
-export function DashboardClient({ initialUser, myListings, favorites, savedSearches, notifications, dailyBookings, payments, prices }: Props) {
+export function DashboardClient({ initialUser, myListings, favorites, savedSearches, notifications, dailyBookings, payments, rpaReports, prices }: Props) {
   const sp = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
@@ -204,6 +209,7 @@ export function DashboardClient({ initialUser, myListings, favorites, savedSearc
           {tab === 'matches' && <Matches />}
           {tab === 'searches' && <SavedSearches initial={savedSearches} />}
           {tab === 'payments' && <PaymentsTab payments={payments} />}
+          {tab === 'rpa-reports' && <RpaReportTab myListings={myListings} reports={rpaReports} priceUsdCents={prices.rpaReport} />}
           {tab === 'notifications' && <Notifications initial={notifications} />}
           {tab === 'settings' && <AccountSettings />}
         </main>
@@ -309,7 +315,9 @@ function MyListings({ listings, prices }: { listings: Property[]; prices: { rene
   // Tarih yenileme / İstBaku onaylı ödemeleri için başarı mesajı.
   const ownerSuccessRef = React.useRef<{ title: string; description: string } | null>(null);
   const [loadingAction, setLoadingAction] = React.useState<string | null>(null);
-  const usd = (cents: number) => `$${Math.round(cents / 100)}`;
+  const { currency } = useCurrency();
+  // Admin ücretleri USD cent — kullanıcının seçtiği para biriminde göster (Madde 10).
+  const usd = (cents: number) => formatUsdCents(cents, currency);
 
   async function startRenew(p: Property) {
     setLoadingAction(`renew-${p.id}`);

@@ -5,7 +5,8 @@ import {
   Eye, Sparkles, Car, Trees, Waves, Dumbbell,
 } from 'lucide-react';
 import { PropertyHeaderActions } from '@/components/listings/PropertyHeaderActions';
-import { getListingBySlug, getSimilarListings, getAgentById, getAllSlugs } from '@/lib/db-queries';
+import { getListingBySlug, getListingByNumber, getSimilarListings, getAgentById, getAllSlugs } from '@/lib/db-queries';
+import { formatListingNumber, parseListingNumber } from '@/lib/listing-number';
 import { sanitizeHtml } from '@/lib/sanitize';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -44,7 +45,11 @@ export const revalidate = 3600;
 
 export default async function PropertyPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const property = await getListingBySlug(slug, { requireApproved: false });
+  // URL segmenti sadece rakamsa public ilan numarası (/property/00012), aksi halde slug.
+  const num = parseListingNumber(slug);
+  const property = num
+    ? await getListingByNumber(num, { requireApproved: false })
+    : await getListingBySlug(slug, { requireApproved: false });
   if (!property) notFound();
   // MH-20 — fan out independent queries; agent lookup depends on property.agentId
   // but does not depend on `similar`, so both can run in parallel.
@@ -81,7 +86,7 @@ export default async function PropertyPage({ params }: { params: Promise<{ slug:
             <Badge variant="outline"><E g="type" v={property.type} /></Badge>
             {(property.istbakuApproved || property.tier === 'premium') && (
               <Badge variant="success">
-                <ShieldCheck size={11} /> <T k="property.approved" />{property.istbakuApproved ? <> (<T k="property.level" /> {property.approvalLevel})</> : ''}
+                <ShieldCheck size={11} /> <T k="property.approved" />
               </Badge>
             )}
             {property.tier === 'guclu' && <Badge variant="ai"><E g="tier" v="guclu" /></Badge>}
@@ -89,6 +94,8 @@ export default async function PropertyPage({ params }: { params: Promise<{ slug:
           </div>
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight max-w-3xl">{property.title}</h1>
           <div className="mt-2 flex items-center gap-3 text-sm text-[color:var(--fg-muted)] flex-wrap">
+            <span className="inline-flex items-center gap-1 font-mono font-semibold text-[color:var(--fg)]">#{formatListingNumber(property.listingNumber)}</span>
+            <span>·</span>
             <span className="inline-flex items-center gap-1"><MapPin size={13} /> {property.city} / {property.district}{property.neighborhood ? ` / ${property.neighborhood}` : ''}</span>
             <span>·</span>
             <span className="inline-flex items-center gap-1"><Eye size={13} /> {property.views.toLocaleString('tr-TR')} <T k="property.views" /></span>
@@ -102,7 +109,7 @@ export default async function PropertyPage({ params }: { params: Promise<{ slug:
       </div>
 
       <div className="mt-6">
-        <PropertyGallery images={property.images} has360={property.has360} video={property.video} />
+        <PropertyGallery images={property.images} has360={property.has360} video={property.video} listingNumber={formatListingNumber(property.listingNumber)} />
       </div>
 
       <div className="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -147,61 +154,86 @@ export default async function PropertyPage({ params }: { params: Promise<{ slug:
             </CardBody>
           </Card>
 
-          {/* Bina ve daire detayları */}
+          {/* Bina ve daire detayları (arsa hariç — arsa için ayrı kart aşağıda) */}
+          {property.type !== 'arsa' && (
           <Card>
             <CardBody>
               <h3 className="font-bold mb-4"><T k="property.details" /></h3>
+              {/* Sıralama site sahibinin talebine göre düzenlendi (Madde 14).
+                  Listede olmayan alanlar (depozito, konut tipi, cephe, yapı durumu,
+                  izin/parsel no) silinmeyip sona alındı. */}
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-3 text-sm font-bold">
+                {/* 1-2 alan */}
                 <DetailRow l={<T k="property.grossArea" />} v={`${property.area.gross} m²`} />
                 <DetailRow l={<T k="property.netArea" />} v={`${property.area.net} m²`} />
+                {/* 3-4 kat */}
                 {showsField(property.type, 'floor') && (
                   <>
-                    <DetailRow l={<T k="property.floor" />} v={<FloorText n={property.floor} />} />
                     <DetailRow l={<T k="property.totalFloors" />} v={property.totalFloors} />
+                    <DetailRow l={<T k="property.floor" />} v={<FloorText n={property.floor} />} />
                   </>
                 )}
+                {/* 5 ısıtma */}
                 {showsField(property.type, 'buildingAge') && (
                   <DetailRow l={<T k="property.heating" />} v={<HeatingText v={property.heating} />} />
                 )}
-                <DetailRow l={<T k="property.parking" />} v={<E g="parking" v={property.parking} />} />
-                {showsField(property.type, 'furnished') && (
-                  <DetailRow l={<T k="property.furnished" />} v={<T k={property.furnished ? 'common.yes' : 'common.no'} />} />
-                )}
-                {showsField(property.type, 'elevator') && (
-                  <DetailRow l={<T k="property.elevator" />} v={<T k={property.elevator ? 'common.exists' : 'common.none'} />} />
-                )}
-                <DetailRow l={<T k="property.balcony" />} v={<T k={property.balcony ? 'common.exists' : 'common.none'} />} />
-                <DetailRow l={<T k="property.inSite" />} v={<T k={property.inSite ? 'common.yes' : 'common.no'} />} />
-                <DetailRow l={<T k="property.titleDeed" />} v={<E g="titleDeed" v={property.titleDeed} />} />
-                <DetailRow l={<T k="property.status" />} v={<E g="status" v={property.status} />} />
-                <DetailRow l={<T k="property.owner" />} v={<E g="ownerType" v={property.ownerType} />} />
-                <DetailRow l={<T k="property.swappable" />} v={property.swappable ? <T k="property.swappableYes" /> : <T k="common.no" />} />
+                {/* 6 krediye uygunluk */}
                 {property.purpose === 'sale' && property.loanEligible && (
                   <DetailRow l={<T k="property.loanEligible" />} v={<T k="common.yes" />} />
                 )}
+                {/* 7 eşyalı */}
+                {showsField(property.type, 'furnished') && (
+                  <DetailRow l={<T k="property.furnished" />} v={<T k={property.furnished ? 'common.yes' : 'common.no'} />} />
+                )}
+                {/* 8 balkon */}
+                <DetailRow l={<T k="property.balcony" />} v={<T k={property.balcony ? 'common.exists' : 'common.none'} />} />
+                {/* 9 durum */}
+                <DetailRow l={<T k="property.status" />} v={<E g="status" v={property.status} />} />
+                {/* 10 asansör */}
+                {showsField(property.type, 'elevator') && (
+                  <DetailRow l={<T k="property.elevator" />} v={<T k={property.elevator ? 'common.exists' : 'common.none'} />} />
+                )}
+                {/* 11 sahip */}
+                <DetailRow l={<T k="property.owner" />} v={<E g="ownerType" v={property.ownerType} />} />
+                {/* 12 zemin etüdü */}
+                <DetailRow l={<T k="property.groundSurvey" />} v={<T k={property.groundSurvey ? 'common.exists' : 'common.none'} />} />
+                {/* 13 enerji kimlik belgesi */}
+                {property.energyClass && property.energyClass !== 'belirsiz' && (
+                  <DetailRow l={<T k="property.energyClass" />} v={<E g="energyClass" v={property.energyClass} />} />
+                )}
+                {/* 14 site içi */}
+                <DetailRow l={<T k="property.inSite" />} v={<T k={property.inSite ? 'common.yes' : 'common.no'} />} />
+                {/* 15 site ismi */}
+                {property.inSite && property.siteName && (
+                  <DetailRow l={<T k="property.siteName" />} v={property.siteName} />
+                )}
+                {/* 16 aidat */}
+                {property.dues != null && property.dues > 0 && (
+                  <DetailRow l={<T k="property.dues" />} v={`${property.dues.toLocaleString('tr-TR')} ₺`} />
+                )}
+                {/* 17 otopark */}
+                <DetailRow l={<T k="property.parking" />} v={<E g="parking" v={property.parking} />} />
+                {/* 18 takas */}
+                <DetailRow l={<T k="property.swappable" />} v={property.swappable ? <T k="property.swappableYes" /> : <T k="common.no" />} />
+                {/* 19 tapu */}
+                <DetailRow l={<T k="property.titleDeed" />} v={<E g="titleDeed" v={property.titleDeed} />} />
+                {/* 20 yapı tipi */}
+                {property.structureType && property.structureType !== 'belirtilmemis' && (
+                  <DetailRow l={<T k="property.structureType" />} v={<E g="structureType" v={property.structureType} />} />
+                )}
+
+                {/* — Listede olmayan ama korunan alanlar (sona alındı) — */}
                 {property.deposit != null && property.deposit > 0 && (
                   <DetailRow l={<T k="property.deposit" />} v={`${property.deposit.toLocaleString('tr-TR')} ${property.currency}`} />
                 )}
                 {property.housingType && property.housingType !== 'belirtilmemis' && (
                   <DetailRow l={<T k="property.housingType" />} v={<E g="housingType" v={property.housingType} />} />
                 )}
-                {property.energyClass && property.energyClass !== 'belirsiz' && (
-                  <DetailRow l={<T k="property.energyClass" />} v={<E g="energyClass" v={property.energyClass} />} />
-                )}
                 {property.facade && property.facade !== 'belirtilmemis' && (
                   <DetailRow l={<T k="property.facade" />} v={<E g="facade" v={property.facade} />} />
                 )}
                 {property.buildingStatus && property.buildingStatus !== 'belirtilmemis' && (
                   <DetailRow l={<T k="property.buildingStatus" />} v={<E g="buildingStatus" v={property.buildingStatus} />} />
-                )}
-                {property.structureType && property.structureType !== 'belirtilmemis' && (
-                  <DetailRow l={<T k="property.structureType" />} v={<E g="structureType" v={property.structureType} />} />
-                )}
-                {property.dues != null && property.dues > 0 && (
-                  <DetailRow l={<T k="property.dues" />} v={`${property.dues.toLocaleString('tr-TR')} ₺`} />
-                )}
-                {property.inSite && property.siteName && (
-                  <DetailRow l={<T k="property.siteName" />} v={property.siteName} />
                 )}
                 {property.permitNo && <DetailRow l={<T k="property.permitNo" />} v={property.permitNo} />}
                 {property.parcelNo && <DetailRow l={<T k="property.parcelNo" />} v={property.parcelNo} />}
@@ -215,6 +247,32 @@ export default async function PropertyPage({ params }: { params: Promise<{ slug:
               </div>
             </CardBody>
           </Card>
+          )}
+
+          {/* Arsa detayları (sadece type='arsa') — Madde 15 */}
+          {property.type === 'arsa' && (
+          <Card>
+            <CardBody>
+              <h3 className="font-bold mb-4"><T k="property.landDetails" /></h3>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-3 text-sm font-bold">
+                {property.imarDurumu && <DetailRow l={<T k="property.imarDurumu" />} v={property.imarDurumu} />}
+                <DetailRow l={<T k="property.titleDeed" />} v={<E g="titleDeed" v={property.titleDeed} />} />
+                <DetailRow l={<T k="property.owner" />} v={<E g="ownerType" v={property.ownerType} />} />
+                <DetailRow l={<T k="property.swappable" />} v={property.swappable ? <T k="property.swappableYes" /> : <T k="common.no" />} />
+                {property.paftaNo && <DetailRow l={<T k="property.paftaNo" />} v={property.paftaNo} />}
+                {property.kaks != null && <DetailRow l={<T k="property.kaks" />} v={property.kaks} />}
+                {property.gabari && <DetailRow l={<T k="property.gabari" />} v={property.gabari} />}
+                {property.purpose === 'sale' && property.loanEligible && (
+                  <DetailRow l={<T k="property.loanEligible" />} v={<T k="common.yes" />} />
+                )}
+                <DetailRow l={<T k="property.grossArea" />} v={`${property.area.gross} m²`} />
+                <DetailRow l={<T k="property.pricePerSqm" />} v={`${Math.round(property.price / Math.max(1, property.area.gross)).toLocaleString('tr-TR')} ${property.currency}/m²`} />
+                {property.adaNo && <DetailRow l={<T k="property.adaNo" />} v={property.adaNo} />}
+                {property.parcelNo && <DetailRow l={<T k="property.parcelNo" />} v={property.parcelNo} />}
+              </div>
+            </CardBody>
+          </Card>
+          )}
 
           {/* Konum + harita + POI */}
           <Card>
