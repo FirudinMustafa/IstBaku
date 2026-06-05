@@ -39,8 +39,8 @@ async function main() {
 
     // For 0000_keen_unicorn.sql and 0001/0002 (existing manual ones), the schema is already in place.
     // Try to apply; statements that conflict (already exists) will fail unless they're IF NOT EXISTS.
-    // For safety, we only auto-apply 0003 and 0004 here.
-    const isNewMigration = file.startsWith('0003') || file.startsWith('0004');
+    // Auto-apply additive, idempotent (IF NOT EXISTS) migrations.
+    const isNewMigration = file.startsWith('0003') || file.startsWith('0004') || file.startsWith('0011') || file.startsWith('0012') || file.startsWith('0013');
     if (!isNewMigration) {
       console.log(`[skip] ${file} (existing infrastructure; not re-applying)`);
       // Record hash so drizzle doesn't try later

@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/Badge';
 import { cn } from '@/lib/utils';
 import { FocusTrap } from '@/components/ui/FocusTrap';
 
-export function PropertyGallery({ images, has360, video }: { images: string[]; has360?: boolean; video?: string }) {
+export function PropertyGallery({ images, has360, video, listingNumber }: { images: string[]; has360?: boolean; video?: string; listingNumber?: string }) {
   const [idx, setIdx] = React.useState(0);
   const [open, setOpen] = React.useState(false);
   const [tab, setTab] = React.useState<'photos' | 'video' | '360'>('photos');
@@ -99,6 +99,7 @@ export function PropertyGallery({ images, has360, video }: { images: string[]; h
               />
               {i === 0 && (
                 <div className="absolute top-3 left-3 flex gap-2">
+                  {listingNumber && <Badge variant="navy" className="font-mono">#{listingNumber}</Badge>}
                   {has360 && <Badge variant="ai">360°</Badge>}
                   {video && <Badge variant="gold"><Play size={11} /> Video</Badge>}
                 </div>
@@ -143,6 +144,11 @@ export function PropertyGallery({ images, has360, video }: { images: string[]; h
             priority
             className="object-cover group-hover:scale-[1.02] transition-transform"
           />
+          {listingNumber && (
+            <div className="absolute top-3 left-3">
+              <Badge variant="navy" className="font-mono">#{listingNumber}</Badge>
+            </div>
+          )}
           <div className="absolute bottom-3 left-3 flex gap-2">
             {has360 && <Badge variant="ai">360° Tur</Badge>}
             {video && <Badge variant="gold"><Play size={11} /> Video</Badge>}

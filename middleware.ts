@@ -22,6 +22,15 @@ const PROTECTED_EXCEPTIONS = [
 ];
 
 const SESSION_COOKIE = 'istbaku-session';
+const LANG_COOKIE = 'istbaku-lang';
+
+// Ülke → dil eşlemesi (Madde 1). AZ→az, TR→tr, geri kalan→en.
+function langForCountry(country: string | null | undefined): 'tr' | 'az' | 'en' {
+  const c = (country ?? '').toUpperCase();
+  if (c === 'AZ') return 'az';
+  if (c === 'TR') return 'tr';
+  return 'en';
+}
 
 function isProtected(pathname: string): boolean {
   if (PROTECTED_EXCEPTIONS.some((p) => pathname === p || pathname.startsWith(`${p}/`))) {
@@ -51,7 +60,21 @@ export function middleware(req: NextRequest) {
     }
   }
 
-  return NextResponse.next({ request: { headers: requestHeaders } });
+  const res = NextResponse.next({ request: { headers: requestHeaders } });
+
+  // Madde 1: ilk ziyarette ülkeye göre dil cookie'si set et (kullanıcı henüz
+  // seçmediyse). Vercel `x-vercel-ip-country` header'ını sağlar. Kullanıcı dili
+  // değiştirdiğinde LangProvider cookie'yi günceller; burada üzerine yazmayız.
+  if (!req.cookies.get(LANG_COOKIE)) {
+    const country = req.headers.get('x-vercel-ip-country');
+    res.cookies.set(LANG_COOKIE, langForCountry(country), {
+      path: '/',
+      maxAge: 60 * 60 * 24 * 365,
+      sameSite: 'lax',
+    });
+  }
+
+  return res;
 }
 
 export const config = {

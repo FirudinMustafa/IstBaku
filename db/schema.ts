@@ -1,5 +1,5 @@
 import {
-  pgTable, text, varchar, integer, boolean, timestamp, jsonb, real,
+  pgTable, text, varchar, integer, boolean, timestamp, jsonb, real, serial,
   pgEnum, uuid, primaryKey, index, uniqueIndex,
 } from 'drizzle-orm/pg-core';
 import { relations, sql } from 'drizzle-orm';
@@ -45,6 +45,8 @@ export const paymentTypeEnum = pgEnum('payment_type', ['tier_upgrade', 'premium_
 export const paymentStatusEnum = pgEnum('payment_status', ['paid', 'refunded', 'failed', 'pending']);
 export const coverKindEnum = pgEnum('cover_kind', ['photo', 'video']);
 export const languageEnum = pgEnum('language', ['tr', 'az', 'en', 'ru', 'de', 'zh']);
+export const reviewStatusEnum = pgEnum('review_status', ['pending', 'approved', 'rejected']);
+export const rpaReportStatusEnum = pgEnum('rpa_report_status', ['pending', 'generated', 'sent', 'cancelled']);
 
 // ============================================================
 // USERS
@@ -89,7 +91,51 @@ export const agents = pgTable('agents', {
   whatsappNumber: text('whatsapp_number'),
   languages: jsonb('languages').$type<string[]>().notNull().default([]),
   memberSince: timestamp('member_since', { withTimezone: true }).notNull().defaultNow(),
+  // Ofis public profili (Madde 12/13)
+  about: text('about'),                                   // Hakkımızda metni
+  photos: jsonb('photos').$type<string[]>().notNull().default([]), // Ofis fotoğrafları
+  // Ofis kaydı / KYC alanları (Madde 5/6)
+  officeCountry: varchar('office_country', { length: 8 }),
+  taxId: varchar('tax_id', { length: 64 }),               // Vergi kimlik no / VÖEN
+  companyName: text('company_name'),                      // Şirket ismi
+  authorizationNo: varchar('authorization_no', { length: 64 }), // Yetki belge no
+  officeAddress: text('office_address'),                  // Açık adres
+  officeCity: varchar('office_city', { length: 64 }),     // İl / şəhər
+  officeDistrict: varchar('office_district', { length: 64 }), // İlçe / rayon
+  officeDocs: jsonb('office_docs').$type<{ name: string; url: string }[]>().notNull().default([]), // Belge görselleri
 });
+
+// Ofis/ajan yorumları + puanları (Madde 12) — gerçek sistem (mock değil)
+export const reviews = pgTable('reviews', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  agentUserId: uuid('agent_user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  authorUserId: uuid('author_user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  rating: integer('rating').notNull(),                    // 1-5
+  text: text('text').notNull().default(''),
+  status: reviewStatusEnum('status').notNull().default('pending'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => ({
+  agentIdx: index('reviews_agent_idx').on(t.agentUserId),
+  // Bir kullanıcı bir ofise tek yorum yazabilir.
+  authorAgentUniq: uniqueIndex('reviews_author_agent_uniq').on(t.agentUserId, t.authorUserId),
+}));
+
+// RPA rapor talepleri (Madde 7) — ücretli; ekip elle hazırlayıp mailler.
+export const rpaReports = pgTable('rpa_reports', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  // Talep edilen ilanların public numaraları.
+  listingNumbers: jsonb('listing_numbers').$type<number[]>().notNull().default([]),
+  status: rpaReportStatusEnum('status').notNull().default('pending'),
+  paymentId: uuid('payment_id'),
+  fileUrl: text('file_url'),               // ekip raporu yükleyince
+  note: text('note'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  sentAt: timestamp('sent_at', { withTimezone: true }),
+}, (t) => ({
+  userIdx: index('rpa_reports_user_idx').on(t.userId),
+  statusIdx: index('rpa_reports_status_idx').on(t.status),
+}));
 
 // ============================================================
 // SESSIONS — iron-session zaten cookie tabanlı, ama DB session de tutmak istersek
@@ -140,6 +186,9 @@ export const passwordResetTokens = pgTable('password_reset_tokens', {
 
 export const listings = pgTable('listings', {
   id: uuid('id').primaryKey().defaultRandom(),
+  // Herkese açık ilan numarası (bina.az item id benzeri). Otomatik artan sıra;
+  // gösterimde sıfır-dolgulu (#00012). URL ve arama bununla yapılır.
+  listingNumber: serial('listing_number').notNull().unique(),
   slug: varchar('slug', { length: 200 }).notNull().unique(),
   title: text('title').notNull(),
   description: text('description').notNull().default(''),
@@ -182,9 +231,16 @@ export const listings = pgTable('listings', {
   facade: facadeEnum('facade').notNull().default('belirtilmemis'),                  // Cephe / yön
   buildingStatus: buildingStatusEnum('building_status').notNull().default('belirtilmemis'),
   structureType: structureTypeEnum('structure_type').notNull().default('belirtilmemis'),
+  groundSurvey: boolean('ground_survey').notNull().default(false), // Zemin etüdü (var/yok)
   permitNo: varchar('permit_no', { length: 64 }),       // İzin / yapı ruhsatı belge no
-  parcelNo: varchar('parcel_no', { length: 64 }),       // Taşınmaz numarası
+  parcelNo: varchar('parcel_no', { length: 64 }),       // Taşınmaz / Parsel numarası
   siteName: varchar('site_name', { length: 120 }),      // Site içindeyse site adı
+  // Arsa (type='arsa') alanları
+  imarDurumu: varchar('imar_durumu', { length: 64 }),   // İmar durumu (konut/ticari/tarla...)
+  paftaNo: varchar('pafta_no', { length: 64 }),         // Pafta no
+  adaNo: varchar('ada_no', { length: 64 }),             // Ada no
+  kaks: real('kaks'),                                   // KAKS / Emsal (örn. 1.5)
+  gabari: varchar('gabari', { length: 32 }),            // Gabari (yükseklik; "Serbest" olabilir)
   dues: integer('dues'),                                // Aidat (aylık)
   deposit: integer('deposit'),                          // Depozito (kiralık)
   images: jsonb('images').$type<string[]>().notNull().default([]),
@@ -611,3 +667,5 @@ export type DbAuditEntry = typeof auditLog.$inferSelect;
 export type DbCountryGuide = typeof countryGuides.$inferSelect;
 export type DbDailyBooking = typeof dailyBookings.$inferSelect;
 export type DbBlogPost = typeof blogPosts.$inferSelect;
+export type DbReview = typeof reviews.$inferSelect;
+export type DbRpaReport = typeof rpaReports.$inferSelect;

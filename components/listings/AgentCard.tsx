@@ -1,8 +1,10 @@
 'use client';
 
 import * as React from 'react';
+import Link from 'next/link';
 import {
   Phone, MessageCircle, Mail, Star, BadgeCheck, Clock, Calendar as CalendarIcon, MessageSquare,
+  Building2, ArrowUpRight,
 } from 'lucide-react';
 import type { Agent } from '@/lib/types';
 import { Card, CardBody } from '@/components/ui/Card';
@@ -119,6 +121,16 @@ export const AgentCard = React.forwardRef<AgentCardHandle, AgentCardProps>(funct
           </div>
 
           <Badge variant="success" className="mt-3">{t('agent.performance')}: {agent.performance}/100</Badge>
+
+          {/* Ofis public sayfası — sadece ofis hesapları (Madde 12) */}
+          {agent.isOffice && (
+            <Link href={`/office/${agent.id}`} className="mt-3 flex items-center justify-between gap-2 rounded-xl border border-gold-400/30 bg-gold-400/5 px-3 py-2.5 hover:border-gold-400/60 transition-colors">
+              <span className="inline-flex items-center gap-2 text-sm font-medium">
+                <Building2 size={15} className="text-gold-300" /> {t('agent.officePage')}
+              </span>
+              <ArrowUpRight size={16} className="text-gold-300" />
+            </Link>
+          )}
 
           <div className="mt-4 grid grid-cols-3 gap-2">
             <a href={`tel:${agent.phone}`}>

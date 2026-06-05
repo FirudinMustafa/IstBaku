@@ -41,40 +41,40 @@ export function Footer() {
         </div>
 
         <div>
-          <h4 className="text-xs font-semibold uppercase tracking-wider text-[color:var(--fg-faint)] mb-3">Platform</h4>
+          <h4 className="text-xs font-semibold uppercase tracking-wider text-[color:var(--fg-faint)] mb-3">{t('footer.platform')}</h4>
           <ul className="space-y-2 text-sm">
-            <li><Link href="/listings" className="hover:text-gold-300">İlanlar</Link></li>
-            <li><Link href="/ai-match" className="hover:text-gold-300">AI Eşleşme</Link></li>
-            <li><Link href="/private-portfolio" className="hover:text-gold-300">Gizli Portföy</Link></li>
-            <li><Link href="/new-listing" className="hover:text-gold-300">İlan Ver</Link></li>
+            <li><Link href="/listings" className="hover:text-gold-300">{t('footer.listings')}</Link></li>
+            <li><Link href="/ai-match" className="hover:text-gold-300">{t('footer.aiMatch')}</Link></li>
+            <li><Link href="/private-portfolio" className="hover:text-gold-300">{t('footer.privatePortfolio')}</Link></li>
+            <li><Link href="/new-listing" className="hover:text-gold-300">{t('footer.newListing')}</Link></li>
           </ul>
         </div>
         <div>
-          <h4 className="text-xs font-semibold uppercase tracking-wider text-[color:var(--fg-faint)] mb-3">Yatırımcı</h4>
+          <h4 className="text-xs font-semibold uppercase tracking-wider text-[color:var(--fg-faint)] mb-3">{t('footer.investor')}</h4>
           <ul className="space-y-2 text-sm">
-            <li><Link href="/reports" className="hover:text-gold-300">Raporlar</Link></li>
-            <li><Link href="/legal-guide" className="hover:text-gold-300">Hukuki Rehber</Link></li>
-            <li><Link href="/blog" className="hover:text-gold-300">Blog</Link></li>
-            <li><Link href="/dashboard" className="hover:text-gold-300">Panelim</Link></li>
+            <li><Link href="/reports" className="hover:text-gold-300">{t('footer.reports')}</Link></li>
+            <li><Link href="/legal-guide" className="hover:text-gold-300">{t('footer.legalGuide')}</Link></li>
+            <li><Link href="/blog" className="hover:text-gold-300">{t('footer.blog')}</Link></li>
+            <li><Link href="/dashboard" className="hover:text-gold-300">{t('footer.dashboard')}</Link></li>
           </ul>
         </div>
         <div>
-          <h4 className="text-xs font-semibold uppercase tracking-wider text-[color:var(--fg-faint)] mb-3">Şirket</h4>
+          <h4 className="text-xs font-semibold uppercase tracking-wider text-[color:var(--fg-faint)] mb-3">{t('footer.company')}</h4>
           <ul className="space-y-2 text-sm">
-            <li><Link href="/hakkimizda" className="hover:text-gold-300">Hakkımızda</Link></li>
-            <li><Link href="/coming-soon?topic=Kariyer" className="hover:text-gold-300">Kariyer</Link></li>
-            <li><Link href="/contact" className="hover:text-gold-300">İletişim</Link></li>
-            <li><Link href="/legal-guide#kvkk" className="hover:text-gold-300">KVKK / GDPR</Link></li>
+            <li><Link href="/hakkimizda" className="hover:text-gold-300">{t('footer.about')}</Link></li>
+            <li><Link href="/coming-soon?topic=Kariyer" className="hover:text-gold-300">{t('footer.career')}</Link></li>
+            <li><Link href="/contact" className="hover:text-gold-300">{t('footer.contact')}</Link></li>
+            <li><Link href="/legal-guide#kvkk" className="hover:text-gold-300">{t('footer.kvkk')}</Link></li>
           </ul>
         </div>
       </div>
       <div className="border-t">
         <div className="w-full px-4 py-4 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-[color:var(--fg-muted)]">
-          <div>© {new Date().getFullYear()} ISTBAKU. Tüm hakları saklıdır.</div>
+          <div>© {new Date().getFullYear()} ISTBAKU. {t('footer.rights')}</div>
           <div className="flex items-center gap-4">
-            <Link href="/legal-guide#privacy" className="hover:text-gold-300">Gizlilik</Link>
-            <Link href="/legal-guide#terms" className="hover:text-gold-300">Kullanım Şartları</Link>
-            <Link href="/coming-soon?topic=%C3%87erezler" className="hover:text-gold-300">Çerezler</Link>
+            <Link href="/legal-guide#privacy" className="hover:text-gold-300">{t('footer.privacy')}</Link>
+            <Link href="/legal-guide#terms" className="hover:text-gold-300">{t('footer.terms')}</Link>
+            <Link href="/coming-soon?topic=%C3%87erezler" className="hover:text-gold-300">{t('footer.cookies')}</Link>
           </div>
         </div>
       </div>

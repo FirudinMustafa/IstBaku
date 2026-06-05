@@ -82,7 +82,7 @@ export function Header() {
               <Logo size="lg" />
             </span>
 
-            <nav aria-label="Ana gezinme" className="hidden lg:flex items-center gap-1">
+            <nav aria-label="Ana gezinme" className="hidden lg:flex items-center gap-1 min-w-0">
               {NAV.map((item) => {
                 const active = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
                 return (
@@ -103,7 +103,7 @@ export function Header() {
               })}
             </nav>
 
-            <div className="flex items-center gap-1.5 sm:gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
               <ThemeToggle className="hidden sm:inline-flex" />
               <LangSwitcher />
               <CurrencySwitcher />

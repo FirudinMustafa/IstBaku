@@ -7,7 +7,7 @@ import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, ListChecks, Users, Briefcase, ShieldCheck,
   Flag, CreditCard, BarChart3, FileText, Bell, Search, Crown, LogOut, BookOpen,
-  Newspaper, Menu, X, Route, Tag,
+  Newspaper, Menu, X, Route, Tag, Building2, Star,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
 import { cn } from '@/lib/utils';
@@ -15,12 +15,15 @@ import { cn } from '@/lib/utils';
 const NAV = [
   { href: '/admin', l: 'Genel Bakış', i: LayoutDashboard },
   { href: '/admin/approvals', l: 'İlan Onayları', i: ListChecks },
+  { href: '/admin/listings', l: 'İlanlar', i: Building2 },
   { href: '/admin/users', l: 'Kullanıcılar', i: Users },
   { href: '/admin/agents', l: 'Ofisler & Ajanlar', i: Briefcase },
   { href: '/admin/offices', l: 'Ofis Performansı', i: Crown },
   { href: '/admin/kyc', l: 'KYC İnceleme', i: ShieldCheck },
+  { href: '/admin/reviews', l: 'Yorum Moderasyonu', i: Star },
   { href: '/admin/reports', l: 'Şikayetler', i: Flag },
   { href: '/admin/payments', l: 'Ödemeler & Gelir', i: CreditCard },
+  { href: '/admin/rpa-reports', l: 'RPA Raporları', i: FileText },
   { href: '/admin/pricing', l: 'Fiyatlandırma', i: Tag },
   { href: '/admin/analytics', l: 'Analitik', i: BarChart3 },
   { href: '/admin/country-guides', l: 'Ülke Rehberleri', i: BookOpen },

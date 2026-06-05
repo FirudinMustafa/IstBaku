@@ -40,6 +40,7 @@ export function SignUpForm() {
   const [phone, setPhone] = React.useState('');
   const [accept, setAccept] = React.useState(false);
   const [role, setRole] = React.useState<PublicSignUpRole>('user');
+  const [officeCountry, setOfficeCountry] = React.useState('TR');
   const [pickerOpen, setPickerOpen] = React.useState(false);
   const pickerRef = React.useRef<HTMLDivElement>(null);
 
@@ -93,6 +94,8 @@ export function SignUpForm() {
       phone: parsed.data.phone,
       // PB-03: forward role intent. Server re-validates against the whitelist.
       role: parsed.data.role,
+      // Ofis kaydında ülke (Madde 6). Diğer rollerde yok sayılır.
+      country: parsed.data.role === 'office' ? officeCountry : undefined,
     });
     setBusy(false);
     if (!res.ok) {
@@ -362,6 +365,24 @@ export function SignUpForm() {
           <p role="alert" className="text-[11px] text-danger mt-1">{errors.role}</p>
         )}
       </div>
+
+      {/* Ofis kaydında ülke seçimi (Madde 6) — talep olunan belgeler ileride ülkeye göre değişecek */}
+      {role === 'office' && (
+        <div>
+          <Label htmlFor="office-country">{t('auth.officeCountry')}</Label>
+          <select
+            id="office-country"
+            value={officeCountry}
+            onChange={(e) => setOfficeCountry(e.target.value)}
+            className="w-full h-10 px-3 rounded-xl bg-[color:var(--bg-elev)] border text-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--ring)]"
+          >
+            {COUNTRY_CODES.map((c) => (
+              <option key={c.iso} value={c.iso}>{c.flag} {c.name}</option>
+            ))}
+          </select>
+          <p className="text-[11px] text-[color:var(--fg-muted)] mt-1">{t('auth.officeCountryHint')}</p>
+        </div>
+      )}
 
       <div>
         {/* PF-03: real native checkbox with a stable id ("terms") + data-testid,

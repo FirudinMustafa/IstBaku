@@ -15,6 +15,8 @@ import { LocationSelector } from '@/components/ui/LocationSelector';
 import { LocationPicker } from '@/components/listings/LocationPicker';
 import { useToast } from '@/components/ui/Toast';
 import { useLang } from '@/components/layout/LangProvider';
+import { useCurrency } from '@/lib/currency-store';
+import { formatUsdCents } from '@/lib/currency';
 import { useUser } from '@/lib/user-auth';
 import { createListingAction } from '@/lib/listing-actions';
 import { createWizardExtrasPaymentAction, applyWizardPrivateAction } from '@/lib/listing-owner-actions';
@@ -54,9 +56,6 @@ interface NewListingClientProps {
   prices?: { badge: number; private: number };
 }
 
-// USD cent → "$NN" gösterimi
-const usdLabel = (cents: number) => `$${Math.round(cents / 100)}`;
-
 // PF-06: bump this whenever the persisted shape changes so old drafts are dropped.
 const DRAFT_STORAGE_KEY = 'istbaku.newListing.v1';
 
@@ -69,6 +68,9 @@ export function NewListingClient({ countries: countryList, prices }: NewListingC
   // Fallback default'lar (RSC fiyat geçmezse).
   const badgePrice = prices?.badge ?? 4900;
   const privatePrice = prices?.private ?? 9900;
+  const { currency } = useCurrency();
+  // USD cent → kullanıcının seçtiği para biriminde gösterim (Madde 10).
+  const usdLabel = (cents: number) => formatUsdCents(cents, currency);
   const dynamicCountries = countryList && countryList.length > 0
     ? countryList
     : [
@@ -119,6 +121,13 @@ export function NewListingClient({ countries: countryList, prices }: NewListingC
     dues: 0,
     deposit: 0,
     loanEligible: false,
+    groundSurvey: false,
+    // Arsa (type='arsa') alanları
+    imarDurumu: '',
+    paftaNo: '',
+    adaNo: '',
+    kaks: 0,
+    gabari: '',
     ownerType: 'sahibi' as 'sahibi' | 'emlakci' | 'insaat' | 'banka',
     titleDeed: 'belirsiz' as 'kat_mulkiyeti' | 'kat_irtifaki' | 'arsa_payi' | 'cikti_belgesi' | 'belirsiz',
     occupancy: 'bos' as 'bos' | 'kiracili' | 'mulk_sahibi',
@@ -427,10 +436,12 @@ export function NewListingClient({ countries: countryList, prices }: NewListingC
       // rooms is a free-form string in component state; zod narrows it to the union.
       rooms: form.rooms,
       bathrooms: form.bathrooms,
-      netArea: form.netArea,
-      grossArea: form.grossArea,
+      // Arsa: M² olarak tek alan girilir; net/brüt aynı kabul edilir, kat alanları
+      // arsa için anlamsız olduğundan validasyonu geçecek güvenli default'lar verilir.
+      netArea: form.type === 'arsa' ? (form.netArea || form.grossArea || 0) : form.netArea,
+      grossArea: form.type === 'arsa' ? (form.grossArea || form.netArea || 0) : form.grossArea,
       floor: form.floor,
-      totalFloors: form.totalFloors,
+      totalFloors: form.type === 'arsa' ? Math.max(1, form.totalFloors) : form.totalFloors,
       buildingAge: form.buildingAge,
       heating: form.heating,
       parking: form.parking,
@@ -462,6 +473,12 @@ export function NewListingClient({ countries: countryList, prices }: NewListingC
       swappable: form.swappable,
       deposit: form.deposit,
       loanEligible: form.loanEligible,
+      groundSurvey: form.groundSurvey,
+      imarDurumu: form.type === 'arsa' ? (form.imarDurumu?.trim() || undefined) : undefined,
+      paftaNo: form.type === 'arsa' ? (form.paftaNo?.trim() || undefined) : undefined,
+      adaNo: form.type === 'arsa' ? (form.adaNo?.trim() || undefined) : undefined,
+      kaks: form.type === 'arsa' && form.kaks > 0 ? form.kaks : undefined,
+      gabari: form.type === 'arsa' ? (form.gabari?.trim() || undefined) : undefined,
       siteName: form.inSite ? (form.siteName?.trim() || undefined) : undefined,
       coverKind: form.coverKind,
       coverPhotoIndex: Math.min(Math.max(0, form.coverPhotoIndex), Math.max(0, photos.length - 1)),
@@ -560,6 +577,12 @@ export function NewListingClient({ countries: countryList, prices }: NewListingC
       swappable: parsed.data.swappable,
       deposit: parsed.data.deposit,
       loanEligible: parsed.data.loanEligible,
+      groundSurvey: parsed.data.groundSurvey,
+      imarDurumu: parsed.data.imarDurumu,
+      paftaNo: parsed.data.paftaNo,
+      adaNo: parsed.data.adaNo,
+      kaks: parsed.data.kaks,
+      gabari: parsed.data.gabari,
       siteName: parsed.data.siteName,
       coverKind: parsed.data.coverKind,
       coverPhotoIndex: parsed.data.coverPhotoIndex,
@@ -727,6 +750,19 @@ export function NewListingClient({ countries: countryList, prices }: NewListingC
               <div className="sm:col-span-2"><Label>İlan başlığı (opsiyonel)</Label>
                 <Input value={form.customTitle} onChange={(e) => set({ customTitle: e.target.value })} maxLength={200} placeholder="Boş bırakırsan otomatik oluşturulur" />
               </div>
+
+              {/* Arsa (type='arsa') alanları — Madde 15 */}
+              {form.type === 'arsa' && (
+                <div className="sm:col-span-2 grid sm:grid-cols-2 gap-4 rounded-xl border border-gold-400/30 bg-gold-400/5 p-4">
+                  <h3 className="sm:col-span-2 text-sm font-semibold text-gold-300">Arsa Bilgileri</h3>
+                  <div><Label>İmar durumu</Label><Input value={form.imarDurumu} onChange={(e) => set({ imarDurumu: e.target.value })} maxLength={64} placeholder="Örn: Konut, Ticari, Tarla" /></div>
+                  <div><Label>Pafta No</Label><Input value={form.paftaNo} onChange={(e) => set({ paftaNo: e.target.value })} maxLength={64} placeholder="Opsiyonel" /></div>
+                  <div><Label>Ada No</Label><Input value={form.adaNo} onChange={(e) => set({ adaNo: e.target.value })} maxLength={64} placeholder="Opsiyonel" /></div>
+                  <div><Label>KAKS / Emsal</Label><Input type="number" min={0} step="0.01" value={numVal(form.kaks)} onChange={(e) => set({ kaks: numSet(e.target.value) })} placeholder="Örn: 1.5" /></div>
+                  <div><Label>Gabari (yükseklik)</Label><Input value={form.gabari} onChange={(e) => set({ gabari: e.target.value })} maxLength={32} placeholder="Örn: 12.50 m / Serbest" /></div>
+                </div>
+              )}
+
               <div><Label>Oda sayısı</Label>
                 <Select value={form.rooms} onChange={(e) => set({ rooms: e.target.value })}>
                   {ROOM_OPTIONS.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
@@ -817,6 +853,7 @@ export function NewListingClient({ countries: countryList, prices }: NewListingC
                   { k: 'gym', l: 'Spor alanı' },
                   { k: 'inSite', l: 'Site içerisinde' },
                   { k: 'swappable', l: 'Takasa uygun' },
+                  { k: 'groundSurvey', l: 'Zemin etüdü' },
                 ] as const).map((o) => (
                   <button
                     key={o.k}

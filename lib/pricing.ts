@@ -16,6 +16,7 @@ export const PRICE_KEYS = {
   private: 'price_private',
   tier_guclu: 'price_tier_guclu',
   tier_premium: 'price_tier_premium',
+  rpa_report: 'price_rpa_report',
 } as const;
 
 export type PriceKey = keyof typeof PRICE_KEYS;
@@ -27,6 +28,7 @@ export const PRICE_DEFAULTS: Record<PriceKey, number> = {
   private: 9900,
   tier_guclu: 900,
   tier_premium: 2900,
+  rpa_report: 4900,
 };
 
 // Admin UI etiketleri
@@ -36,6 +38,7 @@ export const PRICE_LABELS: Record<PriceKey, string> = {
   private: 'Gizli portföy',
   tier_guclu: 'Tier yükseltme — Güçlü',
   tier_premium: 'Tier yükseltme — Premium',
+  rpa_report: 'RPA Raporu',
 };
 
 let cache: { at: number; map: Record<PriceKey, number> } | null = null;

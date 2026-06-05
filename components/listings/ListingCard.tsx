@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import type { Property } from '@/lib/types';
 import { formatPrice, convert } from '@/lib/currency';
+import { formatListingNumber } from '@/lib/listing-number';
 import { useCurrency } from '@/lib/currency-store';
 import { timeAgo, cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/Badge';
@@ -88,7 +89,7 @@ export function ListingCard({ property: p, compact }: Props) {
           Heart/compare buttons sit above (z-10) with their own click handlers and stop
           propagation, so they remain reachable without nesting inside this anchor. */}
       <Link
-        href={`/property/${p.slug}`}
+        href={`/property/${formatListingNumber(p.listingNumber)}`}
         className="absolute inset-0 z-[1] focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-[color:var(--ring)] rounded-2xl"
         aria-label={`${p.title} — ${shownPriceLabel} — ${p.city} ${p.district}`}
       />

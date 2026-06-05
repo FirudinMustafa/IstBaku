@@ -1,18 +1,20 @@
 'use client';
 
 import * as React from 'react';
-import { User, Mail, Lock, Check, ShieldAlert } from 'lucide-react';
+import { User, Mail, Lock, Check, ShieldAlert, Camera, Loader2, Building2 } from 'lucide-react';
 import { Card, CardBody } from '@/components/ui/Card';
-import { Input, Label, Select } from '@/components/ui/Input';
+import { Input, Label, Select, Textarea } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { useToast } from '@/components/ui/Toast';
 import { useLang } from '@/components/layout/LangProvider';
 import { COUNTRY_CODES } from '@/lib/labels';
 import {
-  getMyAccount, updateProfileAction, changePasswordAction, changeEmailAction,
+  getMyAccount, updateProfileAction, changePasswordAction, changeEmailAction, updateAvatarAction,
   type MyAccount,
 } from '@/lib/account-actions';
+import { updateOfficeAboutAction } from '@/lib/office-public-actions';
+import { OfficeDetailsCard } from './OfficeDetailsCard';
 import { verifyCodeAction } from '@/lib/auth-actions';
 
 export function AccountSettings() {
@@ -26,6 +28,15 @@ export function AccountSettings() {
   const [phoneDial, setPhoneDial] = React.useState('+90');
   const [phone, setPhone] = React.useState('');
   const [savingProfile, setSavingProfile] = React.useState(false);
+
+  // Profil fotoğrafı
+  const [avatar, setAvatar] = React.useState<string | null>(null);
+  const [uploadingAvatar, setUploadingAvatar] = React.useState(false);
+  const avatarInputRef = React.useRef<HTMLInputElement>(null);
+
+  // Ofis — Hakkımızda
+  const [about, setAbout] = React.useState('');
+  const [savingAbout, setSavingAbout] = React.useState(false);
 
   // E-posta
   const [newEmail, setNewEmail] = React.useState('');
@@ -48,9 +59,54 @@ export function AccountSettings() {
       setName(a.name);
       setPhoneDial(a.phoneDial || '+90');
       setPhone(a.phone || '');
+      setAvatar(a.avatar);
+      setAbout(a.about || '');
     }
     setLoading(false);
   }, []);
+
+  async function saveAbout() {
+    setSavingAbout(true);
+    const res = await updateOfficeAboutAction(about);
+    setSavingAbout(false);
+    if (res.ok) {
+      toast({ variant: 'success', title: 'Kaydedildi', description: 'Hakkımızda metni güncellendi.' });
+    } else {
+      toast({ variant: 'error', title: 'Hata', description: res.error });
+    }
+  }
+
+  async function onAvatarPick(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = ''; // aynı dosyayı tekrar seçebilmek için
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      toast({ variant: 'error', title: 'Geçersiz dosya', description: 'Lütfen bir görsel seç.' });
+      return;
+    }
+    setUploadingAvatar(true);
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      const res = await fetch('/api/avatars/upload', { method: 'POST', body: fd });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.url) {
+        toast({ variant: 'error', title: 'Yüklenemedi', description: data.error ?? 'Profil fotoğrafı yüklenemedi.' });
+        return;
+      }
+      const save = await updateAvatarAction(data.url);
+      if (!save.ok) {
+        toast({ variant: 'error', title: 'Kaydedilemedi', description: save.error });
+        return;
+      }
+      setAvatar(data.url);
+      toast({ variant: 'success', title: 'Profil fotoğrafı güncellendi' });
+    } catch {
+      toast({ variant: 'error', title: 'Hata', description: 'Bağlantı hatası.' });
+    } finally {
+      setUploadingAvatar(false);
+    }
+  }
 
   React.useEffect(() => { load(); }, [load]);
 
@@ -125,6 +181,28 @@ export function AccountSettings() {
       <Card>
         <CardBody className="space-y-4">
           <div className="flex items-center gap-2 font-semibold"><User size={16} className="text-gold-300" /> {t('dash.settings.profile')}</div>
+
+          {/* Profil fotoğrafı */}
+          <div className="flex items-center gap-4">
+            <div className="relative size-20 rounded-full overflow-hidden border border-[color:var(--border)] bg-[color:var(--bg-elev)] shrink-0">
+              {avatar
+                ? <img src={avatar} alt="" className="size-full object-cover" />
+                : <div className="size-full flex items-center justify-center text-[color:var(--fg-muted)]"><User size={28} /></div>}
+              {uploadingAvatar && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                  <Loader2 size={20} className="animate-spin text-white" />
+                </div>
+              )}
+            </div>
+            <div className="space-y-1.5">
+              <input ref={avatarInputRef} type="file" accept="image/*" className="hidden" onChange={onAvatarPick} />
+              <Button variant="outline" size="sm" onClick={() => avatarInputRef.current?.click()} disabled={uploadingAvatar}>
+                <Camera size={14} /> {t('dash.settings.changePhoto')}
+              </Button>
+              <p className="text-[11px] text-[color:var(--fg-muted)]">{t('dash.settings.photoHint')}</p>
+            </div>
+          </div>
+
           <div>
             <Label>{t('dash.settings.fullName')}</Label>
             <Input value={name} onChange={(e) => setName(e.target.value)} maxLength={120} />
@@ -148,6 +226,23 @@ export function AccountSettings() {
           </div>
         </CardBody>
       </Card>
+
+      {/* Ofis — Hakkımızda (sadece ofis hesapları) */}
+      {acc.isOffice && (
+        <Card>
+          <CardBody className="space-y-4">
+            <div className="flex items-center gap-2 font-semibold"><Building2 size={16} className="text-gold-300" /> {t('dash.settings.officeAbout')}</div>
+            <p className="text-xs text-[color:var(--fg-muted)]">{t('dash.settings.officeAboutHint')}</p>
+            <Textarea id="office-about" rows={5} value={about} onChange={(e) => setAbout(e.target.value)} maxLength={2000} placeholder={t('dash.settings.officeAboutPh')} />
+            <div className="flex justify-end">
+              <Button variant="gold" onClick={saveAbout} loading={savingAbout}><Check size={14} /> {t('dash.settings.save')}</Button>
+            </div>
+          </CardBody>
+        </Card>
+      )}
+
+      {/* Ofis bilgileri & belgeler (KYC — Madde 5/6) */}
+      {acc.isOffice && <OfficeDetailsCard />}
 
       {/* E-posta */}
       <Card>

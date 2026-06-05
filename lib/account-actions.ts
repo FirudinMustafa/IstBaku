@@ -3,7 +3,7 @@
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { db } from '@/db/client';
-import { users, emailVerificationTokens } from '@/db/schema';
+import { users, emailVerificationTokens, agents } from '@/db/schema';
 import { eq, sql, and, isNull } from 'drizzle-orm';
 import { getSession } from './session';
 import { getCurrentUser } from './auth-actions';
@@ -23,6 +23,9 @@ export interface MyAccount {
   phoneDial: string;
   phone: string;
   emailVerified: boolean;
+  avatar: string | null;
+  isOffice: boolean;
+  about: string | null;
 }
 
 export async function getMyAccount(): Promise<MyAccount | null> {
@@ -30,13 +33,48 @@ export async function getMyAccount(): Promise<MyAccount | null> {
   if (!cur) return null;
   const [u] = await db.select().from(users).where(eq(users.id, cur.id)).limit(1);
   if (!u) return null;
+  const isOffice = (u.bio ?? '').includes('[office]');
+  let about: string | null = null;
+  if (isOffice) {
+    const [a] = await db.select({ about: agents.about }).from(agents).where(eq(agents.userId, cur.id)).limit(1);
+    about = a?.about ?? null;
+  }
   return {
     name: u.name,
     email: u.email,
     phoneDial: u.phoneDial ?? '',
     phone: u.phone ?? '',
     emailVerified: u.emailVerified,
+    avatar: u.avatar ?? null,
+    isOffice,
+    about,
   };
+}
+
+/**
+ * Profil fotoğrafı (avatar) güncelle. `url` mutlaka kendi yükleme ucumuzdan
+ * (`/api/avatars/upload` → Blob veya /uploads) gelmeli; harici/arbitrary
+ * değerleri engellemek için basit bir doğrulama yapılır.
+ */
+export async function updateAvatarAction(
+  url: string,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const cur = await getCurrentUser();
+  if (!cur) return { ok: false, error: 'Giriş yapmalısın.' };
+
+  const clean = stripCrlf(url).trim();
+  const isOwnUpload = /^https:\/\/[^/]+\.blob\.vercel-storage\.com\//.test(clean) || clean.startsWith('/uploads/avatars/');
+  if (!isOwnUpload || clean.length > 1000) {
+    return { ok: false, error: 'Geçersiz görsel adresi.' };
+  }
+
+  try {
+    await db.update(users).set({ avatar: clean, updatedAt: new Date() }).where(eq(users.id, cur.id));
+    return { ok: true };
+  } catch (err) {
+    console.error('updateAvatar', err);
+    return { ok: false, error: 'Profil fotoğrafı güncellenemedi.' };
+  }
 }
 
 /** Ad + telefon güncelle. */

@@ -18,6 +18,8 @@ import { db } from '@/db/client';
 import { payments } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { APP_URL } from './email';
+import { convert, fromMinorUnits, toMinorUnits } from './currency';
+import type { Currency } from './types';
 import {
   createKapitalOrder,
   buildHppRedirectUrl,
@@ -52,8 +54,15 @@ export async function createProviderCheckout(args: {
 }): Promise<{ url: string } | { error: string }> {
   try {
     const redirectUrl = `${APP_URL}/api/payments/kapital/callback?paymentId=${args.paymentId}`;
+    // Kapital (test) merchant hesabı AZN ile çalışır. Platform ücretleri USD cent
+    // olarak saklandığından bankaya göndermeden önce AZN'ye çeviriyoruz.
+    const from = (args.currency || 'USD') as Currency;
+    const amountAznMinor = from === 'AZN'
+      ? args.amount
+      : toMinorUnits(convert(fromMinorUnits(args.amount, from), from, 'AZN'), 'AZN');
     const order = await createKapitalOrder({
-      amountMinor: args.amount,
+      amountMinor: amountAznMinor,
+      currency: 'AZN',
       description: args.description,
       redirectUrl,
     });
