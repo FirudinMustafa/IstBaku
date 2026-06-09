@@ -84,6 +84,16 @@ Not: loading.tsx skeleton'larındaki "Yükleniyor…" server-render (kısa flash
 Not: Sunucu hata/bildirim/email metinleri ayrı kategori (request-lang gerekir) — UI öncelik.
 Not: Sunucu kaynaklı hata mesajları/bildirim/email metinleri ayrı kategori (request-lang gerektirir) — UI öncelik.
 
+## TUR 5 — DİZAYN / RESPONSIVE / TAŞMA DENETİMİ (tüm sayfalar)
+Hedef: her sayfa 375/768/1440px'de tutarlı, taşmasız, mantıklı görünsün.
+- [x] Otomatik yatay-taşma taraması: ~46 sayfa × 375/768/1440 (public+authed+admin)
+- [x] Tespit & düzeltme:
+  - Header sağ kümesi mobilde +63px taşıyordu (GLOBAL) → responsive Logo (sm/md/lg) + buton size-9 + px-3 → çözüldü
+  - Admin tab barları (approvals +20, reports +89) → max-w-full + overflow-x-auto
+  - Dashboard layout/overview + agent grid'leri → base `grid-cols-1` (auto-kolon min-w-max ile büyüyordu) + aside min-w-0
+- [x] Görsel inceleme (mobil): home/listings/property/compare temiz, tutarlı
+- [x] Re-scan: TÜM sayfalar × 3 genişlik → SIFIR yatay taşma; typecheck + build temiz
+
 ## KALAN (dürüst)
 - Mahalle dataseti hâlâ seed + serbest metin (tam TR ~50k YOK) — site önerileri otomatik büyüyor.
 - new-listing'deki amenity etiketleri (lib/labels.ts amenitiesFor) hâlâ TR data — TSX label'ları çevrildi.

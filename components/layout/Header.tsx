@@ -76,10 +76,13 @@ export function Header() {
           scrolled ? 'glass backdrop-blur-md shadow-[0_2px_24px_rgba(0,0,0,0.18)]' : 'bg-[color:var(--bg)]/40 backdrop-blur-sm md:bg-transparent',
         )}
       >
-        <div className="w-full px-4">
-          <div className="h-16 flex items-center justify-between gap-3">
-            <span className="pl-1 sm:pl-3 lg:pl-5 shrink-0">
-              <Logo size="lg" />
+        <div className="w-full px-3 sm:px-4">
+          <div className="h-16 flex items-center justify-between gap-2 sm:gap-3">
+            {/* Responsive logo — mobilde küçük, md'de orta, lg+ tam boy (taşma fix, Tur5). */}
+            <span className="pl-0.5 sm:pl-3 lg:pl-5 shrink-0">
+              <span className="inline-flex sm:hidden"><Logo size="sm" /></span>
+              <span className="hidden sm:inline-flex lg:hidden"><Logo size="md" /></span>
+              <span className="hidden lg:inline-flex"><Logo size="lg" /></span>
             </span>
 
             <nav aria-label="Ana gezinme" className="hidden lg:flex items-center gap-1 min-w-0">
@@ -192,7 +195,7 @@ export function Header() {
               {/* Mobil: bildirim ikonu küçük ekranda da görünür */}
               <Link
                 href="/dashboard?tab=notifications"
-                className="sm:hidden relative inline-flex items-center justify-center size-10 rounded-xl border border-[color:var(--border)] bg-[color:var(--bg-elev)]"
+                className="sm:hidden relative inline-flex items-center justify-center size-9 rounded-xl border border-[color:var(--border)] bg-[color:var(--bg-elev)]"
                 aria-label={`Bildirimler${unread ? ` (${unread})` : ''}`}
               >
                 <Bell size={17} />
@@ -204,7 +207,7 @@ export function Header() {
               </Link>
 
               <button
-                className="lg:hidden touch-target inline-flex items-center justify-center size-10 rounded-xl border border-[color:var(--border)] bg-[color:var(--bg-elev)] active:scale-95 transition-transform"
+                className="lg:hidden touch-target inline-flex items-center justify-center size-9 rounded-xl border border-[color:var(--border)] bg-[color:var(--bg-elev)] active:scale-95 transition-transform"
                 onClick={() => setOpen((v) => !v)}
                 aria-label={open ? 'Menüyü kapat' : 'Menüyü aç'}
                 aria-expanded={open}

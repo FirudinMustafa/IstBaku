@@ -170,8 +170,8 @@ export function DashboardClient({ initialUser, myListings, favorites, savedSearc
         </div>
       </div>
 
-      <div className="grid lg:grid-cols-[240px_1fr] gap-6">
-        <aside className="lg:sticky lg:top-20 lg:h-fit space-y-1 overflow-x-auto lg:overflow-visible -mx-4 px-4 lg:mx-0 lg:px-0">
+      <div className="grid grid-cols-1 lg:grid-cols-[240px_1fr] gap-6">
+        <aside className="min-w-0 lg:sticky lg:top-20 lg:h-fit space-y-1 overflow-x-auto lg:overflow-visible -mx-4 px-4 lg:mx-0 lg:px-0">
           <div className="flex lg:flex-col gap-1 lg:gap-1 min-w-max lg:min-w-0">
             {TABS.map((item) => (
               <button
@@ -245,7 +245,7 @@ function Overview({ user, myListings, favorites, notifications }: { user: Public
         })}
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardBody>
             <h3 className="font-semibold mb-3 inline-flex items-center gap-2"><Sparkles size={15} className="text-gold-300" /> {t('dash.yourListings')}</h3>

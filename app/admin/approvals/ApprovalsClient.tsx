@@ -102,7 +102,7 @@ export function ApprovalsClient({
         <p className="text-sm text-[color:var(--fg-muted)] mt-1">{t('approvals.desc')} <strong>{t('approvals.desc.newListing')}</strong> {t('approvals.desc.mid')} <strong>{t('approvals.desc.tier')}</strong> {t('approvals.desc.end')}</p>
       </div>
 
-      <div className="flex items-center gap-1 p-1 rounded-xl bg-[color:var(--bg-elev)] border w-fit">
+      <div className="flex items-center gap-1 p-1 rounded-xl bg-[color:var(--bg-elev)] border max-w-full overflow-x-auto">
         {(['pending', 'approved', 'rejected'] as const).map((tt) => (
           <button
             key={tt}

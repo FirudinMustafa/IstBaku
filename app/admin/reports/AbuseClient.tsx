@@ -76,7 +76,7 @@ export function AbuseClient({ initial }: { initial: Item[] }) {
         ))}
       </div>
 
-      <div className="flex items-center gap-1 p-1 rounded-xl bg-[color:var(--bg-elev)] border w-fit overflow-x-auto">
+      <div className="flex items-center gap-1 p-1 rounded-xl bg-[color:var(--bg-elev)] border max-w-full overflow-x-auto">
         {(['all', 'open', 'reviewing', 'resolved', 'dismissed'] as const).map((tabKey) => (
           <button
             key={tabKey}
