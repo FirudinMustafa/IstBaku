@@ -8,9 +8,16 @@ import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { FilterSidebar } from '@/components/listings/FilterSidebar';
+import dynamic from 'next/dynamic';
 import { ListingCard } from '@/components/listings/ListingCard';
-import { MapView } from '@/components/listings/MapView';
 import { useLang } from '@/components/layout/LangProvider';
+
+// Perf (Madde 14): Leaflet ağır + sadece tarayıcıda çalışır → harita yalnızca
+// gerektiğinde (split/map görünümü) yüklensin, başlangıç bundle'ından çıksın.
+const MapView = dynamic(() => import('@/components/listings/MapView').then((m) => m.MapView), {
+  ssr: false,
+  loading: () => <div className="h-full w-full bg-[color:var(--bg-elev)] animate-pulse" />,
+});
 import type { FilterState, Property } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { formatListingNumber, parseListingNumber } from '@/lib/listing-number';
@@ -32,6 +39,14 @@ function applyFilters(list: Property[], f: FilterState, q?: string): Property[] 
   if (f.country) out = out.filter((p) => p.country === f.country);
   if (f.city) out = out.filter((p) => p.city === f.city);
   if (f.district) out = out.filter((p) => p.district === f.district);
+  if (f.neighborhood?.trim()) {
+    const nl = f.neighborhood.trim().toLowerCase();
+    out = out.filter((p) => (p.neighborhood ?? '').toLowerCase().includes(nl));
+  }
+  if (f.siteName?.trim()) {
+    const sl = f.siteName.trim().toLowerCase();
+    out = out.filter((p) => (p.siteName ?? '').toLowerCase().includes(sl));
+  }
   if (f.type?.length) out = out.filter((p) => f.type!.includes(p.type));
   if (f.minPrice) out = out.filter((p) => p.price >= f.minPrice!);
   if (f.maxPrice) out = out.filter((p) => p.price <= f.maxPrice!);
@@ -98,6 +113,8 @@ function activeFilterCount(f: FilterState, q?: string): number {
   if (q?.trim()) n++;
   if (f.purpose) n++;
   if (f.country) n++;
+  if (f.neighborhood?.trim()) n++;
+  if (f.siteName?.trim()) n++;
   if (f.type?.length) n += f.type.length;
   if (f.minPrice || f.maxPrice) n++;
   if (f.rooms?.length) n += f.rooms.length;
@@ -148,15 +165,22 @@ export function ListingsClient({ initialListings = [], countries = [] }: Listing
   const [showMobileBar, setShowMobileBar] = React.useState(true);
   const lastScrollY = React.useRef(0);
   React.useEffect(() => {
+    // Perf (Madde 14): scroll olayını rAF ile throttle et — hızlı kaydırmada
+    // her frame'de setState çağrısını önler (mobilde kasma azalır).
+    let ticking = false;
     function onScroll() {
-      const y = window.scrollY;
-      const dy = y - lastScrollY.current;
-      // Only react to meaningful scroll deltas, ignore tiny rubber-band jitter.
-      if (Math.abs(dy) < 4) return;
-      if (y < 80) setShowMobileBar(true);
-      else if (dy > 0) setShowMobileBar(false); // scrolling down — hide
-      else setShowMobileBar(true);              // scrolling up — show
-      lastScrollY.current = y;
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        ticking = false;
+        const y = window.scrollY;
+        const dy = y - lastScrollY.current;
+        if (Math.abs(dy) < 4) return;
+        if (y < 80) setShowMobileBar(true);
+        else if (dy > 0) setShowMobileBar(false); // aşağı — gizle
+        else setShowMobileBar(true);              // yukarı — göster
+        lastScrollY.current = y;
+      });
     }
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
@@ -164,6 +188,19 @@ export function ListingsClient({ initialListings = [], countries = [] }: Listing
 
   const results = React.useMemo(() => applyFilters(initialListings, filters, q), [filters, q, initialListings]);
   const filterCount = activeFilterCount(filters, q);
+
+  // Madde 3: "site içi" araması için o bölgedeki mevcut site/kompleks isimleri —
+  // yüklü ilanlardan (seçili şehir/ilçeye göre) distinct türetilir; yeni ilan eklendikçe büyür.
+  const siteSuggestions = React.useMemo(() => {
+    const set = new Set<string>();
+    for (const p of initialListings) {
+      if (!p.siteName) continue;
+      if (filters.city && p.city !== filters.city) continue;
+      if (filters.district && p.district !== filters.district) continue;
+      set.add(p.siteName.trim());
+    }
+    return [...set].filter(Boolean).sort((a, b) => a.localeCompare(b, 'tr'));
+  }, [initialListings, filters.city, filters.district]);
 
   // URL'yi search query ile senkronize tut (debounced).
   // PP-01: under rapid filter spam, calling router.replace inside an old timer can
@@ -344,7 +381,7 @@ export function ListingsClient({ initialListings = [], countries = [] }: Listing
       <div className="mt-4 md:mt-6 grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
         {/* Desktop sidebar */}
         <div className="hidden lg:block">
-          <FilterSidebar filters={filters} onChange={setFilters} resultCount={results.length} countries={countries} />
+          <FilterSidebar filters={filters} onChange={setFilters} resultCount={results.length} countries={countries} siteSuggestions={siteSuggestions} />
         </div>
 
         <div id="listings-results">
@@ -411,7 +448,7 @@ export function ListingsClient({ initialListings = [], countries = [] }: Listing
           </div>
         }
       >
-        <FilterSidebar filters={filters} onChange={setFilters} resultCount={results.length} countries={countries} />
+        <FilterSidebar filters={filters} onChange={setFilters} resultCount={results.length} countries={countries} siteSuggestions={siteSuggestions} />
       </BottomSheet>
     </div>
   );

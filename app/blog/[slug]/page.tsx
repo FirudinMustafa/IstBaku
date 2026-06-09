@@ -7,14 +7,15 @@ import { getBlogPostBySlug, getPublishedBlogPosts } from '@/lib/blog-actions';
 import { sanitizeHtml } from '@/lib/sanitize';
 import { Badge } from '@/components/ui/Badge';
 import { Card, CardBody } from '@/components/ui/Card';
+import { T } from '@/components/i18n/T';
 
 export const revalidate = 3600; // ISR 1 hour
 
-const CATEGORY_LABELS: Record<string, string> = {
-  news: 'Haberler',
-  market: 'Piyasa',
-  guide: 'Rehber',
-  partner: 'Partner',
+const CATEGORY_LABEL_KEYS: Record<string, string> = {
+  news: 'blog.cat.news',
+  market: 'blog.cat.market',
+  guide: 'blog.cat.guide',
+  partner: 'blog.cat.partner',
 };
 
 const CATEGORY_VARIANTS: Record<string, 'gold' | 'navy' | 'success' | 'premium'> = {
@@ -99,7 +100,7 @@ export default async function BlogPostPage({ params }: Props) {
           {/* Meta header */}
           <div className="flex items-center gap-2 flex-wrap mb-4">
             <Badge variant={CATEGORY_VARIANTS[post.category] ?? 'navy'}>
-              {CATEGORY_LABELS[post.category] ?? post.category}
+              {CATEGORY_LABEL_KEYS[post.category] ? <T k={CATEGORY_LABEL_KEYS[post.category]} /> : post.category}
             </Badge>
             {post.tags.map((tag) => (
               <Badge key={tag} variant="outline" className="text-[10px]">
@@ -155,7 +156,7 @@ export default async function BlogPostPage({ params }: Props) {
         <section className="w-full px-2 sm:px-3 lg:px-5 py-12 sm:py-16 mt-8 border-t border-[color:var(--border)]">
           <div className="max-w-5xl mx-auto">
             <h2 className="text-2xl font-bold tracking-tight mb-8 text-center">
-              Diger Yazilar
+              <T k="blog.related" />
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
               {relatedPosts.map((rp) => (
@@ -180,7 +181,7 @@ export default async function BlogPostPage({ params }: Props) {
                           variant={CATEGORY_VARIANTS[rp.category] ?? 'navy'}
                           className="backdrop-blur-sm"
                         >
-                          {CATEGORY_LABELS[rp.category] ?? rp.category}
+                          {CATEGORY_LABEL_KEYS[rp.category] ? <T k={CATEGORY_LABEL_KEYS[rp.category]} /> : rp.category}
                         </Badge>
                       </div>
                     </div>

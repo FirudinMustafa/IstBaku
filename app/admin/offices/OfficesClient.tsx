@@ -7,12 +7,14 @@ import { Card, CardBody } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { useToast } from '@/components/ui/Toast';
+import { useLang } from '@/components/layout/LangProvider';
 import { recomputeOfficeMetricsAction, type OfficeMetricRow } from '@/lib/office-actions';
 import { OFFICE_CRITERIA, TIER_LABEL } from '@/lib/office-metrics';
 
 function pct(v: number) { return `%${Math.round(v * 100)}`; }
 
 export function OfficesClient({ rows }: { rows: OfficeMetricRow[] }) {
+  const { t } = useLang();
   const { toast } = useToast();
   const router = useRouter();
   const [busy, setBusy] = React.useState(false);
@@ -26,10 +28,10 @@ export function OfficesClient({ rows }: { rows: OfficeMetricRow[] }) {
     const res = await recomputeOfficeMetricsAction();
     setBusy(false);
     if (res.ok) {
-      toast({ variant: 'success', title: 'Hesaplandı', description: `${res.count} ofis güncellendi.` });
+      toast({ variant: 'success', title: t('admin.offices.toast.done'), description: t('admin.offices.toast.doneDesc').replace('{n}', String(res.count)) });
       router.refresh();
     } else {
-      toast({ variant: 'error', title: 'Hata', description: res.error });
+      toast({ variant: 'error', title: t('common.error'), description: res.error });
     }
   }
 
@@ -37,22 +39,22 @@ export function OfficesClient({ rows }: { rows: OfficeMetricRow[] }) {
     <div className="space-y-6">
       <div className="flex items-end justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Ofis Performansı & Rütbe</h1>
+          <h1 className="text-2xl font-bold tracking-tight">{t('admin.offices.title')}</h1>
           <p className="text-sm text-[color:var(--fg-muted)] mt-1">
-            Müşteriye kapalı içsel değerlendirme. İlk 8 kriter → Premium Office, 12 kriter → Gold Partner.
+            {t('admin.offices.subtitle')}
           </p>
         </div>
         <Button variant="gold" size="sm" onClick={recompute} disabled={busy}>
-          {busy ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />} Yeniden hesapla
+          {busy ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />} {t('admin.offices.recompute')}
         </Button>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
-          { l: 'Toplam Ofis', v: rows.length },
-          { l: 'Gold Partner', v: gold },
-          { l: 'Premium Office', v: premium },
-          { l: 'Standart', v: rows.length - gold - premium },
+          { l: t('admin.offices.stat.total'), v: rows.length },
+          { l: t('admin.offices.stat.gold'), v: gold },
+          { l: t('admin.offices.stat.premium'), v: premium },
+          { l: t('admin.offices.stat.standard'), v: rows.length - gold - premium },
         ].map((s) => (
           <Card key={s.l}><CardBody className="p-4">
             <div className="text-xs text-[color:var(--fg-muted)]">{s.l}</div>
@@ -63,7 +65,7 @@ export function OfficesClient({ rows }: { rows: OfficeMetricRow[] }) {
 
       {rows.length === 0 && (
         <Card><CardBody className="p-6 text-center text-[color:var(--fg-muted)]">
-          Henüz ofis yok veya metrik hesaplanmadı. "Yeniden hesapla" ile başlat.
+          {t('admin.offices.empty')}
         </CardBody></Card>
       )}
 
@@ -80,22 +82,22 @@ export function OfficesClient({ rows }: { rows: OfficeMetricRow[] }) {
                     <div className="text-xs text-[color:var(--fg-muted)]">{r.agency ?? r.email}</div>
                   </div>
                   <TierBadge tier={r.tier} />
-                  <div className="text-sm font-semibold tabular-nums">{r.criteriaMet.length}/12 kriter</div>
+                  <div className="text-sm font-semibold tabular-nums">{t('admin.offices.criteria').replace('{n}', String(r.criteriaMet.length))}</div>
                   <button
                     onClick={() => setOpen(expanded ? null : r.agentId)}
                     className="inline-flex items-center gap-1 text-xs text-[color:var(--fg-muted)] hover:text-gold-300"
                   >
-                    Detay <ChevronDown size={14} className={expanded ? 'rotate-180 transition-transform' : 'transition-transform'} />
+                    {t('admin.offices.detail')} <ChevronDown size={14} className={expanded ? 'rotate-180 transition-transform' : 'transition-transform'} />
                   </button>
                 </div>
 
                 <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-2 text-xs">
-                  <Stat l="Aktif ilan" v={String(r.activeListings)} />
-                  <Stat l="Video" v={pct(r.videoRatio)} />
-                  <Stat l="360°" v={pct(r.tour360Ratio)} />
-                  <Stat l="Şikayet" v={pct(r.complaintRatio)} />
-                  <Stat l="Puan" v={r.avgReviewRating.toFixed(1)} />
-                  <Stat l="Yanıt" v={`${r.avgResponseMins} dk`} />
+                  <Stat l={t('admin.offices.stat.activeListings')} v={String(r.activeListings)} />
+                  <Stat l={t('admin.offices.stat.video')} v={pct(r.videoRatio)} />
+                  <Stat l={t('admin.offices.stat.tour360')} v={pct(r.tour360Ratio)} />
+                  <Stat l={t('admin.offices.stat.complaint')} v={pct(r.complaintRatio)} />
+                  <Stat l={t('admin.offices.stat.rating')} v={r.avgReviewRating.toFixed(1)} />
+                  <Stat l={t('admin.offices.stat.response')} v={t('admin.offices.response.mins').replace('{n}', String(r.avgResponseMins))} />
                 </div>
 
                 {expanded && (
@@ -106,8 +108,8 @@ export function OfficesClient({ rows }: { rows: OfficeMetricRow[] }) {
                           {met.has(c.id) ? '✓' : '○'}
                         </span>
                         <span className={c.id <= 8 ? '' : 'text-[color:var(--fg-muted)]'}>{c.id}. {c.label}</span>
-                        {c.id === 8 && <span className="ml-auto text-[10px] text-[color:var(--fg-faint)]">↑ Premium Office</span>}
-                        {c.id === 12 && <span className="ml-auto text-[10px] text-[color:var(--fg-faint)]">↑ Gold Partner</span>}
+                        {c.id === 8 && <span className="ml-auto text-[10px] text-[color:var(--fg-faint)]">{t('admin.offices.thresholdPremium')}</span>}
+                        {c.id === 12 && <span className="ml-auto text-[10px] text-[color:var(--fg-faint)]">{t('admin.offices.thresholdGold')}</span>}
                       </li>
                     ))}
                   </ul>
@@ -119,7 +121,7 @@ export function OfficesClient({ rows }: { rows: OfficeMetricRow[] }) {
       </div>
 
       <p className="text-[11px] text-[color:var(--fg-faint)]">
-        Not: "Satış/kira ile kapanma" (kriter 12) için ilan durumu verisi henüz toplanmıyor; bu kriter şimdilik 0 sayılır.
+        {t('admin.offices.note')}
       </p>
     </div>
   );

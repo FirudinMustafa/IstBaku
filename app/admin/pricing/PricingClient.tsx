@@ -6,20 +6,22 @@ import { Card, CardBody } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input, Label } from '@/components/ui/Input';
 import { useToast } from '@/components/ui/Toast';
+import { useLang } from '@/components/layout/LangProvider';
 import { updatePricingAction } from '@/lib/pricing-actions';
 
 // İç anahtar listesi + etiketler (server'dan bağımsız; db import etmeden).
 type PriceKey = 'date_renewal' | 'istbaku_badge' | 'private' | 'tier_guclu' | 'tier_premium' | 'rpa_report';
-const FIELDS: { key: PriceKey; label: string; hint: string }[] = [
-  { key: 'date_renewal', label: 'Tarih yenileme', hint: 'İlan tarihini tazeleme ücreti' },
-  { key: 'istbaku_badge', label: 'İstBaku Onaylı rozet', hint: 'Onaylı rozet / premium başvuru ücreti' },
-  { key: 'private', label: 'Gizli portföy', hint: 'İlanı gizli portföye alma ücreti' },
-  { key: 'tier_guclu', label: 'Tier yükseltme — Güçlü', hint: 'Güçlü pakete yükseltme ücreti' },
-  { key: 'tier_premium', label: 'Tier yükseltme — Premium', hint: 'Premium pakete yükseltme ücreti' },
-  { key: 'rpa_report', label: 'RPA Raporu', hint: 'İlan(lar) için RPA rapor talebi ücreti' },
+const FIELDS: { key: PriceKey; labelKey: string; hintKey: string }[] = [
+  { key: 'date_renewal', labelKey: 'admin.pricing.f.date_renewal', hintKey: 'admin.pricing.f.date_renewal.hint' },
+  { key: 'istbaku_badge', labelKey: 'admin.pricing.f.istbaku_badge', hintKey: 'admin.pricing.f.istbaku_badge.hint' },
+  { key: 'private', labelKey: 'admin.pricing.f.private', hintKey: 'admin.pricing.f.private.hint' },
+  { key: 'tier_guclu', labelKey: 'admin.pricing.f.tier_guclu', hintKey: 'admin.pricing.f.tier_guclu.hint' },
+  { key: 'tier_premium', labelKey: 'admin.pricing.f.tier_premium', hintKey: 'admin.pricing.f.tier_premium.hint' },
+  { key: 'rpa_report', labelKey: 'admin.pricing.f.rpa_report', hintKey: 'admin.pricing.f.rpa_report.hint' },
 ];
 
 export function PricingClient({ initial }: { initial: Record<PriceKey, number> }) {
+  const { t } = useLang();
   const { toast } = useToast();
   const [saving, setSaving] = React.useState(false);
   // USD (dolar) cinsinden düzenle; kaydederken cent'e çevir.
@@ -32,7 +34,7 @@ export function PricingClient({ initial }: { initial: Record<PriceKey, number> }
     for (const f of FIELDS) {
       const d = parseFloat(dollars[f.key]);
       if (!Number.isFinite(d) || d < 0) {
-        toast({ variant: 'error', title: 'Geçersiz fiyat', description: `${f.label} için geçerli bir tutar gir.` });
+        toast({ variant: 'error', title: t('admin.pricing.toast.invalid'), description: t('admin.pricing.toast.invalidDesc').replace('{label}', t(f.labelKey)) });
         return;
       }
       updates[f.key] = Math.round(d * 100); // cent
@@ -40,18 +42,18 @@ export function PricingClient({ initial }: { initial: Record<PriceKey, number> }
     setSaving(true);
     const res = await updatePricingAction(updates);
     setSaving(false);
-    if (res.ok) toast({ variant: 'success', title: 'Kaydedildi', description: 'Fiyatlar güncellendi.' });
-    else toast({ variant: 'error', title: 'Hata', description: res.error });
+    if (res.ok) toast({ variant: 'success', title: t('admin.pricing.toast.saved'), description: t('admin.pricing.toast.savedDesc') });
+    else toast({ variant: 'error', title: t('common.error'), description: res.error });
   }
 
   return (
     <div className="space-y-6 max-w-2xl">
       <div>
         <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-          <CreditCard size={20} className="text-gold-300" /> Fiyatlandırma
+          <CreditCard size={20} className="text-gold-300" /> {t('admin.pricing.title')}
         </h1>
         <p className="text-sm text-[color:var(--fg-muted)] mt-1">
-          Platform ücretleri (USD). Değişiklikler tüm ödeme noktalarında geçerli olur.
+          {t('admin.pricing.subtitle')}
         </p>
       </div>
 
@@ -60,8 +62,8 @@ export function PricingClient({ initial }: { initial: Record<PriceKey, number> }
           {FIELDS.map((f) => (
             <div key={f.key} className="grid sm:grid-cols-[1fr_auto] sm:items-center gap-2">
               <div>
-                <Label>{f.label}</Label>
-                <p className="text-xs text-[color:var(--fg-muted)]">{f.hint}</p>
+                <Label>{t(f.labelKey)}</Label>
+                <p className="text-xs text-[color:var(--fg-muted)]">{t(f.hintKey)}</p>
               </div>
               <div className="relative w-full sm:w-40">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[color:var(--fg-muted)] text-sm">$</span>
@@ -80,15 +82,14 @@ export function PricingClient({ initial }: { initial: Record<PriceKey, number> }
           <div className="pt-2 border-t border-[color:var(--border)] flex justify-end">
             <Button variant="gold" onClick={save} disabled={saving} className="gap-2">
               {saving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />}
-              Kaydet
+              {t('common.save')}
             </Button>
           </div>
         </CardBody>
       </Card>
 
       <p className="text-xs text-[color:var(--fg-faint)]">
-        Not: Fiyatlar USD cent olarak saklanır. Tutarlar yeni oluşturulan ödemelerde geçerli olur;
-        mevcut bekleyen ödemeler oluşturuldukları tutarda kalır.
+        {t('admin.pricing.note')}
       </p>
     </div>
   );

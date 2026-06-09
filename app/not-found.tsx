@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { Compass, ArrowLeft, Home } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
+import { T } from '@/components/i18n/T';
 
 export default function NotFound() {
   return (
@@ -13,13 +14,13 @@ export default function NotFound() {
         <h1 className="mt-6 text-6xl font-bold tracking-tight bg-gradient-to-br from-gold-300 to-gold-500 bg-clip-text text-transparent">
           404
         </h1>
-        <p className="mt-2 text-lg text-[color:var(--fg)]">Bu rota mevcut değil.</p>
+        <p className="mt-2 text-lg text-[color:var(--fg)]"><T k="error.404.title" /></p>
         <p className="mt-1 text-sm text-[color:var(--fg-muted)]">
-          Aradığın ilan kaldırılmış veya link yanlış olabilir. Aşağıdaki sayfalardan birinden devam et.
+          <T k="error.404.body" />
         </p>
         <div className="mt-7 flex flex-wrap gap-2 justify-center">
-          <Link href="/"><Button variant="gold" className="gap-1.5"><Home size={14} /> Ana Sayfa</Button></Link>
-          <Link href="/listings"><Button variant="outline" className="gap-1.5"><ArrowLeft size={14} /> İlanlara dön</Button></Link>
+          <Link href="/"><Button variant="gold" className="gap-1.5"><Home size={14} /> <T k="error.home" /></Button></Link>
+          <Link href="/listings"><Button variant="outline" className="gap-1.5"><ArrowLeft size={14} /> <T k="error.toListings" /></Button></Link>
         </div>
       </div>
     </div>

@@ -4,6 +4,7 @@ import * as React from 'react';
 import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { FocusTrap } from './FocusTrap';
+import { useLang } from '@/components/layout/LangProvider';
 
 interface ModalProps {
   open: boolean;
@@ -23,6 +24,7 @@ const SIZE = {
 };
 
 export function Modal({ open, onClose, title, children, size = 'md', ariaLabel }: ModalProps) {
+  const { t } = useLang();
   const titleId = React.useId();
   React.useEffect(() => {
     if (!open) return;
@@ -59,7 +61,7 @@ export function Modal({ open, onClose, title, children, size = 'md', ariaLabel }
               <button
                 type="button"
                 onClick={onClose}
-                aria-label="Kapat"
+                aria-label={t('common.close')}
                 className="touch-target min-h-11 min-w-11 p-1 hover:bg-[color:var(--bg-card-hover)] rounded-md inline-flex items-center justify-center"
               >
                 <X size={18} />

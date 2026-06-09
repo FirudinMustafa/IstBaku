@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Select } from '@/components/ui/Input';
 import { REGIONS } from '@/lib/data/regions';
+import { useLang } from '@/components/layout/LangProvider';
 
 const TREND = [
   { m: 'Eki', tr: 100, az: 100 },
@@ -40,6 +41,7 @@ const PROFILE = [
 ];
 
 export default function ReportsPage() {
+  const { t } = useLang();
   const [country, setCountry] = React.useState<'all' | 'TR' | 'AZ'>('all');
   const regions = REGIONS.filter((r) => country === 'all' || r.country === country)
     .sort((a, b) => b.demandIndex - a.demandIndex)
@@ -49,28 +51,28 @@ export default function ReportsPage() {
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10">
       <div className="flex items-end justify-between flex-wrap gap-4">
         <div>
-          <Badge variant="ai"><Sparkles size={11} /> Yatırım Raporları</Badge>
-          <h1 className="mt-3 text-3xl sm:text-4xl font-bold tracking-tight">Bölge & Pazar İçgörüleri</h1>
+          <Badge variant="ai"><Sparkles size={11} /> {t('reports.badge')}</Badge>
+          <h1 className="mt-3 text-3xl sm:text-4xl font-bold tracking-tight">{t('reports.pageTitle')}</h1>
           <p className="mt-2 text-[color:var(--fg-muted)] max-w-2xl">
-            Anonim platform verisinden üretilen, kurumlara ve yatırım fonlarına satılabilir hazır raporlar.
+            {t('reports.pageSubtitle')}
           </p>
         </div>
         <div className="flex items-center gap-2">
           <Select value={country} onChange={(e) => setCountry(e.target.value as typeof country)} className="w-48">
-            <option value="all">Tüm ülkeler</option>
-            <option value="TR">🇹🇷 Türkiye</option>
-            <option value="AZ">🇦🇿 Azerbaycan</option>
+            <option value="all">{t('reports.allCountries')}</option>
+            <option value="TR">🇹🇷 {t('portfolio.country.tr')}</option>
+            <option value="AZ">🇦🇿 {t('portfolio.country.az')}</option>
           </Select>
-          <Button variant="gold" size="md"><Download size={14} /> PDF indir</Button>
+          <Button variant="gold" size="md"><Download size={14} /> {t('reports.pdf')}</Button>
         </div>
       </div>
 
       <div className="mt-8 grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { l: 'Aktif Yatırımcı', v: '8,420', d: '+%12.6 YoY', i: Users },
-          { l: 'Yabancı Talep', v: '%34', d: '+5.4 puan', i: Globe },
-          { l: 'YoY Fiyat Trendi', v: '+%17.3', d: 'Pozitif', i: TrendingUp },
-          { l: 'Top Bölge', v: 'Səbail', d: 'Demand 94', i: MapPin },
+          { l: t('reports.stat.investors'), v: '8,420', d: '+%12.6 YoY', i: Users },
+          { l: t('reports.stat.foreign'), v: '%34', d: '+5.4 puan', i: Globe },
+          { l: t('reports.stat.trend'), v: '+%17.3', d: t('reports.stat.positive'), i: TrendingUp },
+          { l: t('reports.stat.topRegion'), v: 'Səbail', d: 'Demand 94', i: MapPin },
         ].map((s) => (
           <Card key={s.l}><CardBody className="p-4">
             <s.i size={16} className="text-gold-300" />
@@ -84,7 +86,7 @@ export default function ReportsPage() {
       <div className="mt-6 grid lg:grid-cols-2 gap-6">
         <Card>
           <CardBody>
-            <h3 className="font-semibold mb-4">Fiyat Endeksi (12 ay)</h3>
+            <h3 className="font-semibold mb-4">{t('reports.chart.priceIndex')}</h3>
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={TREND}>
@@ -113,7 +115,7 @@ export default function ReportsPage() {
 
         <Card>
           <CardBody>
-            <h3 className="font-semibold mb-4">Yabancı Yatırımcı Dağılımı</h3>
+            <h3 className="font-semibold mb-4">{t('reports.chart.foreign')}</h3>
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={FOREIGN} layout="vertical" margin={{ left: 60 }}>
@@ -130,7 +132,7 @@ export default function ReportsPage() {
 
         <Card>
           <CardBody>
-            <h3 className="font-semibold mb-4">Bölge Demand Endeksi</h3>
+            <h3 className="font-semibold mb-4">{t('reports.chart.demand')}</h3>
             <div className="h-72">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={regions}>
@@ -147,7 +149,7 @@ export default function ReportsPage() {
 
         <Card>
           <CardBody>
-            <h3 className="font-semibold mb-4">Bölge Sakini Profil Analizi</h3>
+            <h3 className="font-semibold mb-4">{t('reports.chart.profile')}</h3>
             <div className="h-72">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={PROFILE}>
@@ -159,18 +161,18 @@ export default function ReportsPage() {
                 </BarChart>
               </ResponsiveContainer>
             </div>
-            <p className="text-xs text-[color:var(--fg-muted)] mt-3">% dağılım, anonim platform aktivitesi.</p>
+            <p className="text-xs text-[color:var(--fg-muted)] mt-3">{t('reports.chart.profileNote')}</p>
           </CardBody>
         </Card>
       </div>
 
       <div className="mt-10 rounded-3xl border border-gold-400/30 bg-gradient-to-br from-navy-700 to-navy-900 p-8 text-white">
-        <div className="flex items-center gap-2 text-gold-300 text-xs font-semibold uppercase tracking-wider"><Sparkles size={12} /> B2B Veri Paketi</div>
-        <h3 className="mt-3 text-2xl font-bold">Bu raporun detaylı versiyonunu kurum olarak satın al.</h3>
-        <p className="mt-2 text-navy-200 max-w-2xl">İnşaat firmaları, proje geliştiriciler ve yatırım fonları için aylık güncellenen, segment bazlı detaylı pazar raporu.</p>
+        <div className="flex items-center gap-2 text-gold-300 text-xs font-semibold uppercase tracking-wider"><Sparkles size={12} /> {t('reports.b2b.badge')}</div>
+        <h3 className="mt-3 text-2xl font-bold">{t('reports.b2b.title')}</h3>
+        <p className="mt-2 text-navy-200 max-w-2xl">{t('reports.b2b.body')}</p>
         <div className="mt-5 flex flex-wrap gap-3">
-          <Button variant="gold">Demo Talep Et</Button>
-          <Button variant="outline" className="bg-white/5 text-white border-white/20">Örnek Rapor (PDF)</Button>
+          <Button variant="gold">{t('reports.b2b.demo')}</Button>
+          <Button variant="outline" className="bg-white/5 text-white border-white/20">{t('reports.b2b.sample')}</Button>
         </div>
       </div>
     </div>

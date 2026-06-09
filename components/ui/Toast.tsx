@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { CheckCircle2, AlertCircle, Info, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useLang } from '@/components/layout/LangProvider';
 
 type ToastVariant = 'success' | 'error' | 'info';
 interface ToastItem {
@@ -34,6 +35,7 @@ interface ToastNodeProps {
 }
 
 function ToastNode({ item, onClose }: ToastNodeProps) {
+  const { t } = useLang();
   const duration = item.duration ?? DEFAULT_DURATION;
   const [paused, setPaused] = React.useState(false);
   const startedAt = React.useRef<number>(Date.now());
@@ -104,7 +106,7 @@ function ToastNode({ item, onClose }: ToastNodeProps) {
       <button
         type="button"
         onClick={() => onClose(item.id)}
-        aria-label="Bildirimi kapat"
+        aria-label={t('common.notifClose')}
         className="touch-target min-h-11 min-w-11 -m-2 p-2 inline-flex items-center justify-center text-[color:var(--fg-faint)] hover:text-[color:var(--fg)] rounded-md"
       >
         <X size={16} />
@@ -114,6 +116,7 @@ function ToastNode({ item, onClose }: ToastNodeProps) {
 }
 
 export function ToastProvider({ children }: { children: React.ReactNode }) {
+  const { t } = useLang();
   const [items, setItems] = React.useState<ToastItem[]>([]);
 
   const close = React.useCallback((id: number) => {
@@ -134,7 +137,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
       {children}
       {/* Toast viewport — live region wrapper. Each item has its own role for routing. */}
       <div
-        aria-label="Bildirimler"
+        aria-label={t('common.notifications')}
         className="fixed bottom-5 right-5 z-[1000] flex flex-col gap-2 max-w-sm pointer-events-none"
       >
         {items.map((t) => (

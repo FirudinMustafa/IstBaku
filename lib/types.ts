@@ -235,6 +235,8 @@ export interface FilterState {
   country?: Country;
   city?: string;
   district?: string;
+  neighborhood?: string;         // mahalle/semt (serbest metin veya dropdown)
+  siteName?: string;             // site/kompleks adı araması (inSite ile)
   minPrice?: number;
   maxPrice?: number;
   currency?: Currency;

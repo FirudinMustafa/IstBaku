@@ -4,13 +4,7 @@ import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, PieChart, Pie, Cell, Legend,
 } from 'recharts';
 import { Card, CardBody } from '@/components/ui/Card';
-
-const TYPE_LABEL: Record<string, string> = {
-  tier_upgrade: 'İlan Yükseltme',
-  premium_membership: 'Premium Üyelik',
-  report_purchase: 'Rapor Satışı',
-  partner_commission: 'Partner Komisyonu',
-};
+import { useLang } from '@/components/layout/LangProvider';
 
 const TYPE_COLOR: Record<string, string> = {
   tier_upgrade: '#CAAE99',
@@ -22,13 +16,14 @@ const TYPE_COLOR: Record<string, string> = {
 interface P { id: string; amount: number; type: string; status: string; createdAt: string }
 
 export function PaymentsCharts({ payments }: { payments: P[] }) {
+  const { t } = useLang();
   const byType = Object.entries(
     payments.reduce((acc, p) => {
       if (p.status !== 'paid') return acc;
       acc[p.type] = (acc[p.type] ?? 0) + p.amount;
       return acc;
     }, {} as Record<string, number>),
-  ).map(([type, value]) => ({ type: TYPE_LABEL[type] ?? type, value, color: TYPE_COLOR[type] ?? '#6366f1' }));
+  ).map(([type, value]) => ({ type: t(`enums.paymentType.${type}`), value, color: TYPE_COLOR[type] ?? '#6366f1' }));
 
   // Son 14 gün
   const daily: { d: string; v: number }[] = [];
@@ -46,7 +41,7 @@ export function PaymentsCharts({ payments }: { payments: P[] }) {
     <div className="grid lg:grid-cols-2 gap-6">
       <Card>
         <CardBody>
-          <h3 className="font-semibold mb-4">Günlük Gelir (Son 14 gün)</h3>
+          <h3 className="font-semibold mb-4">{t('admin.payments.chart.dailyRevenue')}</h3>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={daily}>
@@ -63,11 +58,11 @@ export function PaymentsCharts({ payments }: { payments: P[] }) {
 
       <Card>
         <CardBody>
-          <h3 className="font-semibold mb-4">Gelir Kaynağı</h3>
+          <h3 className="font-semibold mb-4">{t('admin.payments.chart.revenueSource')}</h3>
           <div className="h-64">
             {byType.length === 0 ? (
               <div className="h-full flex items-center justify-center text-[color:var(--fg-muted)] text-sm">
-                Henüz ödeme yok
+                {t('admin.payments.chart.noPayments')}
               </div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">

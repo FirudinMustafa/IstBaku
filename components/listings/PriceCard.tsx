@@ -36,9 +36,12 @@ export function PriceCard({ property: p }: { property: Property }) {
               {CURRENCY_SYMBOLS[displayCurrency]}{formatNumber(shownPrice)} <span className="text-xs text-[color:var(--fg-muted)] font-medium">{displayCurrency}</span>
             </div>
           </div>
-          <Badge variant="success" className="gap-1">
-            <TrendingUp size={11} /> {t('price.rentYield')} ~{yieldPct.toFixed(1)}{t('price.perYearPct')}
-          </Badge>
+          {/* Kira getirisi yalnızca satılıkta anlamlı (yatırımcı için). Kiralık/günlük kiralıkta gizle. */}
+          {p.purpose === 'sale' && (
+            <Badge variant="success" className="gap-1">
+              <TrendingUp size={11} /> {t('price.rentYield')} ~{yieldPct.toFixed(1)}{t('price.perYearPct')}
+            </Badge>
+          )}
         </div>
 
         <div className="mt-4 grid grid-cols-3 gap-2">

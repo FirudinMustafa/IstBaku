@@ -22,10 +22,12 @@ import { createListingAction } from '@/lib/listing-actions';
 import { createWizardExtrasPaymentAction, applyWizardPrivateAction } from '@/lib/listing-owner-actions';
 import { PaymentModal, type PendingPayment } from '@/components/payments/PaymentModal';
 import { defaultCity, defaultDistrict } from '@/lib/data/locations';
+import { neighborhoodsOf } from '@/lib/data/neighborhoods';
 import { cn } from '@/lib/utils';
 import type { PropertyType } from '@/lib/types';
 import { createListingSchema, fieldErrors } from '@/lib/schemas';
 import { ROOM_OPTIONS, HOUSING_TYPE_OPTIONS, ENERGY_CLASS_OPTIONS, FACADE_OPTIONS, BUILDING_STATUS_OPTIONS, STRUCTURE_TYPE_OPTIONS } from '@/lib/constants/listing-options';
+import { formShows, amenitiesFor } from '@/lib/labels';
 import { RichTextEditor } from '@/components/ui/RichTextEditor';
 
 const BASE_STEPS = ['wz.step.type', 'wz.step.location', 'wz.step.detail', 'wz.step.media', 'wz.step.cover', 'wz.step.region', 'wz.step.nearby', 'wz.step.options'] as const;
@@ -265,7 +267,7 @@ export function NewListingClient({ countries: countryList, prices }: NewListingC
   function handleVideo(file: File | null) {
     if (!file) return;
     if (file.size > 60 * 1024 * 1024) {
-      toast({ variant: 'error', title: 'Video çok büyük', description: 'Maks. 60 MB.' });
+      toast({ variant: 'error', title: t('wz.toast.videoBig'), description: t('wz.toast.videoBigDesc') });
       return;
     }
     const reader = new FileReader();
@@ -279,7 +281,7 @@ export function NewListingClient({ countries: countryList, prices }: NewListingC
     const parts = [form.address, form.neighborhood, form.district, form.city, form.country === 'AZ' ? 'Azerbaijan' : 'Turkey'].filter(Boolean);
     const q = parts.join(', ');
     if (!form.address || form.address.trim().length < 3) {
-      toast({ variant: 'error', title: 'Adres eksik', description: 'Önce açık adresi yaz.' });
+      toast({ variant: 'error', title: t('wz.toast.addrMissing'), description: t('wz.toast.addrMissingDesc') });
       return;
     }
     setGeocoding(true);
@@ -288,12 +290,12 @@ export function NewListingClient({ countries: countryList, prices }: NewListingC
       const data = await res.json().catch(() => ({ ok: false }));
       if (data.ok && Number.isFinite(data.lat) && Number.isFinite(data.lng)) {
         set({ lat: data.lat, lng: data.lng });
-        toast({ variant: 'success', title: 'Konum bulundu', description: 'Haritada işaretlendi — gerekirse pini sürükleyerek düzelt.' });
+        toast({ variant: 'success', title: t('wz.toast.locFound'), description: t('wz.toast.locFoundDesc') });
       } else {
-        toast({ variant: 'error', title: 'Konum bulunamadı', description: 'Adresi netleştir veya haritada elle işaretle.' });
+        toast({ variant: 'error', title: t('wz.toast.locNotFound'), description: t('wz.toast.locNotFoundDesc') });
       }
     } catch {
-      toast({ variant: 'error', title: 'Hata', description: 'Konum servisine ulaşılamadı.' });
+      toast({ variant: 'error', title: t('wz.toast.error'), description: t('wz.toast.locServiceDown') });
     } finally {
       setGeocoding(false);
     }
@@ -303,7 +305,7 @@ export function NewListingClient({ countries: countryList, prices }: NewListingC
   const [nearbyLoading, setNearbyLoading] = React.useState(false);
   async function autoCalcNearby() {
     if (!form.lat || !form.lng) {
-      toast({ variant: 'error', title: 'Konum gerekli', description: 'Önce "Konum" adımında haritada konumu belirle.' });
+      toast({ variant: 'error', title: t('wz.toast.locRequired'), description: t('wz.toast.locRequiredDesc') });
       return;
     }
     setNearbyLoading(true);
@@ -321,12 +323,12 @@ export function NewListingClient({ countries: countryList, prices }: NewListingC
         }
         set({ nearby: merged });
         const count = Object.keys(data.nearby).length;
-        toast({ variant: count ? 'success' : 'info', title: count ? 'Yakın çevre hesaplandı' : 'Sonuç bulunamadı', description: count ? `${count} kategori dolduruldu — düzenleyebilirsin.` : 'Bu konum için POI bulunamadı, elle girebilirsin.' });
+        toast({ variant: count ? 'success' : 'info', title: count ? t('wz.toast.nearbyDone') : t('wz.toast.nearbyNone'), description: count ? undefined : t('wz.toast.nearbyNoneDesc') });
       } else {
-        toast({ variant: 'error', title: 'Hesaplanamadı', description: 'Konum servisine ulaşılamadı.' });
+        toast({ variant: 'error', title: t('wz.toast.calcFail'), description: t('wz.toast.locServiceDown') });
       }
     } catch {
-      toast({ variant: 'error', title: 'Hata', description: 'Konum servisine ulaşılamadı.' });
+      toast({ variant: 'error', title: t('wz.toast.error'), description: t('wz.toast.locServiceDown') });
     } finally {
       setNearbyLoading(false);
     }
@@ -351,7 +353,7 @@ export function NewListingClient({ countries: countryList, prices }: NewListingC
   }, [form.lat, form.lng]);
 
   if (!ready) {
-    return <div className="mx-auto max-w-7xl px-4 py-12 text-center text-[color:var(--fg-muted)]">Yükleniyor…</div>;
+    return <div className="mx-auto max-w-7xl px-4 py-12 text-center text-[color:var(--fg-muted)]">{t('wz.loading')}</div>;
   }
   if (!user) return null;
 
@@ -361,39 +363,39 @@ export function NewListingClient({ countries: countryList, prices }: NewListingC
     // is also disabled in the JSX (`disabled={!step1Ready}`) — this is the
     // backstop in case someone bypasses that via Enter / scripting.
     if (step === 0 && (!form.purpose || !form.type)) {
-      toast({ variant: 'error', title: 'Bir tür seç', description: 'Satılık/Kiralık ve emlak türünü seçmelisin.' });
+      toast({ variant: 'error', title: t('wz.toast.pickType'), description: t('wz.toast.pickTypeDesc') });
       return;
     }
     if (step === 1 && (!form.city.trim() || !form.district.trim())) {
-      toast({ variant: 'error', title: 'Eksik alan', description: 'Şehir ve ilçe/rayon zorunlu.' });
+      toast({ variant: 'error', title: t('wz.toast.missingField'), description: t('wz.toast.cityDistrictReq') });
       return;
     }
     if (step === 1 && (!form.address || form.address.trim().length < 3)) {
-      toast({ variant: 'error', title: 'Adres zorunlu', description: 'Lütfen açık adresi gir (en az 3 karakter).' });
+      toast({ variant: 'error', title: t('wz.toast.addrReq'), description: t('wz.toast.addrReqDesc') });
       return;
     }
     if (step === 1 && (form.lat === 0 || form.lng === 0)) {
-      toast({ variant: 'error', title: 'Konum seçilmedi', description: 'Haritadan konumu işaretle.' });
+      toast({ variant: 'error', title: t('wz.toast.locNotPicked'), description: t('wz.toast.locNotPickedDesc') });
       return;
     }
     if (step === 2 && !isDaily && form.price <= 0) {
-      toast({ variant: 'error', title: 'Fiyat zorunlu', description: 'Geçerli bir fiyat gir.' });
+      toast({ variant: 'error', title: t('wz.toast.priceReq'), description: t('wz.toast.priceReqDesc') });
       return;
     }
     if (step === 2 && form.inSite && !form.siteName.trim()) {
-      toast({ variant: 'error', title: 'Site adı zorunlu', description: 'Site içindeyse site adını yaz.' });
+      toast({ variant: 'error', title: t('wz.toast.siteNameReq'), description: t('wz.toast.siteNameReqDesc') });
       return;
     }
     if (step === 2 && form.netArea <= 0) {
-      toast({ variant: 'error', title: 'Net m² zorunlu', description: 'Net alan 0\'dan büyük olmalı.' });
+      toast({ variant: 'error', title: t('wz.toast.netReq'), description: t('wz.toast.netReqDesc') });
       return;
     }
     if (step === 2 && form.grossArea <= 0) {
-      toast({ variant: 'error', title: 'Brüt m² zorunlu', description: 'Brüt alan 0\'dan büyük olmalı.' });
+      toast({ variant: 'error', title: t('wz.toast.grossReq'), description: t('wz.toast.grossReqDesc') });
       return;
     }
     if (step === 2 && form.totalFloors < 1) {
-      toast({ variant: 'error', title: 'Toplam kat zorunlu', description: 'Binadaki toplam kat sayısını gir (en az 1).' });
+      toast({ variant: 'error', title: t('wz.toast.totalFloorsReq'), description: t('wz.toast.totalFloorsReqDesc') });
       return;
     }
     // PU-05: enforce description min-length at the step-2 → step-3 transition so
@@ -401,17 +403,17 @@ export function NewListingClient({ countries: countryList, prices }: NewListingC
     if (step === 2 && plainTextLen(form.description) < 20) {
       toast({
         variant: 'error',
-        title: 'Açıklama çok kısa',
-        description: `En az 20 karakter olmalı (şu an ${plainTextLen(form.description)}).`,
+        title: t('wz.toast.descShort'),
+        description: `${t('wz.desc.minChars')} (${plainTextLen(form.description)} / 20).`,
       });
       return;
     }
     if (step === 3 && photos.length < 3) {
-      toast({ variant: 'error', title: 'En az 3 foto gerekli' });
+      toast({ variant: 'error', title: t('wz.toast.photosMin') });
       return;
     }
     if (step === 4 && form.coverKind === 'video' && !coverVideo) {
-      toast({ variant: 'error', title: 'Kapak videosu gerekli', description: 'Bilgisayarından bir video seç.' });
+      toast({ variant: 'error', title: t('wz.toast.coverVideoReq'), description: t('wz.toast.coverVideoReqDesc') });
       return;
     }
     setStep((s) => s + 1);
@@ -500,8 +502,8 @@ export function NewListingClient({ countries: countryList, prices }: NewListingC
     const parsed = createListingSchema.safeParse(payload);
     if (!parsed.success) {
       const errs = fieldErrors(parsed);
-      const first = Object.values(errs)[0] ?? 'Form bilgilerini kontrol et';
-      toast({ variant: 'error', title: 'Doğrulama hatası', description: first });
+      const first = Object.values(errs)[0] ?? t('wz.toast.checkForm');
+      toast({ variant: 'error', title: t('wz.toast.validationErr'), description: first });
       return;
     }
     setPublishing(true);
@@ -523,13 +525,13 @@ export function NewListingClient({ countries: countryList, prices }: NewListingC
           fd.append('file', blob, `photo-${idx + 1}.jpg`);
           const uploadRes = await fetch('/api/listings/upload', { method: 'POST', body: fd });
           const json = await uploadRes.json();
-          if (!uploadRes.ok) throw new Error(json.error || 'Fotoğraf yüklenemedi');
+          if (!uploadRes.ok) throw new Error(json.error || t('wz.err.photoUploadFail'));
           return json.url as string;
         }),
       );
     } catch (err) {
       setPublishing(false);
-      toast({ variant: 'error', title: 'Fotoğraf yükleme hatası', description: err instanceof Error ? err.message : 'Lütfen tekrar dene.' });
+      toast({ variant: 'error', title: t('wz.toast.photoUploadErr'), description: err instanceof Error ? err.message : t('wz.toast.tryAgain') });
       return;
     }
 
@@ -598,7 +600,7 @@ export function NewListingClient({ countries: countryList, prices }: NewListingC
     });
     setPublishing(false);
     if (!res.ok) {
-      toast({ variant: 'error', title: 'Yayınlanamadı', description: res.error });
+      toast({ variant: 'error', title: t('wz.toast.publishFail'), description: res.error });
       return;
     }
 
@@ -611,24 +613,24 @@ export function NewListingClient({ countries: countryList, prices }: NewListingC
       const pay = await createWizardExtrasPaymentAction(res.id, { badge: wantBadge, gizli: wantGizli });
       if (pay.ok && 'paymentId' in pay) {
         paidContextRef.current = { listingId: res.id, slug: res.slug, gizli: wantGizli };
-        const parts = [wantBadge ? 'İstBaku Onaylı rozet' : null, wantGizli ? 'Gizli portföy' : null].filter(Boolean);
+        const parts = [wantBadge ? t('wz.opt.badgeItem') : null, wantGizli ? t('wz.opt.privateItem') : null].filter(Boolean);
         setPendingPayment({
           paymentId: pay.paymentId,
           amount: pay.amount,
           currency: pay.currency,
           checkoutUrl: 'checkoutUrl' in pay ? pay.checkoutUrl : undefined,
-          title: 'İlan eklentileri',
+          title: t('wz.pay.extrasTitle'),
           description: parts.join(' + '),
         });
         return;
       }
       // Ödeme başlatılamadıysa ilan yine de yayında — uyar ve yönlendir.
-      toast({ variant: 'success', title: 'İlanın yayınlandı!', description: 'Eklenti ödemesi başlatılamadı, panelinden tekrar deneyebilirsin.' });
+      toast({ variant: 'success', title: t('wz.toast.published'), description: t('wz.toast.publishedNoPay') });
       setTimeout(() => router.push(`/property/${res.slug}`), 600);
       return;
     }
 
-    toast({ variant: 'success', title: 'İlanın yayınlandı!', description: 'Yayında ve aramada görünür.' });
+    toast({ variant: 'success', title: t('wz.toast.published'), description: t('wz.toast.publishedDesc') });
     setTimeout(() => router.push(`/property/${res.slug}`), 600);
   }
 
@@ -638,9 +640,9 @@ export function NewListingClient({ countries: countryList, prices }: NewListingC
     setPendingPayment(null);
     if (ctx?.gizli) {
       const r = await applyWizardPrivateAction(ctx.listingId);
-      if (!r.ok) toast({ variant: 'error', title: 'Gizli portföy uygulanamadı', description: r.error });
+      if (!r.ok) toast({ variant: 'error', title: t('wz.toast.privateApplyFail'), description: r.error });
     }
-    toast({ variant: 'success', title: 'İlanın yayınlandı!', description: 'Ödeme alındı, eklentiler uygulandı.' });
+    toast({ variant: 'success', title: t('wz.toast.published'), description: t('wz.toast.publishedPaid') });
     const slug = ctx?.slug;
     setTimeout(() => router.push(slug ? `/property/${slug}` : '/dashboard'), 400);
   }
@@ -648,9 +650,9 @@ export function NewListingClient({ countries: countryList, prices }: NewListingC
   return (
     <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-6 md:py-10 pb-32 md:pb-10">
       <div className="text-center max-w-2xl mx-auto">
-        <Badge variant="gold"><Sparkles size={11} /> İlan Yükle</Badge>
-        <h1 className="mt-3 text-3xl sm:text-4xl font-bold tracking-tight">İlanını yayınla</h1>
-        <p className="mt-3 text-[color:var(--fg-muted)]">7 adımda yatırımcının önünde ol.</p>
+        <Badge variant="gold"><Sparkles size={11} /> {t('wz.badge.upload')}</Badge>
+        <h1 className="mt-3 text-3xl sm:text-4xl font-bold tracking-tight">{t('wz.sub.header')}</h1>
+        <p className="mt-3 text-[color:var(--fg-muted)]">{t('wz.sub.tagline')}</p>
       </div>
 
       <div className="mt-6 md:mt-8 flex items-center justify-between gap-1 text-xs overflow-x-auto pb-1">
@@ -672,23 +674,23 @@ export function NewListingClient({ countries: countryList, prices }: NewListingC
           {step === 0 && (
             <div>
               <h2 className="text-lg font-semibold">{t('wz.h.whatListing')}</h2>
-              <p className="mt-1 text-sm text-[color:var(--fg-muted)]">İki seçim de zorunlu — varsayılan yok.</p>
+              <p className="mt-1 text-sm text-[color:var(--fg-muted)]">{t('wz.h.bothRequired')}</p>
               <div className="mt-4 grid grid-cols-3 gap-2">
-                {[{ v: 'sale' as const, l: 'Satılık' }, { v: 'rent' as const, l: 'Kiralık' }, { v: 'daily_rent' as const, l: 'Günlük Kiralık' }].map((o) => (
+                {[{ v: 'sale' as const, l: 'wz.purpose.sale' }, { v: 'rent' as const, l: 'wz.purpose.rent' }, { v: 'daily_rent' as const, l: 'wz.purpose.daily' }].map((o) => (
                   <button key={o.v} onClick={() => set({ purpose: o.v })} aria-pressed={form.purpose === o.v} className={cn('rounded-xl border p-4 font-medium text-sm', form.purpose === o.v ? 'border-gold-400 bg-gold-400/10 text-gold-300' : 'border-[color:var(--border)] bg-[color:var(--bg-elev)] text-[color:var(--fg)] hover:border-[color:var(--border-strong)]')}>
-                    {o.l}
+                    {t(o.l)}
                   </button>
                 ))}
               </div>
               <h2 className="text-lg font-semibold mt-7">{t('wz.h.propertyType')}</h2>
               <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {[
-                  { v: 'konut', l: 'Konut' }, { v: 'luks_konut', l: 'Lüks Konut' },
-                  { v: 'villa', l: 'Villa' }, { v: 'is_yeri', l: 'İş Yeri' },
-                  { v: 'arsa', l: 'Arsa' }, { v: 'proje', l: 'Proje' },
+                  { v: 'konut', l: 'wz.type.konut' }, { v: 'luks_konut', l: 'wz.type.luks_konut' },
+                  { v: 'villa', l: 'wz.type.villa' }, { v: 'is_yeri', l: 'wz.type.is_yeri' },
+                  { v: 'bina', l: 'wz.type.bina' }, { v: 'arsa', l: 'wz.type.arsa' }, { v: 'proje', l: 'wz.type.proje' },
                 ].map((o) => (
                   <button key={o.v} onClick={() => set({ type: o.v as PropertyType })} aria-pressed={form.type === o.v} className={cn('rounded-xl border p-3 text-sm', form.type === o.v ? 'border-gold-400 bg-gold-400/10 text-gold-300' : 'border-[color:var(--border)] bg-[color:var(--bg-elev)] text-[color:var(--fg)] hover:border-[color:var(--border-strong)]')}>
-                    {o.l}
+                    {t(o.l)}
                   </button>
                 ))}
               </div>
@@ -705,7 +707,7 @@ export function NewListingClient({ countries: countryList, prices }: NewListingC
               <h2 className="text-lg font-semibold">{t('wz.h.location')}</h2>
               <div className="grid sm:grid-cols-2 gap-3">
                 <div>
-                  <Label>Ülke</Label>
+                  <Label>{t('wz.field.country')}</Label>
                   <Select value={form.country} onChange={(e) => set({ country: e.target.value })}>
                     {dynamicCountries.map((c) => (
                       <option key={c.code} value={c.code}>{c.flag} {c.label}</option>
@@ -720,20 +722,27 @@ export function NewListingClient({ countries: countryList, prices }: NewListingC
                   onCityChange={(c) => set({ city: c, lat: 0, lng: 0 })}
                   onDistrictChange={(d) => set({ district: d })}
                 />
-                <div className="sm:col-span-2"><Label>Mahalle (opsiyonel)</Label><Input value={form.neighborhood} onChange={(e) => set({ neighborhood: e.target.value })} placeholder="Örn: Etiler" /></div>
                 <div className="sm:col-span-2">
-                  <Label>Açık adres</Label>
+                  <Label>{t('wz.field.neighborhood')}</Label>
+                  <Input list="nl-nb-list" value={form.neighborhood} onChange={(e) => set({ neighborhood: e.target.value })} placeholder={t('wz.ph.neighborhood')} />
+                  <datalist id="nl-nb-list">
+                    {neighborhoodsOf(form.country, form.city, form.district).map((n) => <option key={n} value={n} />)}
+                  </datalist>
+                  <p className="mt-1 text-[11px] text-[color:var(--fg-faint)]">{t('wz.hint.neighborhood')}</p>
+                </div>
+                <div className="sm:col-span-2">
+                  <Label>{t('wz.field.address')}</Label>
                   <div className="flex gap-2">
-                    <Input value={form.address} onChange={(e) => set({ address: e.target.value })} placeholder="Cadde, no, kapı..." className="flex-1" />
+                    <Input value={form.address} onChange={(e) => set({ address: e.target.value })} placeholder={t('wz.ph.address')} className="flex-1" />
                     <Button type="button" variant="outline" onClick={geocodeFromAddress} loading={geocoding} className="shrink-0">
-                      <MapPin size={15} /> Adresten bul
+                      <MapPin size={15} /> {t('wz.btn.findFromAddress')}
                     </Button>
                   </div>
-                  <p className="mt-1 text-[11px] text-[color:var(--fg-faint)]">Adresi yazıp "Adresten bul" ile haritada otomatik işaretle.</p>
+                  <p className="mt-1 text-[11px] text-[color:var(--fg-faint)]">{t('wz.hint.address')}</p>
                 </div>
               </div>
               <div>
-                <Label>Haritada tam konumu işaretle</Label>
+                <Label>{t('wz.field.markOnMap')}</Label>
                 <LocationPicker
                   lat={form.lat || undefined}
                   lng={form.lng || undefined}
@@ -747,141 +756,177 @@ export function NewListingClient({ countries: countryList, prices }: NewListingC
           {step === 2 && (
             <div className="grid sm:grid-cols-2 gap-4">
               <h2 className="sm:col-span-2 text-lg font-semibold">{t('wz.h.details')}</h2>
-              <div className="sm:col-span-2"><Label>İlan başlığı (opsiyonel)</Label>
-                <Input value={form.customTitle} onChange={(e) => set({ customTitle: e.target.value })} maxLength={200} placeholder="Boş bırakırsan otomatik oluşturulur" />
+              <div className="sm:col-span-2"><Label>{t('wz.field.customTitle')}</Label>
+                <Input value={form.customTitle} onChange={(e) => set({ customTitle: e.target.value })} maxLength={200} placeholder={t('wz.ph.customTitle')} />
               </div>
 
               {/* Arsa (type='arsa') alanları — Madde 15 */}
               {form.type === 'arsa' && (
                 <div className="sm:col-span-2 grid sm:grid-cols-2 gap-4 rounded-xl border border-gold-400/30 bg-gold-400/5 p-4">
-                  <h3 className="sm:col-span-2 text-sm font-semibold text-gold-300">Arsa Bilgileri</h3>
-                  <div><Label>İmar durumu</Label><Input value={form.imarDurumu} onChange={(e) => set({ imarDurumu: e.target.value })} maxLength={64} placeholder="Örn: Konut, Ticari, Tarla" /></div>
-                  <div><Label>Pafta No</Label><Input value={form.paftaNo} onChange={(e) => set({ paftaNo: e.target.value })} maxLength={64} placeholder="Opsiyonel" /></div>
-                  <div><Label>Ada No</Label><Input value={form.adaNo} onChange={(e) => set({ adaNo: e.target.value })} maxLength={64} placeholder="Opsiyonel" /></div>
-                  <div><Label>KAKS / Emsal</Label><Input type="number" min={0} step="0.01" value={numVal(form.kaks)} onChange={(e) => set({ kaks: numSet(e.target.value) })} placeholder="Örn: 1.5" /></div>
-                  <div><Label>Gabari (yükseklik)</Label><Input value={form.gabari} onChange={(e) => set({ gabari: e.target.value })} maxLength={32} placeholder="Örn: 12.50 m / Serbest" /></div>
+                  <h3 className="sm:col-span-2 text-sm font-semibold text-gold-300">{t('wz.land.title')}</h3>
+                  <div><Label>{t('wz.field.imarDurumu')}</Label><Input value={form.imarDurumu} onChange={(e) => set({ imarDurumu: e.target.value })} maxLength={64} placeholder={t('wz.ph.imarDurumu')} /></div>
+                  <div><Label>{t('wz.field.paftaNo')}</Label><Input value={form.paftaNo} onChange={(e) => set({ paftaNo: e.target.value })} maxLength={64} placeholder={t('wz.ph.optional')} /></div>
+                  <div><Label>{t('wz.field.adaNo')}</Label><Input value={form.adaNo} onChange={(e) => set({ adaNo: e.target.value })} maxLength={64} placeholder={t('wz.ph.optional')} /></div>
+                  <div><Label>{t('wz.field.kaks')}</Label><Input type="number" min={0} step="0.01" value={numVal(form.kaks)} onChange={(e) => set({ kaks: numSet(e.target.value) })} placeholder={t('wz.ph.kaks')} /></div>
+                  <div><Label>{t('wz.field.gabari')}</Label><Input value={form.gabari} onChange={(e) => set({ gabari: e.target.value })} maxLength={32} placeholder={t('wz.ph.gabari')} /></div>
                 </div>
               )}
 
-              <div><Label>Oda sayısı</Label>
-                <Select value={form.rooms} onChange={(e) => set({ rooms: e.target.value })}>
-                  {ROOM_OPTIONS.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
-                </Select>
-              </div>
-              <div><Label>Banyo sayısı</Label>
-                <Select value={form.bathrooms} onChange={(e) => set({ bathrooms: +e.target.value })}>
-                  {[1, 2, 3, 4, 5].map((b) => <option key={b} value={b}>{b}</option>)}
-                </Select>
-              </div>
-              <div><Label>Konut tipi</Label>
-                <Select value={form.housingType} onChange={(e) => set({ housingType: e.target.value })}>
-                  {HOUSING_TYPE_OPTIONS.map((h) => <option key={h.value} value={h.value}>{h.label}</option>)}
-                </Select>
-              </div>
-              <div><Label>Enerji kimlik belgesi</Label>
-                <Select value={form.energyClass} onChange={(e) => set({ energyClass: e.target.value })}>
-                  {ENERGY_CLASS_OPTIONS.map((en) => <option key={en.value} value={en.value}>{en.label}</option>)}
-                </Select>
-              </div>
-              <div><Label>Cephe / yön</Label>
-                <Select value={form.facade} onChange={(e) => set({ facade: e.target.value })}>
-                  {FACADE_OPTIONS.map((f) => <option key={f.value} value={f.value}>{f.label}</option>)}
-                </Select>
-              </div>
-              <div><Label>Yapının durumu</Label>
-                <Select value={form.buildingStatus} onChange={(e) => set({ buildingStatus: e.target.value })}>
-                  {BUILDING_STATUS_OPTIONS.map((b) => <option key={b.value} value={b.value}>{b.label}</option>)}
-                </Select>
-              </div>
-              <div><Label>Yapı tipi</Label>
-                <Select value={form.structureType} onChange={(e) => set({ structureType: e.target.value })}>
-                  {STRUCTURE_TYPE_OPTIONS.map((st) => <option key={st.value} value={st.value}>{st.label}</option>)}
-                </Select>
-              </div>
-              <div><Label>Net m²</Label><Input type="number" min={0} value={numVal(form.netArea)} onChange={(e) => set({ netArea: numSet(e.target.value) })} placeholder="Örn: 100" /></div>
-              <div><Label>Brüt m²</Label><Input type="number" min={0} value={numVal(form.grossArea)} onChange={(e) => set({ grossArea: numSet(e.target.value) })} placeholder="Örn: 120" /></div>
-              <div><Label>Bina yaşı</Label><Input type="number" min={0} value={numVal(form.buildingAge)} onChange={(e) => set({ buildingAge: numSet(e.target.value) })} placeholder="0" /></div>
-              <div><Label>Bulunduğu kat</Label><Input type="number" value={numVal(form.floor)} onChange={(e) => set({ floor: numSet(e.target.value) })} placeholder="0" /></div>
-              <div><Label>Toplam kat</Label><Input type="number" min={0} value={numVal(form.totalFloors)} onChange={(e) => set({ totalFloors: numSet(e.target.value) })} placeholder="Örn: 8" /></div>
-              <div><Label>Aidat (aylık)</Label><Input type="number" min={0} value={numVal(form.dues)} onChange={(e) => set({ dues: numSet(e.target.value) })} placeholder="Yoksa boş bırak" /></div>
-              <div><Label>Isıtma</Label>
-                <Select value={form.heating} onChange={(e) => set({ heating: e.target.value })}>
-                  {['Kombi', 'Merkezi', 'Merkezi (Doğalgaz)', 'Yerden ısıtma', 'Klima', 'Yok'].map((h) => <option key={h}>{h}</option>)}
-                </Select>
-              </div>
-              <div><Label>Otopark</Label>
-                <Select value={form.parking} onChange={(e) => set({ parking: e.target.value as typeof form.parking })}>
-                  <option value="kapali">Kapalı otopark</option>
-                  <option value="acik">Açık otopark</option>
-                  <option value="yok">Yok</option>
-                </Select>
-              </div>
-              <div><Label>Kimden</Label>
+              {/* Madde 3: alanlar ilan tipine göre gösterilir (arsa/iş yeri/bina farklı). */}
+              {formShows(form.type, 'rooms') && (
+                <div><Label>{form.type === 'is_yeri' || form.type === 'bina' ? t('wz.field.roomsCommercial') : t('wz.field.rooms')}</Label>
+                  <Select value={form.rooms} onChange={(e) => set({ rooms: e.target.value })}>
+                    {ROOM_OPTIONS.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
+                  </Select>
+                </div>
+              )}
+              {formShows(form.type, 'bathrooms') && (
+                <div><Label>{t('wz.field.bathrooms')}</Label>
+                  <Select value={form.bathrooms} onChange={(e) => set({ bathrooms: +e.target.value })}>
+                    {[1, 2, 3, 4, 5].map((b) => <option key={b} value={b}>{b}</option>)}
+                  </Select>
+                </div>
+              )}
+              {formShows(form.type, 'housingType') && (
+                <div><Label>{t('wz.field.housingType')}</Label>
+                  <Select value={form.housingType} onChange={(e) => set({ housingType: e.target.value })}>
+                    {HOUSING_TYPE_OPTIONS.map((h) => <option key={h.value} value={h.value}>{h.label}</option>)}
+                  </Select>
+                </div>
+              )}
+              {formShows(form.type, 'energyClass') && (
+                <div><Label>{t('wz.field.energyClass')}</Label>
+                  <Select value={form.energyClass} onChange={(e) => set({ energyClass: e.target.value })}>
+                    {ENERGY_CLASS_OPTIONS.map((en) => <option key={en.value} value={en.value}>{en.label}</option>)}
+                  </Select>
+                </div>
+              )}
+              {formShows(form.type, 'facade') && (
+                <div><Label>{t('wz.field.facade')}</Label>
+                  <Select value={form.facade} onChange={(e) => set({ facade: e.target.value })}>
+                    {FACADE_OPTIONS.map((f) => <option key={f.value} value={f.value}>{f.label}</option>)}
+                  </Select>
+                </div>
+              )}
+              {formShows(form.type, 'buildingStatus') && (
+                <div><Label>{t('wz.field.buildingStatus')}</Label>
+                  <Select value={form.buildingStatus} onChange={(e) => set({ buildingStatus: e.target.value })}>
+                    {BUILDING_STATUS_OPTIONS.map((b) => <option key={b.value} value={b.value}>{b.label}</option>)}
+                  </Select>
+                </div>
+              )}
+              {formShows(form.type, 'structureType') && (
+                <div><Label>{t('wz.field.structureType')}</Label>
+                  <Select value={form.structureType} onChange={(e) => set({ structureType: e.target.value })}>
+                    {STRUCTURE_TYPE_OPTIONS.map((st) => <option key={st.value} value={st.value}>{st.label}</option>)}
+                  </Select>
+                </div>
+              )}
+              <div><Label>{t('wz.field.netArea')}</Label><Input type="number" min={0} value={numVal(form.netArea)} onChange={(e) => set({ netArea: numSet(e.target.value) })} placeholder={t('wz.ph.netArea')} /></div>
+              <div><Label>{t('wz.field.grossArea')}</Label><Input type="number" min={0} value={numVal(form.grossArea)} onChange={(e) => set({ grossArea: numSet(e.target.value) })} placeholder={t('wz.ph.grossArea')} /></div>
+              {formShows(form.type, 'buildingAge') && (
+                <div><Label>{t('wz.field.buildingAge')}</Label><Input type="number" min={0} value={numVal(form.buildingAge)} onChange={(e) => set({ buildingAge: numSet(e.target.value) })} placeholder="0" /></div>
+              )}
+              {formShows(form.type, 'floor') && (
+                <div><Label>{t('wz.field.floor')}</Label><Input type="number" value={numVal(form.floor)} onChange={(e) => set({ floor: numSet(e.target.value) })} placeholder="0" /></div>
+              )}
+              {formShows(form.type, 'totalFloors') && (
+                <div><Label>{t('wz.field.totalFloors')}</Label><Input type="number" min={0} value={numVal(form.totalFloors)} onChange={(e) => set({ totalFloors: numSet(e.target.value) })} placeholder={t('wz.ph.totalFloors')} /></div>
+              )}
+              {formShows(form.type, 'dues') && (
+                <div><Label>{t('wz.field.dues')}</Label><Input type="number" min={0} value={numVal(form.dues)} onChange={(e) => set({ dues: numSet(e.target.value) })} placeholder={t('wz.ph.duesEmpty')} /></div>
+              )}
+              {formShows(form.type, 'heating') && (
+                <div><Label>{t('wz.field.heating')}</Label>
+                  <Select value={form.heating} onChange={(e) => set({ heating: e.target.value })}>
+                    {[
+                      { v: 'Kombi', k: 'wz.heat.kombi' },
+                      { v: 'Merkezi', k: 'wz.heat.merkezi' },
+                      { v: 'Merkezi (Doğalgaz)', k: 'wz.heat.merkeziGaz' },
+                      { v: 'Yerden ısıtma', k: 'wz.heat.yerden' },
+                      { v: 'Klima', k: 'wz.heat.klima' },
+                      { v: 'Yok', k: 'wz.heat.yok' },
+                    ].map((h) => <option key={h.v} value={h.v}>{t(h.k)}</option>)}
+                  </Select>
+                </div>
+              )}
+              {formShows(form.type, 'parking') && (
+                <div><Label>{t('wz.field.parking')}</Label>
+                  <Select value={form.parking} onChange={(e) => set({ parking: e.target.value as typeof form.parking })}>
+                    <option value="kapali">{t('wz.park.kapali')}</option>
+                    <option value="acik">{t('wz.park.acik')}</option>
+                    <option value="yok">{t('wz.park.yok')}</option>
+                  </Select>
+                </div>
+              )}
+              <div><Label>{t('wz.field.ownerType')}</Label>
                 <Select value={form.ownerType} onChange={(e) => set({ ownerType: e.target.value as typeof form.ownerType })}>
-                  <option value="sahibi">Sahibinden</option>
-                  <option value="emlakci">Emlakçıdan</option>
-                  <option value="insaat">İnşaat firmasından</option>
-                  <option value="banka">Bankadan</option>
+                  <option value="sahibi">{t('wz.owner.sahibi')}</option>
+                  <option value="emlakci">{t('wz.owner.emlakci')}</option>
+                  <option value="insaat">{t('wz.owner.insaat')}</option>
+                  <option value="banka">{t('wz.owner.banka')}</option>
                 </Select>
               </div>
-              <div><Label>Tapu durumu</Label>
-                <Select value={form.titleDeed} onChange={(e) => set({ titleDeed: e.target.value as typeof form.titleDeed })}>
-                  <option value="belirsiz">Belirtilmemiş</option>
-                  <option value="kat_mulkiyeti">Kat Mülkiyeti</option>
-                  <option value="kat_irtifaki">Kat İrtifakı</option>
-                  <option value="arsa_payi">Arsa Payı</option>
-                  <option value="cikti_belgesi">Çıktı Belgesi</option>
-                </Select>
-              </div>
-              <div><Label>Kullanım durumu</Label>
-                <Select value={form.occupancy} onChange={(e) => set({ occupancy: e.target.value as typeof form.occupancy })}>
-                  <option value="bos">Boş</option>
-                  <option value="kiracili">Kiracılı</option>
-                  <option value="mulk_sahibi">Mülk sahibi oturuyor</option>
-                </Select>
-              </div>
-              <div><Label>İzin / ruhsat belge no</Label><Input value={form.permitNo} onChange={(e) => set({ permitNo: e.target.value })} maxLength={64} placeholder="Opsiyonel" /></div>
-              <div><Label>Taşınmaz numarası</Label><Input value={form.parcelNo} onChange={(e) => set({ parcelNo: e.target.value })} maxLength={64} placeholder="Opsiyonel" /></div>
+              {formShows(form.type, 'titleDeed') && (
+                <div><Label>{t('wz.field.titleDeed')}</Label>
+                  <Select value={form.titleDeed} onChange={(e) => set({ titleDeed: e.target.value as typeof form.titleDeed })}>
+                    <option value="belirsiz">{t('wz.deed.belirsiz')}</option>
+                    <option value="kat_mulkiyeti">{t('wz.deed.kat_mulkiyeti')}</option>
+                    <option value="kat_irtifaki">{t('wz.deed.kat_irtifaki')}</option>
+                    <option value="arsa_payi">{t('wz.deed.arsa_payi')}</option>
+                    <option value="cikti_belgesi">{t('wz.deed.cikti_belgesi')}</option>
+                  </Select>
+                </div>
+              )}
+              {formShows(form.type, 'occupancy') && (
+                <div><Label>{t('wz.field.occupancy')}</Label>
+                  <Select value={form.occupancy} onChange={(e) => set({ occupancy: e.target.value as typeof form.occupancy })}>
+                    <option value="bos">{t('wz.occ.bos')}</option>
+                    <option value="kiracili">{t('wz.occ.kiracili')}</option>
+                    <option value="mulk_sahibi">{t('wz.occ.mulk_sahibi')}</option>
+                  </Select>
+                </div>
+              )}
+              {formShows(form.type, 'permits') && (
+                <>
+                  <div><Label>{t('wz.field.permitNo')}</Label><Input value={form.permitNo} onChange={(e) => set({ permitNo: e.target.value })} maxLength={64} placeholder={t('wz.ph.optional')} /></div>
+                  <div><Label>{t('wz.field.parcelNo')}</Label><Input value={form.parcelNo} onChange={(e) => set({ parcelNo: e.target.value })} maxLength={64} placeholder={t('wz.ph.optional')} /></div>
+                </>
+              )}
 
-              {/* Özellikler — evet/hayır */}
+              {/* Özellikler — evet/hayır (tipe göre liste değişir) */}
               <div className="sm:col-span-2 grid grid-cols-2 sm:grid-cols-3 gap-2">
-                {([
-                  { k: 'elevator', l: 'Asansör' },
-                  { k: 'furnished', l: 'Eşyalı' },
-                  { k: 'balcony', l: 'Balkon' },
-                  { k: 'pool', l: 'Yüzme havuzu' },
-                  { k: 'gym', l: 'Spor alanı' },
-                  { k: 'inSite', l: 'Site içerisinde' },
-                  { k: 'swappable', l: 'Takasa uygun' },
-                  { k: 'groundSurvey', l: 'Zemin etüdü' },
-                ] as const).map((o) => (
-                  <button
-                    key={o.k}
-                    type="button"
-                    onClick={() => set({ [o.k]: !form[o.k] } as Partial<typeof form>)}
-                    aria-pressed={form[o.k]}
-                    className={cn('rounded-xl border p-3 text-sm text-left', form[o.k] ? 'border-gold-400 bg-gold-400/10 text-gold-300' : 'border-[color:var(--border)] bg-[color:var(--bg-elev)] text-[color:var(--fg)] hover:border-[color:var(--border-strong)]')}
-                  >
-                    {form[o.k] ? '✓ ' : ''}{o.l}
-                  </button>
-                ))}
+                {amenitiesFor(form.type).map((o) => {
+                  const key = o.k as keyof typeof form;
+                  return (
+                    <button
+                      key={o.k}
+                      type="button"
+                      onClick={() => set({ [o.k]: !form[key] } as Partial<typeof form>)}
+                      aria-pressed={!!form[key]}
+                      className={cn('rounded-xl border p-3 text-sm text-left', form[key] ? 'border-gold-400 bg-gold-400/10 text-gold-300' : 'border-[color:var(--border)] bg-[color:var(--bg-elev)] text-[color:var(--fg)] hover:border-[color:var(--border-strong)]')}
+                    >
+                      {form[key] ? '✓ ' : ''}{o.l}
+                    </button>
+                  );
+                })}
               </div>
               {form.inSite && (
-                <div className="sm:col-span-2"><Label>Site adı</Label>
-                  <Input value={form.siteName} onChange={(e) => set({ siteName: e.target.value })} maxLength={120} placeholder="Örn: Bahçeşehir Park Evleri" />
+                <div className="sm:col-span-2"><Label>{t('wz.field.siteName')}</Label>
+                  <Input value={form.siteName} onChange={(e) => set({ siteName: e.target.value })} maxLength={120} placeholder={t('wz.ph.siteName')} />
                 </div>
               )}
 
               {!isDaily && (
                 <>
-                  <div><Label>Fiyat</Label><Input type="number" min={0} value={numVal(form.price)} onChange={(e) => set({ price: numSet(e.target.value) })} placeholder="Örn: 250000" /></div>
-                  <div><Label>Para Birimi</Label>
+                  <div><Label>{t('wz.field.price')}</Label><Input type="number" min={0} value={numVal(form.price)} onChange={(e) => set({ price: numSet(e.target.value) })} placeholder={t('wz.ph.price')} /></div>
+                  <div><Label>{t('wz.field.currency')}</Label>
                     <Select value={form.currency} onChange={(e) => set({ currency: e.target.value })}>
                       {['USD', 'EUR', 'TRY', 'AZN'].map((c) => <option key={c}>{c}</option>)}
                     </Select>
                   </div>
                   {form.purpose === 'rent' && (
-                    <div><Label>Depozito ({form.currency})</Label><Input type="number" min={0} value={numVal(form.deposit)} onChange={(e) => set({ deposit: numSet(e.target.value) })} placeholder="Yoksa boş bırak" /></div>
+                    <div><Label>{t('wz.field.deposit')} ({form.currency})</Label><Input type="number" min={0} value={numVal(form.deposit)} onChange={(e) => set({ deposit: numSet(e.target.value) })} placeholder={t('wz.ph.duesEmpty')} /></div>
                   )}
                   {form.purpose === 'sale' && (
                     <button
@@ -890,25 +935,25 @@ export function NewListingClient({ countries: countryList, prices }: NewListingC
                       aria-pressed={form.loanEligible}
                       className={cn('rounded-xl border p-3 text-sm text-left self-end', form.loanEligible ? 'border-gold-400 bg-gold-400/10 text-gold-300' : 'border-[color:var(--border)] bg-[color:var(--bg-elev)] text-[color:var(--fg)] hover:border-[color:var(--border-strong)]')}
                     >
-                      {form.loanEligible ? '✓ ' : ''}Krediye uygun
+                      {form.loanEligible ? '✓ ' : ''}{t('wz.btn.loanEligible')}
                     </button>
                   )}
                   <p className="sm:col-span-2 text-xs font-bold text-[color:var(--fg-muted)] leading-relaxed rounded-lg bg-[color:var(--bg-elev)] border border-[color:var(--border)] p-3">
-                    Ticaret Bakanlığı, ilgili mevzuat gereğince ilanlardaki fiyat artışlarını yakından takip etmektedir. Piyasa koşullarına uygun olmayan fiyat artışı yapılan ilanlara ilişkin bilgilerin Ticaret Bakanlığı tarafından talep edildiğini ve aykırılık tespit edilen ilanlar için 858.620 TL&apos;ye varan idari para cezası uygulanabileceğini önemle hatırlatırız.
+                    {t('wz.notice.priceWarning')}
                   </p>
                 </>
               )}
               {isDaily && (
                 <p className="sm:col-span-2 text-xs text-[color:var(--fg-muted)] rounded-lg bg-[color:var(--bg-elev)] border border-[color:var(--border)] p-3">
-                  Günlük kiralık ilan — gecelik fiyat ve kuralları son adımda gireceksin.
+                  {t('wz.notice.daily')}
                 </p>
               )}
               <div className="sm:col-span-2">
-                <Label>Açıklama</Label>
+                <Label>{t('wz.field.description')}</Label>
                 <RichTextEditor
                   value={form.description}
                   onChange={(html) => set({ description: html })}
-                  placeholder="İlanın hakkında detaylı açıklama yaz. Bölgenin avantajları, daire içi özellikler, yakın çevre..."
+                  placeholder={t('wz.ph.description')}
                   invalid={plainTextLen(form.description) > 0 && plainTextLen(form.description) < 20}
                 />
                 {(() => {
@@ -921,7 +966,7 @@ export function NewListingClient({ countries: countryList, prices }: NewListingC
                       )}
                     >
                       {len} / 20
-                      {len > 0 && len < 20 && ' · En az 20 karakter'}
+                      {len > 0 && len < 20 && ` · ${t('wz.desc.minChars')}`}
                     </div>
                   );
                 })()}
@@ -936,7 +981,7 @@ export function NewListingClient({ countries: countryList, prices }: NewListingC
                   is the #1 driver of inquiries), but update the copy so users
                   learn about it on first paint — not after a failed click. */}
               <p className="text-sm text-[color:var(--fg-muted)] mt-1">
-                <strong>En az 3 fotoğraf yükleyin</strong> (maks. 12). Bilgisayar/telefondaki gerçek fotoğrafları seç.
+                <strong>{t('wz.photos.help')}</strong> {t('wz.photos.helpRest')}
               </p>
 
               <input
@@ -950,7 +995,7 @@ export function NewListingClient({ countries: countryList, prices }: NewListingC
 
               {photos.length > 1 && (
                 <p className="mt-3 text-[11px] text-[color:var(--fg-faint)] inline-flex items-center gap-1">
-                  <GripVertical size={12} /> Sırayı değiştirmek için fotoğrafları sürükle. 1. foto kapak olur.
+                  <GripVertical size={12} /> {t('wz.photos.dragHint')}
                 </p>
               )}
 
@@ -984,12 +1029,12 @@ export function NewListingClient({ countries: countryList, prices }: NewListingC
                       type="button"
                       onClick={() => setPhotos((p) => p.filter((_, j) => j !== i))}
                       className="absolute top-1.5 right-1.5 size-7 rounded-full bg-black/70 text-white flex items-center justify-center hover:bg-black"
-                      aria-label="Sil"
+                      aria-label={t('wz.photos.delete')}
                     >
                       <X size={13} />
                     </button>
                     {i === 0 && (
-                      <span className="absolute bottom-1.5 left-1.5 text-[10px] bg-gold-400 text-navy-900 font-semibold px-1.5 py-0.5 rounded-full">1. foto · Kapak</span>
+                      <span className="absolute bottom-1.5 left-1.5 text-[10px] bg-gold-400 text-navy-900 font-semibold px-1.5 py-0.5 rounded-full">{t('wz.photos.coverBadge')}</span>
                     )}
                   </div>
                 ))}
@@ -1000,13 +1045,13 @@ export function NewListingClient({ countries: countryList, prices }: NewListingC
                     className="aspect-[4/3] rounded-xl border-2 border-dashed border-[color:var(--border-strong)] flex flex-col items-center justify-center gap-1 text-[color:var(--fg-muted)] hover:text-gold-300 hover:border-gold-400/60 transition-colors"
                   >
                     <Camera size={20} />
-                    <div className="text-xs font-medium">Foto Ekle</div>
+                    <div className="text-xs font-medium">{t('wz.photos.add')}</div>
                   </button>
                 )}
               </div>
 
               <p className="mt-3 text-[11px] text-[color:var(--fg-faint)]">
-                {photos.length}/12 yüklendi · ilk foto kart kapağı olarak da kullanılır
+                {photos.length}/12 {t('wz.photos.uploadedSuffix')}
               </p>
             </div>
           )}
@@ -1015,7 +1060,7 @@ export function NewListingClient({ countries: countryList, prices }: NewListingC
             <div>
               <h2 className="text-lg font-semibold">{t('wz.h.cardCover')}</h2>
               <p className="text-sm text-[color:var(--fg-muted)] mt-1">
-                İlan kartında ilk görünecek şey. Fotoğraf seçersen 1. foton kapak olur. Video seçersen kullanıcı mouse'u kartın üstüne getirince otomatik oynar.
+                {t('wz.cover.help')}
               </p>
 
               <div className="mt-5 grid grid-cols-2 gap-3">
@@ -1025,8 +1070,8 @@ export function NewListingClient({ countries: countryList, prices }: NewListingC
                   className={cn('rounded-2xl border p-5 text-left', form.coverKind === 'photo' ? 'border-gold-400 bg-gold-400/10 text-gold-300' : 'border-[color:var(--border)] bg-[color:var(--bg-elev)] text-[color:var(--fg)] hover:border-[color:var(--border-strong)]')}
                 >
                   <ImgIcon size={20} />
-                  <div className="mt-2 font-semibold">Fotoğraf Kapak</div>
-                  <p className="text-xs text-[color:var(--fg-muted)] mt-1">Yüklediğin fotoğraflardan birini kapak yap.</p>
+                  <div className="mt-2 font-semibold">{t('wz.cover.photoTitle')}</div>
+                  <p className="text-xs text-[color:var(--fg-muted)] mt-1">{t('wz.cover.photoDesc')}</p>
                 </button>
                 <button
                   type="button"
@@ -1034,17 +1079,17 @@ export function NewListingClient({ countries: countryList, prices }: NewListingC
                   className={cn('rounded-2xl border p-5 text-left', form.coverKind === 'video' ? 'border-gold-400 bg-gold-400/10 text-gold-300' : 'border-[color:var(--border)] bg-[color:var(--bg-elev)] text-[color:var(--fg)] hover:border-[color:var(--border-strong)]')}
                 >
                   <Play size={20} />
-                  <div className="mt-2 font-semibold">Video Kapak <Badge variant="premium" className="!text-[10px] ml-1">Premium</Badge></div>
-                  <p className="text-xs text-[color:var(--fg-muted)] mt-1">Hover'da otomatik oynar — daha çok dikkat çeker.</p>
+                  <div className="mt-2 font-semibold">{t('wz.cover.videoTitle')} <Badge variant="premium" className="!text-[10px] ml-1">Premium</Badge></div>
+                  <p className="text-xs text-[color:var(--fg-muted)] mt-1">{t('wz.cover.videoDesc')}</p>
                 </button>
               </div>
 
               {form.coverKind === 'photo' ? (
                 <div className="mt-5">
-                  <Label>Kapak fotoğrafı seç</Label>
+                  <Label>{t('wz.cover.selectPhoto')}</Label>
                   {photos.length === 0 ? (
                     <div className="rounded-xl border-2 border-dashed p-5 text-center text-sm text-[color:var(--fg-muted)]">
-                      Önce "Medya" adımında fotoğraf yükle.
+                      {t('wz.cover.uploadFirst')}
                     </div>
                   ) : (
                     <div className="grid grid-cols-3 gap-2">
@@ -1060,7 +1105,7 @@ export function NewListingClient({ countries: countryList, prices }: NewListingC
                         >
                           <img src={src} alt="" className="w-full h-full object-cover" />
                           {form.coverPhotoIndex === i && (
-                            <span className="absolute top-1.5 right-1.5 rounded-full bg-gold-400 text-navy-900 text-[10px] font-bold px-1.5 py-0.5">KAPAK</span>
+                            <span className="absolute top-1.5 right-1.5 rounded-full bg-gold-400 text-navy-900 text-[10px] font-bold px-1.5 py-0.5">{t('wz.cover.coverTag')}</span>
                           )}
                         </button>
                       ))}
@@ -1069,7 +1114,10 @@ export function NewListingClient({ countries: countryList, prices }: NewListingC
                 </div>
               ) : (
                 <div className="mt-5 space-y-3">
-                  <Label>Kapak videosu yükle (MP4, maks. 60 MB)</Label>
+                  <Label>{t('wz.cover.uploadVideo')}</Label>
+                  <div className="rounded-lg border border-[color:var(--border)] bg-[color:var(--bg-elev)] p-3 text-[11px] text-[color:var(--fg-muted)] leading-relaxed">
+                    <strong className="text-[color:var(--fg)]">{t('wz.cover.recommended')}</strong> {t('wz.cover.recommendedDesc')}
+                  </div>
                   <input
                     ref={videoInputRef}
                     type="file"
@@ -1079,15 +1127,15 @@ export function NewListingClient({ countries: countryList, prices }: NewListingC
                   />
                   {coverVideo ? (
                     <div className="space-y-2">
-                      <div className="aspect-video rounded-xl overflow-hidden border bg-[color:var(--bg-card-hover)]">
-                        <video src={coverVideo} muted loop autoPlay playsInline className="w-full h-full object-cover" />
+                      <div className="aspect-video rounded-xl overflow-hidden border bg-black flex items-center justify-center">
+                        <video src={coverVideo} muted loop autoPlay playsInline className="max-w-full max-h-full object-contain" />
                       </div>
                       <div className="flex gap-2">
                         <Button variant="outline" size="sm" onClick={() => videoInputRef.current?.click()}>
-                          <Video size={13} /> Değiştir
+                          <Video size={13} /> {t('wz.cover.change')}
                         </Button>
                         <Button variant="ghost" size="sm" onClick={() => setCoverVideo('')} className="text-danger hover:bg-danger/10">
-                          <X size={13} /> Kaldır
+                          <X size={13} /> {t('wz.cover.remove')}
                         </Button>
                       </div>
                     </div>
@@ -1098,8 +1146,8 @@ export function NewListingClient({ countries: countryList, prices }: NewListingC
                       className="w-full rounded-xl border-2 border-dashed border-[color:var(--border-strong)] p-8 flex flex-col items-center justify-center gap-2 text-[color:var(--fg-muted)] hover:text-gold-300 hover:border-gold-400/60 transition-colors"
                     >
                       <Upload size={24} />
-                      <div className="text-sm font-medium">Video Seç</div>
-                      <div className="text-[11px] text-[color:var(--fg-faint)]">15–60 sn önerilir</div>
+                      <div className="text-sm font-medium">{t('wz.cover.selectVideo')}</div>
+                      <div className="text-[11px] text-[color:var(--fg-faint)]">{t('wz.cover.videoDuration')}</div>
                     </button>
                   )}
                 </div>
@@ -1114,9 +1162,9 @@ export function NewListingClient({ countries: countryList, prices }: NewListingC
           {step === 6 && (
             <div>
               <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
-                <p className="text-sm text-[color:var(--fg-muted)]">Yakın çevre mesafeleri konuma göre otomatik hesaplanır.</p>
+                <p className="text-sm text-[color:var(--fg-muted)]">{t('wz.nearby.autoIntro')}</p>
                 <Button type="button" variant="gold" size="sm" onClick={autoCalcNearby} loading={nearbyLoading}>
-                  <SparklesIcon size={14} /> Yeniden hesapla
+                  <SparklesIcon size={14} /> {t('wz.nearby.recalc')}
                 </Button>
               </div>
               <NearbyStep value={form.nearby} />
@@ -1127,14 +1175,13 @@ export function NewListingClient({ countries: countryList, prices }: NewListingC
             <div>
               <h2 className="text-lg font-semibold">{t('wz.h.dailyRent')}</h2>
               <p className="text-sm text-[color:var(--fg-muted)] mt-1">
-                Misafirler takvim üzerinden rezervasyon talep eder, sen onaylar veya reddedersin.
-                Gecelik fiyat zorunludur.
+                {t('wz.daily.desc')}
               </p>
 
               {(
                 <div className="mt-5 grid sm:grid-cols-2 gap-4">
                   <div>
-                    <Label>Gecelik fiyat</Label>
+                    <Label>{t('wz.daily.price')}</Label>
                     <Input
                       type="number"
                       min={1}
@@ -1144,7 +1191,7 @@ export function NewListingClient({ countries: countryList, prices }: NewListingC
                     />
                   </div>
                   <div>
-                    <Label>Para birimi</Label>
+                    <Label>{t('wz.daily.currency')}</Label>
                     <Select
                       value={form.dailyRentalCurrency}
                       onChange={(e) => set({ dailyRentalCurrency: e.target.value as typeof form.dailyRentalCurrency })}
@@ -1156,7 +1203,7 @@ export function NewListingClient({ countries: countryList, prices }: NewListingC
                     </Select>
                   </div>
                   <div>
-                    <Label>Minimum gece</Label>
+                    <Label>{t('wz.daily.minNights')}</Label>
                     <Input
                       type="number"
                       min={1}
@@ -1166,11 +1213,11 @@ export function NewListingClient({ countries: countryList, prices }: NewListingC
                     />
                   </div>
                   <div className="sm:col-span-2">
-                    <Label>Ev kuralları / not (opsiyonel)</Label>
+                    <Label>{t('wz.daily.notes')}</Label>
                     <Input
                       value={form.dailyRentalNotes}
                       onChange={(e) => set({ dailyRentalNotes: e.target.value })}
-                      placeholder="Sigara içilmez, evcil hayvan kabul edilir, vb."
+                      placeholder={t('wz.daily.notesPh')}
                     />
                   </div>
                 </div>
@@ -1181,7 +1228,7 @@ export function NewListingClient({ countries: countryList, prices }: NewListingC
           {step === 7 && (
             <div>
               <h2 className="text-lg font-semibold">{t('wz.h.listingOptions')}</h2>
-              <p className="text-sm text-[color:var(--fg-muted)] mt-1">İlanını öne çıkar veya gizli portföye al.</p>
+              <p className="text-sm text-[color:var(--fg-muted)] mt-1">{t('wz.opt.desc')}</p>
 
               <div className="mt-4 grid sm:grid-cols-2 gap-3">
                 {/* Option 1: IstBaku Onaylı Rozet */}
@@ -1198,10 +1245,10 @@ export function NewListingClient({ countries: countryList, prices }: NewListingC
                 >
                   <div className="flex items-center gap-2">
                     <ShieldCheck size={20} className={form.tier === 'premium' ? 'text-gold-300' : 'text-[color:var(--fg-muted)]'} />
-                    <div className="font-bold">İstBaku Onaylı Rozet Al</div>
+                    <div className="font-bold">{t('wz.opt.badgeTitle')}</div>
                   </div>
                   <p className="text-xs text-[color:var(--fg-muted)] mt-2">
-                    İlanın kontrol edilir, onaylanırsa öne çıkarılır ve İstBaku Onaylı rozeti alır.
+                    {t('wz.opt.badgeDesc')}
                   </p>
                   <div className="mt-3 text-gold-300 font-bold">{usdLabel(badgePrice)}</div>
                 </button>
@@ -1218,8 +1265,8 @@ export function NewListingClient({ countries: countryList, prices }: NewListingC
                       if (form.price < 500000) {
                         toast({
                           variant: 'error',
-                          title: 'Gizli portföy kullanılamaz',
-                          description: 'Gizli portföy sadece $500.000 ve üzeri ilanlar için geçerlidir.',
+                          title: t('wz.toast.privateUnavail'),
+                          description: t('wz.toast.privateUnavailDesc'),
                         });
                         return;
                       }
@@ -1227,8 +1274,8 @@ export function NewListingClient({ countries: countryList, prices }: NewListingC
                       if (user?.kycStatus !== 'approved') {
                         toast({
                           variant: 'error',
-                          title: 'KYC doğrulaması gerekli',
-                          description: 'Gizli portföy için KYC doğrulamanızın onaylanmış olması gerekir.',
+                          title: t('wz.toast.kycRequired'),
+                          description: t('wz.toast.kycRequiredDesc'),
                         });
                         return;
                       }
@@ -1245,10 +1292,10 @@ export function NewListingClient({ countries: countryList, prices }: NewListingC
                 >
                   <div className="flex items-center gap-2">
                     <Lock size={20} className={form.isPrivate ? 'text-gold-300' : 'text-[color:var(--fg-muted)]'} />
-                    <div className="font-bold">Gizli Portföy Yap</div>
+                    <div className="font-bold">{t('wz.opt.privateTitle')}</div>
                   </div>
                   <p className="text-xs text-[color:var(--fg-muted)] mt-2">
-                    İlanın sadece doğrulanmış kullanıcılara gösterilir. ($500K+ ilanlar)
+                    {t('wz.opt.privateDesc')}
                   </p>
                   <div className="mt-3 text-gold-300 font-bold">{usdLabel(privatePrice)}</div>
                 </button>
@@ -1261,23 +1308,23 @@ export function NewListingClient({ countries: countryList, prices }: NewListingC
                   className="mt-5 rounded-xl bg-gold-500/10 border border-gold-500/30 p-4 text-sm"
                 >
                   <div className="flex items-center gap-2 font-semibold text-gold-300">
-                    <ShieldCheck size={16} /> Ödenecek eklentiler
+                    <ShieldCheck size={16} /> {t('wz.opt.payTitle')}
                   </div>
                   <ul className="mt-2 space-y-1 text-[color:var(--fg-muted)]">
-                    {form.tier === 'premium' && <li className="flex justify-between"><span>İstBaku Onaylı rozet</span><span>{usdLabel(badgePrice)}</span></li>}
-                    {form.isPrivate && <li className="flex justify-between"><span>Gizli portföy</span><span>{usdLabel(privatePrice)}</span></li>}
+                    {form.tier === 'premium' && <li className="flex justify-between"><span>{t('wz.opt.badgeItem')}</span><span>{usdLabel(badgePrice)}</span></li>}
+                    {form.isPrivate && <li className="flex justify-between"><span>{t('wz.opt.privateItem')}</span><span>{usdLabel(privatePrice)}</span></li>}
                   </ul>
                   <div className="mt-2 pt-2 border-t border-[color:var(--border)] flex justify-between font-bold">
-                    <span>Toplam</span>
+                    <span>{t('wz.opt.total')}</span>
                     <span className="text-gold-300">{usdLabel((form.tier === 'premium' ? badgePrice : 0) + (form.isPrivate ? privatePrice : 0))}</span>
                   </div>
-                  <p className="mt-2 text-xs text-[color:var(--fg-faint)]">"Yayınla" deyince ödeme penceresi açılır.</p>
+                  <p className="mt-2 text-xs text-[color:var(--fg-faint)]">{t('wz.opt.payHint')}</p>
                 </div>
               ) : (
                 <div className="mt-5 rounded-xl bg-[color:var(--bg-elev)] border border-[color:var(--border)] p-4 text-sm flex items-start gap-3">
                   <AlertCircle size={16} className="text-[color:var(--fg-muted)] mt-0.5 shrink-0" />
                   <div className="text-[color:var(--fg-muted)]">
-                    Hiçbirini seçmezsen ilanın standart olarak yayınlanır.
+                    {t('wz.opt.none')}
                   </div>
                 </div>
               )}
@@ -1377,7 +1424,7 @@ export function NewListingClient({ countries: countryList, prices }: NewListingC
           // Ödeme iptal — ilan zaten standart/açık yayında; panele yönlendir.
           const slug = paidContextRef.current?.slug;
           setPendingPayment(null);
-          toast({ variant: 'info', title: 'Ödeme iptal edildi', description: 'İlanın standart olarak yayında. Eklentileri panelinden ekleyebilirsin.' });
+          toast({ variant: 'info', title: t('wz.toast.payCancelled'), description: t('wz.toast.payCancelledDesc') });
           setTimeout(() => router.push(slug ? `/property/${slug}` : '/dashboard'), 300);
         }}
         onSuccess={onWizardPaid}
@@ -1409,13 +1456,13 @@ function NearbyStep({ value }: { value: NearbyShape }) {
   const { t } = useLang();
   type PoiKey = Exclude<keyof NearbyShape, 'markets'>;
   const FIELDS: { key: PoiKey; label: string }[] = [
-    { key: 'metro',   label: 'Metro / Toplu Taşıma' },
-    { key: 'okul',    label: 'Okul' },
-    { key: 'hastane', label: 'Hastane' },
-    { key: 'avm',     label: 'AVM' },
-    { key: 'park',    label: 'Park / Yeşil Alan' },
-    { key: 'eczane',  label: 'Eczane' },
-    { key: 'eglence', label: 'Restoran / Cafe' },
+    { key: 'metro',   label: t('wz.nearby.metro') },
+    { key: 'okul',    label: t('wz.nearby.okul') },
+    { key: 'hastane', label: t('wz.nearby.hastane') },
+    { key: 'avm',     label: t('wz.nearby.avm') },
+    { key: 'park',    label: t('wz.nearby.park') },
+    { key: 'eczane',  label: t('wz.nearby.eczane') },
+    { key: 'eglence', label: t('wz.nearby.eglence') },
   ];
 
   // Salt-okunur: mesafeler sunucuda koordinattan hesaplanır (anti-fraud).
@@ -1426,7 +1473,7 @@ function NearbyStep({ value }: { value: NearbyShape }) {
       .map((f) => ({ label: f.label, entry: value[f.key] })),
     ...(value.markets ?? [])
       .filter((m) => m.name?.trim())
-      .map((m) => ({ label: 'Market', entry: m })),
+      .map((m) => ({ label: t('wz.nearby.market'), entry: m })),
   ];
 
   return (
@@ -1434,16 +1481,13 @@ function NearbyStep({ value }: { value: NearbyShape }) {
       <div>
         <h2 className="text-lg font-semibold">{t('wz.h.nearby')}</h2>
         <p className="text-sm text-[color:var(--fg-muted)] mt-1">
-          Yakın çevre mesafeleri konumuna göre <strong>otomatik</strong> hesaplanır ve elle
-          değiştirilemez — böylece ilanlardaki mesafe bilgileri herkes için doğru ve
-          karşılaştırılabilir kalır.
+          {t('wz.nearby.desc')}
         </p>
       </div>
 
       {rows.length === 0 ? (
         <div className="rounded-xl border border-dashed p-4 text-center text-sm text-[color:var(--fg-muted)]">
-          Konumu “Konum” adımında haritada işaretle; yakın çevre otomatik dolacak. Dilersen
-          yukarıdaki <strong>Yeniden hesapla</strong> ile güncelleyebilirsin.
+          {t('wz.nearby.empty')}
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
@@ -1500,17 +1544,17 @@ function RegionStep({ value, onChange }: { value: RegionShape; onChange: (v: Reg
   }
 
   const rows: { key: RegionKey; label: string; icon: typeof Users; color: string }[] = [
-    { key: 'aile', label: 'Aile', icon: Users, color: '#CAAE99' },
-    { key: 'memur', label: 'Memur', icon: Briefcase, color: '#6366f1' },
-    { key: 'ogrenci', label: 'Öğrenci', icon: GraduationCap, color: '#10b981' },
-    { key: 'yabanci', label: 'Yabancı Uyruklu', icon: Globe, color: '#e3d6c8' },
+    { key: 'aile', label: t('wz.region.aile'), icon: Users, color: '#CAAE99' },
+    { key: 'memur', label: t('wz.region.memur'), icon: Briefcase, color: '#6366f1' },
+    { key: 'ogrenci', label: t('wz.region.ogrenci'), icon: GraduationCap, color: '#10b981' },
+    { key: 'yabanci', label: t('wz.region.yabanci'), icon: Globe, color: '#e3d6c8' },
   ];
 
   return (
     <div>
       <h2 className="text-lg font-semibold">{t('wz.h.regionProfile')}</h2>
       <p className="text-sm text-[color:var(--fg-muted)] mt-1">
-        Bölgede genellikle kimler yaşıyor? Sliderları oynat — toplam otomatik 100'de tutulur, kalan kısım <strong>Diğer</strong> olarak işaretlenir. Yanlış yapamazsın 🙂
+        {t('wz.region.desc')}
       </p>
 
       <div className="mt-6 space-y-4">
@@ -1536,7 +1580,7 @@ function RegionStep({ value, onChange }: { value: RegionShape; onChange: (v: Reg
 
         <div className="pt-3 border-t border-dashed">
           <div className="flex items-center justify-between text-sm mb-1.5">
-            <span className="text-[color:var(--fg-muted)]">Diğer (otomatik)</span>
+            <span className="text-[color:var(--fg-muted)]">{t('wz.region.diger')}</span>
             <span className="font-bold tabular-nums text-[color:var(--fg-muted)]">%{other}</span>
           </div>
           <div className="h-2 rounded-full bg-[color:var(--bg-card-hover)] overflow-hidden">

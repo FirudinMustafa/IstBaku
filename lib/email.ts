@@ -1,6 +1,7 @@
 import 'server-only';
 import { Resend } from 'resend';
 import { stripCrlf } from './security';
+import { formatDateInTz, formatTimeInTz } from './datetime';
 
 const apiKey = process.env.RESEND_API_KEY;
 const fromAddr = process.env.EMAIL_FROM ?? 'ISTBAKU <noreply@istbaku.com>';
@@ -478,17 +479,22 @@ export function tplNewMessage({
 }
 
 export function tplAppointmentVisitor({
-  visitorName, agentName, listingTitle, when, propertyUrl,
-}: { visitorName: string; agentName: string; listingTitle: string; when: Date; propertyUrl: string }) {
-  const dateStr = when.toLocaleDateString('tr-TR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-  const timeStr = when.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+  visitorName, agentName, listingTitle, when, propertyUrl, country, pending,
+}: { visitorName: string; agentName: string; listingTitle: string; when: Date; propertyUrl: string; country?: string | null; pending?: boolean }) {
+  const dateStr = formatDateInTz(when, country);
+  const timeStr = formatTimeInTz(when, country);
   const firstName = escapeHtml(visitorName.split(' ')[0]);
+  // pending=true → talep alındı, ofis onayı bekleniyor; false → onaylandı.
   return emailShell({
-    preheader: `Gezinti randevun onaylandı — ${dateStr} ${timeStr}`,
+    preheader: pending
+      ? `Gezinti randevu talebin alındı — ${dateStr} ${timeStr} (onay bekleniyor)`
+      : `Gezinti randevun onaylandı — ${dateStr} ${timeStr}`,
     heroIcon: '📅',
-    heroEyebrow: 'Randevu Onaylandı',
-    title: `${firstName}, randevun hazır`,
-    intro: `<strong style="color:${C.text};">${escapeHtml(listingTitle)}</strong> ilanı için ${escapeHtml(agentName)} ile gezinti randevun oluşturuldu.`,
+    heroEyebrow: pending ? 'Randevu Talebi Alındı' : 'Randevu Onaylandı',
+    title: pending ? `${firstName}, talebin alındı` : `${firstName}, randevun hazır`,
+    intro: pending
+      ? `<strong style="color:${C.text};">${escapeHtml(listingTitle)}</strong> ilanı için ${escapeHtml(agentName)} ile gezinti talebin alındı. Ofis onayladığında ayrıca bilgilendirileceksin.`
+      : `<strong style="color:${C.text};">${escapeHtml(listingTitle)}</strong> ilanı için ${escapeHtml(agentName)} ile gezinti randevun onaylandı.`,
     bodyHtml: `
       <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin:0 0 8px;">
         <tr>
@@ -503,7 +509,7 @@ export function tplAppointmentVisitor({
     ctaLabel: 'İlanı Aç',
     ctaUrl: propertyUrl,
     secondaryCtaLabel: 'Randevuyu panelden takip et',
-    secondaryCtaUrl: `${appUrl}/dashboard`,
+    secondaryCtaUrl: `${appUrl}/dashboard?tab=appointments`,
     tipBox: {
       title: 'Önemli',
       body: `İptal veya değişiklik için randevudan en az 2 saat önce ${escapeHtml(agentName)} ile iletişime geç.`,
@@ -511,17 +517,67 @@ export function tplAppointmentVisitor({
   });
 }
 
-export function tplAppointmentAgent({
-  agentName, visitorName, visitorEmail, visitorPhone, listingTitle, when, dashboardUrl,
-}: { agentName: string; visitorName: string; visitorEmail: string; visitorPhone?: string; listingTitle: string; when: Date; dashboardUrl: string }) {
-  const dateStr = when.toLocaleDateString('tr-TR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-  const timeStr = when.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+/** Ofis randevuyu reddedince ziyaretçiye giden mail. */
+export function tplAppointmentRejected({
+  visitorName, agentName, listingTitle, when, country, reason,
+}: { visitorName: string; agentName: string; listingTitle: string; when: Date; country?: string | null; reason?: string }) {
+  const dateStr = formatDateInTz(when, country);
+  const timeStr = formatTimeInTz(when, country);
+  const firstName = escapeHtml(visitorName.split(' ')[0]);
   return emailShell({
-    preheader: 'Yeni gezinti talebi geldi.',
+    preheader: `Gezinti randevu talebin onaylanamadı — ${dateStr} ${timeStr}`,
+    heroIcon: '🗓️',
+    heroEyebrow: 'Randevu Reddedildi',
+    title: `${firstName}, randevu talebin onaylanamadı`,
+    intro: `<strong style="color:${C.text};">${escapeHtml(listingTitle)}</strong> ilanı için ${dateStr} ${timeStr} randevu talebin ${escapeHtml(agentName)} tarafından onaylanamadı.${reason ? ` Sebep: ${escapeHtml(reason)}` : ''}`,
+    bodyHtml: `<p style="margin:0;color:${C.textMuted};font-size:14px;line-height:1.6;">Dilersen başka bir tarih/saat için yeni bir randevu talebi oluşturabilirsin.</p>`,
+    ctaLabel: 'Yeni randevu oluştur',
+    ctaUrl: `${appUrl}/dashboard?tab=appointments`,
+  });
+}
+
+/** Ofis alternatif saat önerince ziyaretçiye giden mail. */
+export function tplAppointmentRescheduled({
+  visitorName, agentName, listingTitle, oldWhen, newWhen, country,
+}: { visitorName: string; agentName: string; listingTitle: string; oldWhen: Date; newWhen: Date; country?: string | null }) {
+  const oldStr = `${formatDateInTz(oldWhen, country)} ${formatTimeInTz(oldWhen, country)}`;
+  const newDate = formatDateInTz(newWhen, country);
+  const newTime = formatTimeInTz(newWhen, country);
+  const firstName = escapeHtml(visitorName.split(' ')[0]);
+  return emailShell({
+    preheader: `${escapeHtml(agentName)} yeni bir saat önerdi — ${newDate} ${newTime}`,
+    heroIcon: '🔁',
+    heroEyebrow: 'Yeni Saat Önerildi',
+    title: `${firstName}, ofis yeni bir saat önerdi`,
+    intro: `<strong style="color:${C.text};">${escapeHtml(listingTitle)}</strong> için talep ettiğin <s>${oldStr}</s> saati uygun değil. ${escapeHtml(agentName)} aşağıdaki saati önerdi:`,
+    bodyHtml: `
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin:0 0 8px;">
+        <tr>
+          <td class="stack-col" style="padding:0 6px 0 0;width:50%;">
+            ${metricCard('Yeni Tarih', newDate)}
+          </td>
+          <td class="stack-col" style="padding:0 0 0 6px;width:50%;">
+            ${metricCard('Yeni Saat', newTime, C.amber)}
+          </td>
+        </tr>
+      </table>
+      <p style="margin:12px 0 0;color:${C.textMuted};font-size:14px;line-height:1.6;">Bu saati kabul etmek veya reddetmek için panelindeki "Randevularım" bölümünü kullan.</p>`,
+    ctaLabel: 'Öneriyi gör',
+    ctaUrl: `${appUrl}/dashboard?tab=appointments`,
+  });
+}
+
+export function tplAppointmentAgent({
+  agentName, visitorName, visitorEmail, visitorPhone, listingTitle, when, dashboardUrl, country,
+}: { agentName: string; visitorName: string; visitorEmail: string; visitorPhone?: string; listingTitle: string; when: Date; dashboardUrl: string; country?: string | null }) {
+  const dateStr = formatDateInTz(when, country);
+  const timeStr = formatTimeInTz(when, country);
+  return emailShell({
+    preheader: 'Yeni gezinti talebi geldi — onay bekliyor.',
     heroIcon: '🏠',
-    heroEyebrow: 'Yeni Lead',
-    title: `${escapeHtml(visitorName)} ile randevu`,
-    intro: `<strong style="color:${C.text};">${escapeHtml(listingTitle)}</strong> için bir ziyaretçi randevu oluşturdu. Detaylar aşağıda.`,
+    heroEyebrow: 'Yeni Lead — Onay Bekliyor',
+    title: `${escapeHtml(visitorName)} ile randevu talebi`,
+    intro: `<strong style="color:${C.text};">${escapeHtml(listingTitle)}</strong> için bir ziyaretçi randevu talebi oluşturdu. Panelinden <strong>onayla / reddet / yeni saat öner</strong>. Detaylar aşağıda.`,
     bodyHtml: `
       <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:${C.navy700};border:1px solid ${C.border};border-radius:10px;">
         <tr><td style="padding:8px 16px;">

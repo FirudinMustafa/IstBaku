@@ -47,30 +47,66 @@ async function requireModeratorOrAbove(): Promise<AdminCtx> {
 }
 
 // ----- Listings approval -----
-export async function approveListingAction(listingId: string, level: 1 | 2 | 3 = 2) {
+/**
+ * İlan onay kuyruğundaki TEK bir talebi onaylar (talebe-özel — Madde 4 fix).
+ * - `new_listing` / `price_change` / `photo_update` → YAYIN onayı: yalnızca
+ *   approvalStatus='approved' yapılır. İstBaku rozetine (istbakuApproved) DOKUNULMAZ.
+ * - `tier_upgrade` → ROZET onayı: yalnızca ödemesi 'paid' olan rozet talebi için
+ *   istbakuApproved=true + approvalLevel set edilir. Ödeme yoksa onay reddedilir.
+ * Böylece "normal onay verince rozet de bedava veriliyor" ve "tek tıkla ikisi birden
+ * onaylanıyor" bug'ları ortadan kalkar.
+ */
+export async function approveListingAction(requestId: string, level: 1 | 2 | 3 = 2) {
   const admin = await requireModeratorOrAbove();
   if (![1, 2, 3].includes(level)) {
     return { ok: false, error: 'Geçersiz seviye.' };
   }
-  await db.update(s.listings).set({
-    approvalStatus: 'approved',
-    istbakuApproved: true,
-    approvalLevel: level,
-    aiVerified: true,
-    updatedAt: new Date(),
-  }).where(eq(s.listings.id, listingId));
+
+  const [reqRow] = await db.select().from(s.approvalRequests)
+    .where(eq(s.approvalRequests.id, requestId)).limit(1);
+  if (!reqRow) return { ok: false, error: 'Onay talebi bulunamadı.' };
+  if (reqRow.status !== 'pending') return { ok: false, error: 'Bu talep zaten işlenmiş.' };
+  const listingId = reqRow.listingId;
+  const isBadge = reqRow.type === 'tier_upgrade';
+
+  if (isBadge) {
+    // Rozet onayı yalnızca ödemesi alınmış talepler için verilebilir.
+    const [paid] = await db.select({ id: s.payments.id }).from(s.payments)
+      .where(and(
+        eq(s.payments.listingId, listingId),
+        eq(s.payments.type, 'istbaku_approved'),
+        eq(s.payments.status, 'paid'),
+      )).orderBy(desc(s.payments.createdAt)).limit(1);
+    if (!paid) return { ok: false, error: 'Bu rozet için onaylanmış ödeme bulunamadı.' };
+    await db.update(s.listings).set({
+      istbakuApproved: true,
+      approvalLevel: level,
+      aiVerified: true,
+      tier: 'premium',
+      updatedAt: new Date(),
+    }).where(eq(s.listings.id, listingId));
+  } else {
+    // Yayın onayı — rozete dokunma.
+    await db.update(s.listings).set({
+      approvalStatus: 'approved',
+      updatedAt: new Date(),
+    }).where(eq(s.listings.id, listingId));
+  }
+
+  // SADECE bu talebi onayla.
   await db.update(s.approvalRequests).set({
     status: 'approved',
     reviewedById: admin.id,
     reviewedAt: new Date(),
-  }).where(and(eq(s.approvalRequests.listingId, listingId), eq(s.approvalRequests.status, 'pending')));
+  }).where(eq(s.approvalRequests.id, requestId));
+
   await db.insert(s.auditLog).values({
     actorId: admin.id, actorEmail: admin.email,
-    action: 'İlan onaylandı', target: listingId,
-    meta: { level },
+    action: isBadge ? 'İstBaku rozeti onaylandı' : 'İlan yayını onaylandı', target: listingId,
+    meta: { level, requestType: reqRow.type },
   });
 
-  // Ajana mail
+  // Ajana mail/bildirim
   const [listing] = await db.select({ title: s.listings.title, slug: s.listings.slug, agentId: s.listings.agentId })
     .from(s.listings).where(eq(s.listings.id, listingId)).limit(1);
   if (listing?.agentId) {
@@ -80,13 +116,13 @@ export async function approveListingAction(listingId: string, level: 1 | 2 | 3 =
       await db.insert(s.notifications).values({
         userId: listing.agentId,
         type: 'approval',
-        title: `İlanın onaylandı: ${listing.title}`,
-        body: `ISTBAKU Onaylı (Seviye ${level}) rozetiyle yayında.`,
+        title: isBadge ? `İstBaku Onaylı rozetin verildi: ${listing.title}` : `İlanın onaylandı: ${listing.title}`,
+        body: isBadge ? `İlanın artık İstBaku Onaylı (Seviye ${level}) rozetiyle öne çıkıyor.` : 'İlanın yayında ve aramada görünür.',
         link: `/property/${listing.slug}`,
       });
       sendEmail({
         to: agent.email,
-        subject: `İlanın yayında! — ${listing.title}`,
+        subject: isBadge ? `İstBaku Onaylı rozetin verildi — ${listing.title}` : `İlanın yayında! — ${listing.title}`,
         html: tplListingApproved({
           agentName: agent.name,
           listingTitle: listing.title,
@@ -101,45 +137,80 @@ export async function approveListingAction(listingId: string, level: 1 | 2 | 3 =
   return { ok: true };
 }
 
-export async function rejectListingAction(listingId: string, reason?: string) {
+/**
+ * Tek bir onay talebini reddeder (talebe-özel — Madde 4 fix).
+ * - `tier_upgrade` reddi → ilan YAYINDA kalır; sadece rozet/premium geri alınır,
+ *   kullanıcıya iade bildirimi gider.
+ * - Yayın talebi reddi → ilan approvalStatus='rejected' (yayından düşer).
+ */
+export async function rejectListingAction(requestId: string, reason?: string) {
   const admin = await requireModeratorOrAbove();
-  await db.update(s.listings).set({ approvalStatus: 'rejected', updatedAt: new Date() }).where(eq(s.listings.id, listingId));
+
+  const [reqRow] = await db.select().from(s.approvalRequests)
+    .where(eq(s.approvalRequests.id, requestId)).limit(1);
+  if (!reqRow) return { ok: false, error: 'Onay talebi bulunamadı.' };
+  if (reqRow.status !== 'pending') return { ok: false, error: 'Bu talep zaten işlenmiş.' };
+  const listingId = reqRow.listingId;
+  const isBadge = reqRow.type === 'tier_upgrade';
+
   await db.update(s.approvalRequests).set({
     status: 'rejected',
     reviewedById: admin.id,
     reviewedAt: new Date(),
     notes: reason,
-  }).where(and(eq(s.approvalRequests.listingId, listingId), eq(s.approvalRequests.status, 'pending')));
+  }).where(eq(s.approvalRequests.id, requestId));
+
+  if (isBadge) {
+    // Rozet reddi: yayın etkilenmez, premium/rozet geri alınır.
+    await db.update(s.listings).set({
+      istbakuApproved: false,
+      tier: 'standart',
+      updatedAt: new Date(),
+    }).where(eq(s.listings.id, listingId));
+  } else {
+    await db.update(s.listings).set({ approvalStatus: 'rejected', updatedAt: new Date() }).where(eq(s.listings.id, listingId));
+  }
+
   await db.insert(s.auditLog).values({
     actorId: admin.id, actorEmail: admin.email,
-    action: 'İlan reddedildi', target: listingId,
-    meta: { reason },
+    action: isBadge ? 'İstBaku rozeti reddedildi' : 'İlan reddedildi', target: listingId,
+    meta: { reason, requestType: reqRow.type },
   });
 
-  const [listing] = await db.select({ title: s.listings.title, agentId: s.listings.agentId })
+  const [listing] = await db.select({ title: s.listings.title, slug: s.listings.slug, agentId: s.listings.agentId })
     .from(s.listings).where(eq(s.listings.id, listingId)).limit(1);
   if (listing?.agentId) {
     const [agent] = await db.select({ name: s.users.name, email: s.users.email })
       .from(s.users).where(eq(s.users.id, listing.agentId)).limit(1);
     if (agent) {
-      await db.insert(s.notifications).values({
-        userId: listing.agentId,
-        type: 'approval',
-        title: `İlanın yayınlanamadı: ${listing.title}`,
-        body: reason ?? 'Lütfen detayları gözden geçir ve tekrar gönder.',
-        link: '/dashboard?tab=listings',
-      });
-      sendEmail({
-        to: agent.email,
-        subject: `İlanın yayınlanmadı — ${listing.title}`,
-        html: tplListingRejected({
-          agentName: agent.name,
-          listingTitle: listing.title,
-          reason,
-          dashboardUrl: `${APP_URL}/dashboard?tab=listings`,
-        }),
-        silent: true,
-      }).catch((e) => console.warn('[reject mail]', e));
+      if (isBadge) {
+        await db.insert(s.notifications).values({
+          userId: listing.agentId,
+          type: 'approval',
+          title: `İstBaku Onaylı başvurun reddedildi: ${listing.title}`,
+          body: `${reason ?? 'Rozet kriterleri sağlanmadı.'} İlanın yayında kalmaya devam ediyor; rozet ücreti iade edilecektir.`,
+          link: `/property/${listing.slug}`,
+        });
+      } else {
+        await db.insert(s.notifications).values({
+          userId: listing.agentId,
+          type: 'approval',
+          title: `İlanın yayınlanamadı: ${listing.title}`,
+          body: reason ?? 'Lütfen detayları gözden geçir ve tekrar gönder.',
+          link: '/dashboard?tab=listings',
+        });
+        sendEmail({
+          to: agent.email,
+          subject: `İlanın yayınlanmadı — ${listing.title}`,
+          html: tplListingRejected({
+            agentName: agent.name,
+            listingTitle: listing.title,
+            reason,
+            dashboardUrl: `${APP_URL}/dashboard?tab=listings`,
+          }),
+          silent: true,
+        }).catch((e) => console.warn('[reject mail]', e));
+      }
     }
   }
 

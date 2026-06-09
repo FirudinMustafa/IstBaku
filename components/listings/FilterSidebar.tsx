@@ -5,6 +5,7 @@ import { Filter, Check, RotateCcw, ChevronDown } from 'lucide-react';
 import { Input, Label, Select } from '@/components/ui/Input';
 import type { FilterState, PropertyType, OwnerType } from '@/lib/types';
 import { citiesOf, districtsOf } from '@/lib/data/locations';
+import { neighborhoodsOf, neighborhoodsOfCity } from '@/lib/data/neighborhoods';
 import { cn } from '@/lib/utils';
 import { useLang } from '@/components/layout/LangProvider';
 import { useCurrency } from '@/lib/currency-store';
@@ -24,6 +25,8 @@ const STRUCTURE_TYPE_FILTERS = STRUCTURE_TYPE_OPTIONS.filter((o) => o.value !== 
 interface Props {
   filters: FilterState;
   onChange: (f: FilterState) => void;
+  /** O bölgedeki mevcut site/kompleks isimleri (ilanlardan türetilir — Madde 3). */
+  siteSuggestions?: string[];
   /** İstemcide gösterilen sayı (mobile sheet için) */
   resultCount?: number;
   /** Dinamik ülke listesi — DB'den çekilip ListingsClient üzerinden geçer. */
@@ -60,7 +63,7 @@ const STATUS_KEYS = [
   { v: 'bos', key: 'status.bos' }, { v: 'kiracili', key: 'status.kiracili' }, { v: 'mulk_sahibi', key: 'status.mulk_sahibi' },
 ];
 
-export function FilterSidebar({ filters, onChange, countries: countryList }: Props) {
+export function FilterSidebar({ filters, onChange, countries: countryList, siteSuggestions }: Props) {
   const { t } = useLang();
   const { currency: displayCurrency } = useCurrency();
 
@@ -111,7 +114,7 @@ export function FilterSidebar({ filters, onChange, countries: countryList }: Pro
           {[
             { v: 'sale' as const, l: t('filter.purpose.sale') },
             { v: 'rent' as const, l: t('filter.purpose.rent') },
-            { v: 'daily_rent' as const, l: 'Günlük Kiralık' },
+            { v: 'daily_rent' as const, l: t('enums.purpose.daily_rent') },
           ].map((o) => (
             <Chip key={o.v} active={filters.purpose === o.v} onClick={() => set({ purpose: filters.purpose === o.v ? undefined : o.v })}>
               {o.l}
@@ -158,6 +161,21 @@ export function FilterSidebar({ filters, onChange, countries: countryList }: Pro
                 <option value="">{t('filter.allDistricts')}</option>
                 {districtsOf(filters.country, filters.city).map((d) => <option key={d} value={d}>{d}</option>)}
               </Select>
+
+              {/* Mahalle / semt (Madde 3) — veri varsa öneri datalist'i, her durumda serbest metin */}
+              <Label className="!mb-1 !mt-3 !text-[10px]">{t('filter.neighborhood')}</Label>
+              <Input
+                list="filter-nb-list"
+                value={filters.neighborhood ?? ''}
+                onChange={(e) => set({ neighborhood: e.target.value || undefined })}
+                placeholder={t('filter.neighborhoodPh')}
+              />
+              <datalist id="filter-nb-list">
+                {(filters.district
+                  ? neighborhoodsOf(filters.country, filters.city, filters.district)
+                  : neighborhoodsOfCity(filters.country, filters.city)
+                ).map((n) => <option key={n} value={n} />)}
+              </datalist>
             </>
           )}
         </Section>
@@ -255,9 +273,24 @@ export function FilterSidebar({ filters, onChange, countries: countryList }: Pro
             <Chip key={f.k} active={filters.features?.includes(f.k)} onClick={() => toggle('features', f.k)}>{t(f.key)}</Chip>
           ))}
         </div>
+        {/* "Site içi" seçilince site/kompleks adına göre ara (Madde 3 / 8b) */}
+        {filters.features?.includes('inSite') && (
+          <div className="mt-2">
+            <Label className="!mb-1 !text-[10px]">{t('filter.siteName')}</Label>
+            <Input
+              list="filter-site-list"
+              value={filters.siteName ?? ''}
+              onChange={(e) => set({ siteName: e.target.value || undefined })}
+              placeholder={t('filter.siteNamePh')}
+            />
+            <datalist id="filter-site-list">
+              {(siteSuggestions ?? []).map((s) => <option key={s} value={s} />)}
+            </datalist>
+          </div>
+        )}
       </Section>
 
-      <Section title="Konut tipi">
+      <Section title={t('property.housingType')}>
         <div className="flex flex-wrap gap-1.5">
           {HOUSING_TYPE_FILTERS.map((o) => (
             <Chip key={o.value} active={filters.housingType?.includes(o.value)} onClick={() => toggle('housingType', o.value)}>{o.label}</Chip>
@@ -265,7 +298,7 @@ export function FilterSidebar({ filters, onChange, countries: countryList }: Pro
         </div>
       </Section>
 
-      <Section title="Enerji sınıfı">
+      <Section title={t('property.energyClass')}>
         <div className="flex flex-wrap gap-1.5">
           {ENERGY_CLASS_FILTERS.map((o) => (
             <Chip key={o.value} active={filters.energyClass?.includes(o.value)} onClick={() => toggle('energyClass', o.value)}>{o.label}</Chip>
@@ -273,7 +306,7 @@ export function FilterSidebar({ filters, onChange, countries: countryList }: Pro
         </div>
       </Section>
 
-      <Section title="Yapının durumu">
+      <Section title={t('property.buildingStatus')}>
         <div className="flex flex-wrap gap-1.5">
           {BUILDING_STATUS_FILTERS.map((o) => (
             <Chip key={o.value} active={filters.buildingStatus?.includes(o.value)} onClick={() => toggle('buildingStatus', o.value)}>{o.label}</Chip>
@@ -281,7 +314,7 @@ export function FilterSidebar({ filters, onChange, countries: countryList }: Pro
         </div>
       </Section>
 
-      <Section title="Yapı tipi">
+      <Section title={t('property.structureType')}>
         <div className="flex flex-wrap gap-1.5">
           {STRUCTURE_TYPE_FILTERS.map((o) => (
             <Chip key={o.value} active={filters.structureType?.includes(o.value)} onClick={() => toggle('structureType', o.value)}>{o.label}</Chip>
@@ -289,7 +322,7 @@ export function FilterSidebar({ filters, onChange, countries: countryList }: Pro
         </div>
       </Section>
 
-      <Section title="Cephe / yön">
+      <Section title={t('property.facade')}>
         <div className="flex flex-wrap gap-1.5">
           {FACADE_FILTERS.map((o) => (
             <Chip key={o.value} active={filters.facade?.includes(o.value)} onClick={() => toggle('facade', o.value)}>{o.label}</Chip>

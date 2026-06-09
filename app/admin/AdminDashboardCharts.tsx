@@ -7,6 +7,7 @@ import {
 import { TrendingUp } from 'lucide-react';
 import { Card, CardBody } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
+import { useLang } from '@/components/layout/LangProvider';
 import { formatNumber } from '@/lib/utils';
 
 interface Props {
@@ -18,14 +19,15 @@ interface Props {
 }
 
 export function AdminDashboardCharts({ revTrend, signupsTrend, revenueTotal, totalUsers, totalListings }: Props) {
+  const { t } = useLang();
   return (
     <div className="grid lg:grid-cols-3 gap-6">
       <Card className="lg:col-span-2">
         <CardBody>
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h3 className="font-semibold">Haftalık Gelir</h3>
-              <p className="text-xs text-[color:var(--fg-muted)]">Son 7 gün — tüm ödeme türleri</p>
+              <h3 className="font-semibold">{t('admin.charts.weeklyRevenue')}</h3>
+              <p className="text-xs text-[color:var(--fg-muted)]">{t('admin.charts.last7Days')}</p>
             </div>
             <Badge variant="success" className="gap-1"><TrendingUp size={11} /> ${formatNumber(revenueTotal)}</Badge>
           </div>
@@ -52,7 +54,7 @@ export function AdminDashboardCharts({ revTrend, signupsTrend, revenueTotal, tot
 
       <Card>
         <CardBody>
-          <h3 className="font-semibold mb-3">Yeni Kayıtlar (7g)</h3>
+          <h3 className="font-semibold mb-3">{t('admin.charts.newSignups')}</h3>
           <div className="h-56">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={signupsTrend}>
@@ -66,11 +68,11 @@ export function AdminDashboardCharts({ revTrend, signupsTrend, revenueTotal, tot
           </div>
           <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
             <div className="rounded-lg border bg-[color:var(--bg-elev)] p-2.5">
-              <div className="text-[color:var(--fg-muted)]">Toplam Kullanıcı</div>
+              <div className="text-[color:var(--fg-muted)]">{t('admin.charts.totalUsers')}</div>
               <div className="font-bold text-lg">{totalUsers}</div>
             </div>
             <div className="rounded-lg border bg-[color:var(--bg-elev)] p-2.5">
-              <div className="text-[color:var(--fg-muted)]">İlan</div>
+              <div className="text-[color:var(--fg-muted)]">{t('admin.charts.listing')}</div>
               <div className="font-bold text-lg">{totalListings}</div>
             </div>
           </div>

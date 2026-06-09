@@ -23,20 +23,23 @@ export function Hero() {
       }}
     >
       <div className="absolute inset-0 grid-bg opacity-20 pointer-events-none" />
-      <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-[900px] h-[900px] aurora rounded-full opacity-40 pointer-events-none" />
-      {/* Marka tonlu yumuşak ışık lekeleri — arka plana derinlik ve renk katar */}
-      <div
-        className="absolute -top-24 -left-24 w-[480px] h-[480px] rounded-full pointer-events-none blur-3xl opacity-50"
-        style={{ background: 'radial-gradient(circle, rgba(202,174,153,0.32) 0%, transparent 70%)' }}
-      />
-      <div
-        className="absolute -bottom-32 -right-16 w-[560px] h-[560px] rounded-full pointer-events-none blur-3xl opacity-40"
-        style={{ background: 'radial-gradient(circle, rgba(202,174,153,0.22) 0%, transparent 70%)' }}
-      />
-      <div
-        className="absolute top-1/3 right-1/4 w-[320px] h-[320px] rounded-full pointer-events-none blur-3xl opacity-30"
-        style={{ background: 'radial-gradient(circle, rgba(120,160,200,0.18) 0%, transparent 70%)' }}
-      />
+      {/* Perf (Madde 14): aurora + ağır blur lekeleri yalnızca md+ ekranlarda —
+          mobilde GPU blur compositing kasmasını önler; masaüstü görünüm aynı. */}
+      <div aria-hidden className="hidden md:block">
+        <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-[900px] h-[900px] aurora rounded-full opacity-40 pointer-events-none" />
+        <div
+          className="absolute -top-24 -left-24 w-[480px] h-[480px] rounded-full pointer-events-none blur-3xl opacity-50"
+          style={{ background: 'radial-gradient(circle, rgba(202,174,153,0.32) 0%, transparent 70%)' }}
+        />
+        <div
+          className="absolute -bottom-32 -right-16 w-[560px] h-[560px] rounded-full pointer-events-none blur-3xl opacity-40"
+          style={{ background: 'radial-gradient(circle, rgba(202,174,153,0.22) 0%, transparent 70%)' }}
+        />
+        <div
+          className="absolute top-1/3 right-1/4 w-[320px] h-[320px] rounded-full pointer-events-none blur-3xl opacity-30"
+          style={{ background: 'radial-gradient(circle, rgba(120,160,200,0.18) 0%, transparent 70%)' }}
+        />
+      </div>
       {/* Alttan yukarı yumuşak vignette — içeriği zeminden ayırır */}
       <div
         className="absolute inset-0 pointer-events-none"
@@ -81,10 +84,10 @@ export function Hero() {
         <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-xs">
           <span className="text-[color:var(--fg-faint)]">{t('hero.popular')}:</span>
           {[
-            { l: 'Bakı Səbail penthouse', q: 'Bakı Səbail penthouse' },
-            { l: 'İstanbul Beşiktaş 3+1', q: 'Beşiktaş 3+1' },
-            { l: 'Bodrum villa', q: 'Bodrum villa' },
-            { l: 'Yatırımlık 200K USD altı', q: 'yatırımlık 200000 USD' },
+            { l: t('hero.popular.1'), q: 'Bakı Səbail penthouse' },
+            { l: t('hero.popular.2'), q: 'Beşiktaş 3+1' },
+            { l: t('hero.popular.3'), q: 'Bodrum villa' },
+            { l: t('hero.popular.4'), q: 'yatırımlık 200000 USD' },
           ].map((c) => (
             <Link key={c.l} href={`/listings?q=${encodeURIComponent(c.q)}`} className="rounded-full border px-3 py-1 hover:border-gold-400/60 hover:text-gold-300 transition-colors">
               {c.l}

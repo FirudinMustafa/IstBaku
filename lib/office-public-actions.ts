@@ -38,7 +38,9 @@ export async function getOfficeProfile(userId: string): Promise<OfficeProfile | 
     .innerJoin(agents, eq(users.id, agents.userId))
     .where(and(eq(users.id, userId), isNull(users.deletedAt)))
     .limit(1);
-  if (!row || !isOfficeBio(row.user.bio)) return null;
+  // Madde (tur3) #2: profil sayfası artık TÜM ajanlar için açık (ofis + bireysel).
+  // agents tablosunda satırı olan herkes (ajan/ofis) profilini görüntüleyebilir.
+  if (!row) return null;
 
   const agent = rowsToAgent(row.user, row.agent);
 
@@ -115,9 +117,14 @@ export async function submitReviewAction(input: {
   }
   const text = stripCrlf(input.text ?? '').trim().slice(0, 1000);
 
-  // Hedef gerçekten ofis mi?
-  const [target] = await db.select({ bio: users.bio }).from(users).where(eq(users.id, input.agentUserId)).limit(1);
-  if (!target || !isOfficeBio(target.bio)) return { ok: false, error: 'Ofis bulunamadı.' };
+  // Hedef gerçek bir ajan/ofis mi? (tur3 #2 — yorumlar tüm ajanlara açık)
+  const [target] = await db
+    .select({ userId: agents.userId })
+    .from(agents)
+    .innerJoin(users, eq(agents.userId, users.id))
+    .where(and(eq(agents.userId, input.agentUserId), isNull(users.deletedAt)))
+    .limit(1);
+  if (!target) return { ok: false, error: 'Ajan bulunamadı.' };
 
   try {
     await db.insert(reviews)

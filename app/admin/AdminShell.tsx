@@ -10,27 +10,28 @@ import {
   Newspaper, Menu, X, Route, Tag, Building2, Star,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
+import { useLang } from '@/components/layout/LangProvider';
 import { cn } from '@/lib/utils';
 
 const NAV = [
-  { href: '/admin', l: 'Genel Bakış', i: LayoutDashboard },
-  { href: '/admin/approvals', l: 'İlan Onayları', i: ListChecks },
-  { href: '/admin/listings', l: 'İlanlar', i: Building2 },
-  { href: '/admin/users', l: 'Kullanıcılar', i: Users },
-  { href: '/admin/agents', l: 'Ofisler & Ajanlar', i: Briefcase },
-  { href: '/admin/offices', l: 'Ofis Performansı', i: Crown },
-  { href: '/admin/kyc', l: 'KYC İnceleme', i: ShieldCheck },
-  { href: '/admin/reviews', l: 'Yorum Moderasyonu', i: Star },
-  { href: '/admin/reports', l: 'Şikayetler', i: Flag },
-  { href: '/admin/payments', l: 'Ödemeler & Gelir', i: CreditCard },
-  { href: '/admin/rpa-reports', l: 'RPA Raporları', i: FileText },
-  { href: '/admin/pricing', l: 'Fiyatlandırma', i: Tag },
-  { href: '/admin/analytics', l: 'Analitik', i: BarChart3 },
-  { href: '/admin/country-guides', l: 'Ülke Rehberleri', i: BookOpen },
-  { href: '/admin/cross-border', l: 'Sınır Ötesi Adımlar', i: Route },
-  { href: '/admin/blog', l: 'Blog / Haberler', i: Newspaper },
-  { href: '/admin/publishers', l: 'Blog Yayıncıları', i: Newspaper },
-  { href: '/admin/audit', l: 'Denetim Logu', i: FileText },
+  { href: '/admin', k: 'admin.nav.overview', i: LayoutDashboard },
+  { href: '/admin/approvals', k: 'admin.nav.approvals', i: ListChecks },
+  { href: '/admin/listings', k: 'admin.nav.listings', i: Building2 },
+  { href: '/admin/users', k: 'admin.nav.users', i: Users },
+  { href: '/admin/agents', k: 'admin.nav.agents', i: Briefcase },
+  { href: '/admin/offices', k: 'admin.nav.officePerf', i: Crown },
+  { href: '/admin/kyc', k: 'admin.nav.kyc', i: ShieldCheck },
+  { href: '/admin/reviews', k: 'admin.nav.reviews', i: Star },
+  { href: '/admin/reports', k: 'admin.nav.reports', i: Flag },
+  { href: '/admin/payments', k: 'admin.nav.payments', i: CreditCard },
+  { href: '/admin/rpa-reports', k: 'admin.nav.rpaReports', i: FileText },
+  { href: '/admin/pricing', k: 'admin.nav.pricing', i: Tag },
+  { href: '/admin/analytics', k: 'admin.nav.analytics', i: BarChart3 },
+  { href: '/admin/country-guides', k: 'admin.nav.countryGuides', i: BookOpen },
+  { href: '/admin/cross-border', k: 'admin.nav.crossBorder', i: Route },
+  { href: '/admin/blog', k: 'admin.nav.blog', i: Newspaper },
+  { href: '/admin/publishers', k: 'admin.nav.publishers', i: Newspaper },
+  { href: '/admin/audit', k: 'admin.nav.audit', i: FileText },
 ];
 
 interface AdminInfo { id: string; name: string; email: string; role: string }
@@ -39,6 +40,7 @@ export function AdminShell({
   admin, logoutAction, children,
 }: { admin: AdminInfo; logoutAction: () => Promise<void>; children: React.ReactNode }) {
   const pathname = usePathname();
+  const { t } = useLang();
   const [drawerOpen, setDrawerOpen] = React.useState(false);
 
   React.useEffect(() => { setDrawerOpen(false); }, [pathname]);
@@ -65,12 +67,12 @@ export function AdminShell({
             </span>
             <div>
               <div className="font-bold text-sm leading-none">ISTBAKU</div>
-              <div className="text-[10px] uppercase tracking-[0.18em] text-gold-300 mt-1">Admin Console</div>
+              <div className="text-[10px] uppercase tracking-[0.18em] text-gold-300 mt-1">{t('admin.console')}</div>
             </div>
           </Link>
           <button
             onClick={() => setDrawerOpen(false)}
-            aria-label="Kapat"
+            aria-label={t('admin.close')}
             className="lg:hidden touch-target size-10 rounded-xl hover:bg-[color:var(--bg-card-hover)] flex items-center justify-center"
           >
             <X size={18} />
@@ -92,7 +94,7 @@ export function AdminShell({
                   : 'text-[color:var(--fg-muted)] hover:text-[color:var(--fg)] hover:bg-[color:var(--bg-card-hover)]',
               )}
             >
-              <span className="inline-flex items-center gap-2.5"><item.i size={15} /> {item.l}</span>
+              <span className="inline-flex items-center gap-2.5"><item.i size={15} /> {t(item.k)}</span>
             </Link>
           );
         })}
@@ -111,7 +113,7 @@ export function AdminShell({
               type="submit"
               className="mt-2.5 w-full inline-flex items-center justify-center gap-1.5 text-xs text-navy-200 hover:text-gold-300 border-t border-white/10 pt-2"
             >
-              <LogOut size={11} /> Çıkış yap
+              <LogOut size={11} /> {t('admin.logout')}
             </button>
           </form>
         </div>
@@ -152,7 +154,7 @@ export function AdminShell({
           <div className="h-14 px-3 sm:px-6 border-b border-[color:var(--border)] bg-[color:var(--bg-elev)]/80 backdrop-blur sticky top-0 z-30 flex items-center gap-2 sm:gap-3 safe-top">
             <button
               onClick={() => setDrawerOpen(true)}
-              aria-label="Menü"
+              aria-label={t('admin.menu')}
               className="lg:hidden touch-target size-10 rounded-lg border bg-[color:var(--bg-card)] flex items-center justify-center active:scale-95"
             >
               <Menu size={18} />
@@ -161,18 +163,18 @@ export function AdminShell({
             <div className="relative flex-1 max-w-md">
               <Search size={14} className="absolute left-3 top-2.5 text-[color:var(--fg-muted)]" />
               <input
-                placeholder="Ara…"
+                placeholder={t('admin.searchPlaceholder')}
                 className="w-full h-9 pl-9 pr-3 rounded-lg bg-[color:var(--bg-card)] border text-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--ring)]"
               />
             </div>
             <div className="flex items-center gap-1.5 sm:gap-2">
               <span className="hidden md:inline text-xs text-[color:var(--fg-muted)]">{admin.role}</span>
-              <Link href="/admin/reports" className="size-10 rounded-lg border bg-[color:var(--bg-card)] flex items-center justify-center relative" aria-label="Şikayetler">
+              <Link href="/admin/reports" className="size-10 rounded-lg border bg-[color:var(--bg-card)] flex items-center justify-center relative" aria-label={t('admin.nav.reports')}>
                 <Bell size={15} />
               </Link>
-              <Link href="/" className="hidden sm:inline text-xs text-[color:var(--fg-muted)] hover:text-gold-300 px-2">← Siteye dön</Link>
+              <Link href="/" className="hidden sm:inline text-xs text-[color:var(--fg-muted)] hover:text-gold-300 px-2">{t('admin.backToSite')}</Link>
               <form action={logoutAction} className="lg:hidden">
-                <button type="submit" className="touch-target size-10 rounded-lg border bg-[color:var(--bg-card)] flex items-center justify-center text-danger" aria-label="Çıkış">
+                <button type="submit" className="touch-target size-10 rounded-lg border bg-[color:var(--bg-card)] flex items-center justify-center text-danger" aria-label={t('admin.exit')}>
                   <LogOut size={14} />
                 </button>
               </form>

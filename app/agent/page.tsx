@@ -13,14 +13,18 @@ import { eq, and, desc, gte, or, count, sql } from 'drizzle-orm';
 import { rowToProperty } from '@/lib/db-mappers';
 import { formatPrice } from '@/lib/currency';
 import { timeAgo } from '@/lib/utils';
+import { formatDateTimeInTz } from '@/lib/datetime';
+import { getAgentAppointmentsDetailed } from '@/lib/appointment-actions';
+import { AgentAppointmentsClient } from '@/components/appointments/AgentAppointmentsClient';
+import { T } from '@/components/i18n/T';
 
 export const dynamic = 'force-dynamic';
 
-const STATUS_LABEL: Record<string, { l: string; v: 'default' | 'success' | 'gold' | 'danger' }> = {
-  confirmed: { l: 'Onaylandı', v: 'gold' },
-  pending: { l: 'Bekliyor', v: 'default' },
-  cancelled: { l: 'İptal', v: 'danger' },
-  completed: { l: 'Tamamlandı', v: 'success' },
+const STATUS_LABEL: Record<string, { k: string; v: 'default' | 'success' | 'gold' | 'danger' }> = {
+  confirmed: { k: 'appt.status.confirmed', v: 'gold' },
+  pending: { k: 'appt.status.pending', v: 'default' },
+  cancelled: { k: 'appt.status.cancelled', v: 'danger' },
+  completed: { k: 'appt.status.completed', v: 'success' },
 };
 
 export default async function AgentCRMPage() {
@@ -69,6 +73,23 @@ export default async function AgentCRMPage() {
     .from(messageThreads)
     .where(or(eq(messageThreads.participantA, me.id), eq(messageThreads.participantB, me.id)));
 
+  // Randevu yönetimi (Madde 7) — onayla/reddet/yeni saat öner
+  const apptRows = await getAgentAppointmentsDetailed();
+  const myAppointments = apptRows.map((a) => ({
+    id: a.id,
+    scheduledAt: a.scheduledAt.toISOString(),
+    proposedAt: a.proposedAt ? a.proposedAt.toISOString() : null,
+    status: a.status,
+    visitorName: a.visitorName,
+    visitorEmail: a.visitorEmail,
+    visitorPhone: a.visitorPhone,
+    notes: a.notes,
+    listingTitle: a.listingTitle,
+    listingSlug: a.listingSlug,
+    listingCountry: a.listingCountry,
+  }));
+  const pendingApptCount = myAppointments.filter((a) => a.status === 'pending' || a.status === 'rescheduled').length;
+
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
       <div className="flex items-center justify-between flex-wrap gap-4 mb-6">
@@ -84,40 +105,51 @@ export default async function AgentCRMPage() {
               {agentRow && (
                 <>
                   <span className="inline-flex items-center gap-1 text-gold-300"><Star size={11} fill="currentColor" /> {agentRow.rating.toFixed(1)}</span>
-                  <span>Performans <strong className="text-gold-300">{agentRow.performance}/100</strong></span>
+                  <span><T k="agentCrm.performance" /> <strong className="text-gold-300">{agentRow.performance}/100</strong></span>
                 </>
               )}
             </div>
           </div>
         </div>
-        <Link href="/new-listing"><Button variant="gold">+ Yeni İlan</Button></Link>
+        <Link href="/new-listing"><Button variant="gold"><T k="agentCrm.newListing" /></Button></Link>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
         {[
-          { l: 'Aktif Lead', v: String(activeLeads.c), i: Users },
-          { l: 'Bu Hafta Görüşme', v: String(thisWeekMeetings.c), i: Calendar },
-          { l: 'Aktif İlan', v: String(myListings.length), i: Eye },
-          { l: 'Açık Konuşma', v: String(openThreads.c), i: MessageCircle },
+          { k: 'agentCrm.stat.activeLeads', v: String(activeLeads.c), i: Users },
+          { k: 'agentCrm.stat.weekMeetings', v: String(thisWeekMeetings.c), i: Calendar },
+          { k: 'agentCrm.stat.activeListings', v: String(myListings.length), i: Eye },
+          { k: 'agentCrm.stat.openThreads', v: String(openThreads.c), i: MessageCircle },
         ].map((s) => (
-          <Card key={s.l}><CardBody className="p-4">
+          <Card key={s.k}><CardBody className="p-4">
             <s.i size={16} className="text-gold-300" />
-            <div className="text-xs text-[color:var(--fg-muted)] mt-2">{s.l}</div>
+            <div className="text-xs text-[color:var(--fg-muted)] mt-2"><T k={s.k} /></div>
             <div className="text-2xl font-bold mt-0.5">{s.v}</div>
           </CardBody></Card>
         ))}
+      </div>
+
+      {/* Randevu Yönetimi (Madde 7) */}
+      <div className="mb-6">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="font-semibold flex items-center gap-2">
+            <Calendar size={16} className="text-gold-300" /> <T k="agentCrm.appointments" />
+          </h3>
+          {pendingApptCount > 0 && <Badge variant="gold">{pendingApptCount} <T k="agentCrm.pendingApproval" /></Badge>}
+        </div>
+        <AgentAppointmentsClient appointments={myAppointments} />
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6">
         <Card className="lg:col-span-2">
           <CardBody>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold">Son Lead'ler (14 gün)</h3>
-              <Badge variant="outline">{leadRows.length} randevu</Badge>
+              <h3 className="font-semibold"><T k="agentCrm.recentLeads" /></h3>
+              <Badge variant="outline">{leadRows.length} <T k="agentCrm.appointment" /></Badge>
             </div>
             {leadRows.length === 0 ? (
               <div className="text-center py-10 text-sm text-[color:var(--fg-muted)]">
-                Son 14 günde randevu yok.
+                <T k="agentCrm.noLeads" />
               </div>
             ) : (
               <div className="space-y-2">
@@ -132,13 +164,13 @@ export default async function AgentCRMPage() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           <div className="font-medium">{a.visitorName}</div>
-                          <Badge variant={st.v}>{st.l}</Badge>
+                          <Badge variant={st.v}><T k={st.k} /></Badge>
                         </div>
                         <div className="text-xs text-[color:var(--fg-muted)] truncate">
                           {row.listing?.title ?? '—'}
                         </div>
                         <div className="text-[10px] text-[color:var(--fg-faint)] mt-0.5">
-                          {new Date(a.scheduledAt).toLocaleString('tr-TR', { dateStyle: 'short', timeStyle: 'short' })}
+                          {formatDateTimeInTz(new Date(a.scheduledAt), row.listing?.country)}
                           {' · '}{timeAgo(a.createdAt.toISOString())}
                         </div>
                       </div>
@@ -155,10 +187,10 @@ export default async function AgentCRMPage() {
 
         <Card>
           <CardBody>
-            <h3 className="font-semibold mb-4">İlanlarım</h3>
+            <h3 className="font-semibold mb-4"><T k="agentCrm.myListings" /></h3>
             {myListings.length === 0 ? (
               <div className="text-center py-6 text-sm text-[color:var(--fg-muted)]">
-                Henüz ilan yok. <Link href="/new-listing" className="text-gold-300 hover:underline">Yeni ilan yükle</Link>
+                <T k="agentCrm.noListings" /> <Link href="/new-listing" className="text-gold-300 hover:underline"><T k="agentCrm.uploadNew" /></Link>
               </div>
             ) : (
               <div className="space-y-3">

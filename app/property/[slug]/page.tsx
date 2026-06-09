@@ -2,9 +2,10 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import {
   MapPin, BedDouble, Bath, Maximize2, Building2, ShieldCheck,
-  Eye, Sparkles, Car, Trees, Waves, Dumbbell,
+  Eye, Sparkles, Car, Trees, Waves, Dumbbell, Hash,
 } from 'lucide-react';
 import { PropertyHeaderActions } from '@/components/listings/PropertyHeaderActions';
+import { BackButton } from '@/components/listings/BackButton';
 import { getListingBySlug, getListingByNumber, getSimilarListings, getAgentById, getAllSlugs } from '@/lib/db-queries';
 import { formatListingNumber, parseListingNumber } from '@/lib/listing-number';
 import { sanitizeHtml } from '@/lib/sanitize';
@@ -69,6 +70,10 @@ export default async function PropertyPage({ params }: { params: Promise<{ slug:
       {/* PP-04: pb-44 (was pb-32) gives the mobile bottom-bar + global bottom-nav +
           iOS safe-area enough headroom so the agent's "Mesaj gönder" CTA at the end
           of the page is never visually clipped behind the sticky CTA. */}
+      <div className="mb-3">
+        <BackButton fallback="/listings" />
+      </div>
+
       <nav className="text-xs text-[color:var(--fg-muted)] mb-4 flex items-center gap-1.5 flex-wrap">
         <Link href="/" className="hover:text-gold-300"><T k="common.home" /></Link>
         <span>/</span>
@@ -94,7 +99,9 @@ export default async function PropertyPage({ params }: { params: Promise<{ slug:
           </div>
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight max-w-3xl">{property.title}</h1>
           <div className="mt-2 flex items-center gap-3 text-sm text-[color:var(--fg-muted)] flex-wrap">
-            <span className="inline-flex items-center gap-1 font-mono font-semibold text-[color:var(--fg)]">#{formatListingNumber(property.listingNumber)}</span>
+            <span className="inline-flex items-center gap-1 rounded-md border border-[color:var(--border)] bg-[color:var(--bg-elev)] px-2 py-0.5 font-mono font-semibold tabular-nums tracking-wide text-[color:var(--fg)]" title="İlan numarası">
+              <Hash size={12} className="text-gold-300" />{formatListingNumber(property.listingNumber)}
+            </span>
             <span>·</span>
             <span className="inline-flex items-center gap-1"><MapPin size={13} /> {property.city} / {property.district}{property.neighborhood ? ` / ${property.neighborhood}` : ''}</span>
             <span>·</span>
@@ -278,7 +285,7 @@ export default async function PropertyPage({ params }: { params: Promise<{ slug:
           <Card>
             <CardBody>
               <h3 className="font-semibold mb-3 inline-flex items-center gap-2"><MapPin size={15} className="text-gold-300" /> <T k="property.location" /></h3>
-              <div className="w-full h-[420px] rounded-2xl overflow-hidden border">
+              <div className="w-full h-[300px] sm:h-[420px] rounded-2xl overflow-hidden border">
                 <MapView properties={[property]} />
               </div>
               <p className="mt-3 text-xs text-[color:var(--fg-muted)]">
@@ -294,8 +301,8 @@ export default async function PropertyPage({ params }: { params: Promise<{ slug:
           {/* Bölge profil analizi */}
           <RegionProfileCard profile={property.regionProfile} district={property.district} city={property.city} />
 
-          {/* Hızlı kredi — sol kolon en altta */}
-          <QuickMortgage property={property} />
+          {/* Hızlı kredi — yalnızca satılık ilanlarda (kiralık/günlük kiralıkta ipotek anlamsız) */}
+          {property.purpose === 'sale' && <QuickMortgage property={property} />}
 
           {/* Benzer ilanlar */}
           {similar.length > 0 && (
@@ -310,7 +317,7 @@ export default async function PropertyPage({ params }: { params: Promise<{ slug:
 
         {/* Sağ kolon: skor + agent kartı (sticky). */}
         <div className="space-y-6 lg:sticky lg:top-20 lg:self-start lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto pr-0.5">
-          <InvestmentScoreCard property={property} />
+          {property.type !== 'arsa' && property.type !== 'proje' && <InvestmentScoreCard property={property} />}
           {property.agentId && (
             <OwnerActionBarWrapper
               listingId={property.id}

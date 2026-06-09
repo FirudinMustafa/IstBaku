@@ -12,6 +12,7 @@ import {
 import { AccountSettings } from './AccountSettings';
 import { RpaReportTab } from './RpaReportTab';
 import type { MyRpaReport } from '@/lib/rpa-actions';
+import { MyAppointmentsClient, type MyAppt } from '@/components/appointments/MyAppointmentsClient';
 import { Card, CardBody } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -37,6 +38,7 @@ const TABS = [
   { k: 'overview', lk: 'dash.tab.overview', i: Home },
   { k: 'listings', lk: 'dash.tab.listings', i: Home },
   { k: 'daily-bookings', lk: 'dash.tab.dailyBookings', i: CalendarDays },
+  { k: 'appointments', lk: 'dash.tab.appointments', i: CalendarDays },
   { k: 'favorites', lk: 'dash.tab.favorites', i: Heart },
   { k: 'compare', lk: 'dash.tab.compare', i: GitCompare },
   { k: 'matches', lk: 'dash.tab.matches', i: Sparkles },
@@ -86,28 +88,23 @@ interface Props {
   savedSearches: SavedSearchUI[];
   notifications: NotificationUI[];
   dailyBookings: DailyBookingUI[];
+  myAppointments: MyAppt[];
   payments: PaymentUI[];
   rpaReports: MyRpaReport[];
   /** Admin'den ayarlanabilir platform fiyatları (USD cent). */
   prices: { renewal: number; badge: number; guclu: number; premium: number; rpaReport: number };
 }
 
-const PAYMENT_TYPE_LABELS: Record<string, string> = {
-  tier_upgrade: 'İlan Yükseltme',
-  premium_membership: 'Premium Üyelik',
-  report_purchase: 'Rapor Satışı',
-  partner_commission: 'Partner Komisyonu',
-  date_renewal: 'Tarih Yenileme',
-  istbaku_approved: 'IstBaku Onaylı',
-};
-const PAYMENT_STATUS_LABELS: Record<string, { l: string; v: 'success' | 'gold' | 'danger' | 'default' }> = {
-  paid: { l: 'Ödendi', v: 'success' },
-  pending: { l: 'Beklemede', v: 'gold' },
-  failed: { l: 'Başarısız', v: 'danger' },
-  refunded: { l: 'İade', v: 'default' },
+// Ödeme tipi/durumu etiketleri i18n'dedir (enums.paymentType.* / enums.paymentStatus.*).
+// Burada yalnızca durum → rozet varyantı eşlemesi tutulur.
+const PAYMENT_STATUS_VARIANT: Record<string, 'success' | 'gold' | 'danger' | 'default'> = {
+  paid: 'success',
+  pending: 'gold',
+  failed: 'danger',
+  refunded: 'default',
 };
 
-export function DashboardClient({ initialUser, myListings, favorites, savedSearches, notifications, dailyBookings, payments, rpaReports, prices }: Props) {
+export function DashboardClient({ initialUser, myListings, favorites, savedSearches, notifications, dailyBookings, myAppointments, payments, rpaReports, prices }: Props) {
   const sp = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
@@ -204,6 +201,7 @@ export function DashboardClient({ initialUser, myListings, favorites, savedSearc
           {tab === 'overview' && <Overview user={user} myListings={myListings} favorites={favorites} notifications={notifications} />}
           {tab === 'listings' && <MyListings listings={myListings} prices={prices} />}
           {tab === 'daily-bookings' && <DailyBookingsTab initial={dailyBookings} />}
+          {tab === 'appointments' && <MyAppointmentsClient appointments={myAppointments} />}
           {tab === 'favorites' && <Favorites favorites={favorites} />}
           {tab === 'compare' && <CompareTab />}
           {tab === 'matches' && <Matches />}
@@ -323,18 +321,18 @@ function MyListings({ listings, prices }: { listings: Property[]; prices: { rene
     setLoadingAction(`renew-${p.id}`);
     const res = await renewListingDateAction(p.id);
     setLoadingAction(null);
-    if (!res.ok) { toast({ variant: 'error', title: 'Hata', description: res.error }); return; }
-    ownerSuccessRef.current = { title: 'Tarih yenilendi', description: 'Ödeme onaylandı — ilanın tarihi tazelendi.' };
-    setPendingPayment({ paymentId: res.paymentId, amount: res.amount, currency: res.currency, checkoutUrl: res.checkoutUrl, title: 'Tarihi Yenile', description: 'İlanın yayın tarihi tazelenir ve listelerde öne çıkar.' });
+    if (!res.ok) { toast({ variant: 'error', title: t('common.error'), description: res.error }); return; }
+    ownerSuccessRef.current = { title: t('pay.dateRenewed.title'), description: t('pay.dateRenewed.desc') };
+    setPendingPayment({ paymentId: res.paymentId, amount: res.amount, currency: res.currency, checkoutUrl: res.checkoutUrl, title: t('pay.renew.title'), description: t('pay.renew.desc') });
   }
 
   async function startApprove(p: Property) {
     setLoadingAction(`approve-${p.id}`);
     const res = await requestPremiumUpgradeAction(p.id);
     setLoadingAction(null);
-    if (!res.ok) { toast({ variant: 'error', title: 'Hata', description: res.error }); return; }
-    ownerSuccessRef.current = { title: 'Ödeme onaylandı', description: 'İstBaku Onaylı başvurun admin onayına gönderildi.' };
-    setPendingPayment({ paymentId: res.paymentId, amount: res.amount, currency: res.currency, checkoutUrl: res.checkoutUrl, title: 'İstBaku Onaylı Rozet', description: 'İlan en üst sıralarda gösterilir ve İstBaku Onaylı sürecine girer.' });
+    if (!res.ok) { toast({ variant: 'error', title: t('common.error'), description: res.error }); return; }
+    ownerSuccessRef.current = { title: t('pay.approved.title'), description: t('pay.approvedBadge.desc') };
+    setPendingPayment({ paymentId: res.paymentId, amount: res.amount, currency: res.currency, checkoutUrl: res.checkoutUrl, title: t('pay.badge.title'), description: t('pay.badge.desc') });
   }
 
   if (listings.length === 0) {
@@ -363,11 +361,11 @@ function MyListings({ listings, prices }: { listings: Property[]; prices: { rene
         amount: res.amount,
         currency: res.currency,
         checkoutUrl: res.checkoutUrl,
-        title: tier === 'premium' ? 'Premium ilan (30 gün)' : 'Güçlü ilan (30 gün)',
-        description: tier === 'premium' ? 'En üst sırada + İstBaku Onaylı süreci.' : 'Yüksek görünürlük, video kapak.',
+        title: tier === 'premium' ? t('pay.premiumListing.title') : t('pay.strongListing.title'),
+        description: tier === 'premium' ? t('pay.premiumListing.desc') : t('pay.strongListing.desc'),
       });
     } else {
-      toast({ variant: 'error', title: 'Hata', description: res.error });
+      toast({ variant: 'error', title: t('common.error'), description: res.error });
     }
   }
 
@@ -380,7 +378,7 @@ function MyListings({ listings, prices }: { listings: Property[]; prices: { rene
       toast({ variant: 'success', title: msg.title, description: msg.description });
     } else {
       const tier = upgradeSuccessRef.current;
-      toast({ variant: 'success', title: 'Yükseltildi!', description: `İlan ${tier === 'premium' ? 'Premium' : 'Güçlü'} seviyeye geçti.` });
+      toast({ variant: 'success', title: t('pay.upgraded.title'), description: tier === 'premium' ? t('pay.upgraded.descPremium') : t('pay.upgraded.descGuclu') });
     }
     router.refresh();
   }
@@ -391,11 +389,11 @@ function MyListings({ listings, prices }: { listings: Property[]; prices: { rene
     const res = await deleteListingAction(deleteFor.id);
     setWorking(false);
     if (res.ok) {
-      toast({ variant: 'success', title: 'İlan silindi' });
+      toast({ variant: 'success', title: t('dash.toast.listingDeleted') });
       setDeleteFor(null);
       router.refresh();
     } else {
-      toast({ variant: 'error', title: 'Silinemedi', description: res.error });
+      toast({ variant: 'error', title: t('dash.toast.deleteFailed'), description: res.error });
     }
   }
 
@@ -554,7 +552,7 @@ function Favorites({ favorites }: { favorites: Property[] }) {
           className="text-danger hover:bg-danger/10"
           onClick={async () => {
             for (const p of favorites) await fav.toggle(p.id);
-            toast({ variant: 'info', title: 'Tüm favoriler temizlendi' });
+            toast({ variant: 'info', title: t('dash.toast.favCleared') });
             router.refresh();
           }}
         >
@@ -618,7 +616,7 @@ function SavedSearches({ initial }: { initial: SavedSearchUI[] }) {
     setDeleting(null);
     if (res.ok) {
       setItems((cur) => cur.filter((x) => x.id !== id));
-      toast({ variant: 'success', title: 'Arama silindi' });
+      toast({ variant: 'success', title: t('dash.toast.searchDeleted') });
     }
   }
 
@@ -677,7 +675,7 @@ function Notifications({ initial }: { initial: NotificationUI[] }) {
   async function markAll() {
     await markAllNotificationsReadAction();
     setItems((cur) => cur.map((n) => ({ ...n, read: true })));
-    toast({ variant: 'success', title: 'Tümü okundu işaretlendi' });
+    toast({ variant: 'success', title: t('dash.toast.allRead') });
   }
 
   if (items.length === 0) {
@@ -732,15 +730,15 @@ function DailyBookingsTab({ initial }: { initial: DailyBookingUI[] }) {
     setProcessing(null);
     if (res.ok) {
       setList((cur) => cur.map((b) => b.id === id ? { ...b, status: 'approved' as const } : b));
-      toast({ variant: 'success', title: 'Onaylandı', description: 'Misafire bildirim gönderildi.' });
+      toast({ variant: 'success', title: t('dash.book.approved'), description: t('dash.toast.bookingApproved.desc') });
     } else {
-      toast({ variant: 'error', title: 'Hata', description: res.error });
+      toast({ variant: 'error', title: t('common.error'), description: res.error });
     }
   }
 
   async function reject(id: string) {
     if (reason.trim().length < 3) {
-      toast({ variant: 'error', title: 'Red sebebi gerekli', description: 'Lütfen kısa bir açıklama yaz.' });
+      toast({ variant: 'error', title: t('dash.toast.reasonRequired.title'), description: t('dash.toast.reasonRequired.desc') });
       return;
     }
     setProcessing(id);
@@ -751,9 +749,9 @@ function DailyBookingsTab({ initial }: { initial: DailyBookingUI[] }) {
       setList((cur) => cur.map((b) => b.id === id ? { ...b, status: 'rejected' as const, ownerResponseNote: reason } : b));
       setRejecting(null);
       setReason('');
-      toast({ variant: 'success', title: 'Reddedildi', description: 'Misafire bildirim gönderildi.' });
+      toast({ variant: 'success', title: t('dash.book.rejected'), description: t('dash.toast.bookingApproved.desc') });
     } else {
-      toast({ variant: 'error', title: 'Hata', description: res.error });
+      toast({ variant: 'error', title: t('common.error'), description: res.error });
     }
   }
 
@@ -895,12 +893,12 @@ function PaymentsTab({ payments }: { payments: PaymentUI[] }) {
             </thead>
             <tbody className="divide-y divide-[color:var(--border)]">
               {payments.map((p) => {
-                const st = PAYMENT_STATUS_LABELS[p.status] ?? { l: p.status, v: 'default' as const };
+                const stVariant = PAYMENT_STATUS_VARIANT[p.status] ?? 'default';
                 return (
                   <tr key={p.id} className="hover:bg-[color:var(--bg-card-hover)]">
                     <td className="px-4 py-3 font-medium">{t(`enums.paymentType.${p.type}`)}</td>
                     <td className="px-4 py-3">${(p.amount / 100).toFixed(2)} {p.currency}</td>
-                    <td className="px-4 py-3"><Badge variant={st.v}>{t(`enums.paymentStatus.${p.status}`)}</Badge></td>
+                    <td className="px-4 py-3"><Badge variant={stVariant}>{t(`enums.paymentStatus.${p.status}`)}</Badge></td>
                     <td className="px-4 py-3 text-[color:var(--fg-muted)] hidden sm:table-cell">
                       {new Date(p.createdAt).toLocaleDateString('tr-TR', { day: '2-digit', month: 'short', year: 'numeric' })}
                     </td>

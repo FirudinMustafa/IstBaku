@@ -1,6 +1,6 @@
 import { db } from '@/db/client';
 import { listings, users, agents } from '@/db/schema';
-import { eq, and, or, ilike, gte, lte, inArray, desc, asc, sql, isNull } from 'drizzle-orm';
+import { eq, ne, and, or, ilike, gte, lte, inArray, desc, asc, sql, isNull } from 'drizzle-orm';
 import { rowToProperty, rowsToAgent } from './db-mappers';
 import type { FilterState, Property, Agent } from './types';
 
@@ -207,6 +207,10 @@ export async function searchListings(
   if (filter.country) conds.push(eq(listings.country, filter.country));
   if (filter.city) conds.push(eq(listings.city, filter.city));
   if (filter.district) conds.push(eq(listings.district, filter.district));
+  // Mahalle/semt — serbest metin veya dropdown seçimi (kısmi eşleşme).
+  if (filter.neighborhood?.trim()) conds.push(ilike(listings.neighborhood, `%${filter.neighborhood.trim()}%`));
+  // Site/kompleks adı araması (Madde 3 / 8b) — inSite ilanlarda site adına göre.
+  if (filter.siteName?.trim()) conds.push(ilike(listings.siteName, `%${filter.siteName.trim()}%`));
   if (filter.type?.length) conds.push(inArray(listings.type, filter.type));
   if (filter.minPrice) conds.push(gte(listings.price, filter.minPrice));
   if (filter.maxPrice) conds.push(lte(listings.price, filter.maxPrice));
@@ -225,6 +229,22 @@ export async function searchListings(
   if (filter.buildingStatus?.length) conds.push(inArray(listings.buildingStatus, filter.buildingStatus as never));
   if (filter.structureType?.length) conds.push(inArray(listings.structureType, filter.structureType as never));
   if (filter.facade?.length) conds.push(inArray(listings.facade, filter.facade as never));
+  // Özellikler (Madde 8b) — daha önce hiç filtrelenmiyordu (latent bug). Boolean
+  // kolonlara eşle; 'eşyalı' ve 'site içi' artık gerçekten süzülür.
+  if (filter.features?.length) {
+    for (const f of filter.features) {
+      switch (f) {
+        case 'pool': conds.push(eq(listings.pool, true)); break;
+        case 'gym': conds.push(eq(listings.gym, true)); break;
+        case 'sauna': conds.push(eq(listings.sauna, true)); break;
+        case 'elevator': conds.push(eq(listings.elevator, true)); break;
+        case 'balcony': conds.push(eq(listings.balcony, true)); break;
+        case 'furnished': conds.push(eq(listings.furnished, true)); break;
+        case 'inSite': conds.push(eq(listings.inSite, true)); break;
+        case 'parking': conds.push(ne(listings.parking, 'yok')); break;
+      }
+    }
+  }
 
   let order;
   switch (filter.sort) {

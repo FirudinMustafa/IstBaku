@@ -3,6 +3,7 @@ import { Clock, ArrowLeft } from 'lucide-react';
 import { Card, CardBody } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
+import { T } from '@/components/i18n/T';
 
 export const metadata = {
   title: 'Çok Yakında — ISTBAKU',
@@ -25,17 +26,17 @@ export default async function ComingSoonPage({
             <Clock size={32} aria-hidden="true" />
           </div>
           <div className="mt-4">
-            <Badge variant="ai">Çok Yakında</Badge>
+            <Badge variant="ai"><T k="comingSoon.badge" /></Badge>
           </div>
-          <h1 className="mt-3 text-2xl font-bold tracking-tight">Bu sayfa yapım aşamasında</h1>
+          <h1 className="mt-3 text-2xl font-bold tracking-tight"><T k="comingSoon.title" /></h1>
           <p className="mt-2 text-sm text-[color:var(--fg-muted)]">
             {topic
-              ? `"${topic}" sayfası yakın zamanda yayında olacak.`
-              : 'İçerik kısa süre içinde yayında olacak. Lütfen daha sonra tekrar dene.'}
+              ? <T k="comingSoon.bodyTopic" vars={{ topic }} />
+              : <T k="comingSoon.body" />}
           </p>
           <Link href="/" className="mt-6 inline-block">
             <Button variant="gold" size="md" className="gap-2">
-              <ArrowLeft size={14} /> Ana sayfaya dön
+              <ArrowLeft size={14} /> <T k="comingSoon.home" />
             </Button>
           </Link>
         </CardBody>

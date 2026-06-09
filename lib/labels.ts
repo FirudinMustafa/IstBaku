@@ -25,7 +25,7 @@ export const TITLE_DEED_LABEL: Record<string, string> = {
   kat_mulkiyeti: 'Kat Mülkiyeti',
   kat_irtifaki: 'Kat İrtifakı',
   arsa_payi: 'Arsa Payı',
-  cikti_belgesi: 'Çıktı Belgesi',
+  cikti_belgesi: 'Sözleşme',
   belirsiz: 'Belirsiz',
 };
 
@@ -69,6 +69,7 @@ export const PURPOSE_LABEL: Record<string, string> = {
 
 export const HOUSING_TYPE_LABEL: Record<string, string> = {
   belirtilmemis: 'Belirtilmemiş',
+  giris_kat: 'Giriş Kat',
   dubleks: 'Dubleks',
   tribleks: 'Tribleks',
   en_ust_kat: 'En Üst Kat',
@@ -104,12 +105,63 @@ export const TIER_LABEL: Record<string, string> = {
   premium: 'Premium',
 };
 
-// Hangi alanlar hangi tür için gösterilmeli?
+// Hangi alanlar hangi tür için gösterilmeli? (ilan detay GÖSTERİMİ — property page)
 export function showsField(type: string, field: 'rooms' | 'bathrooms' | 'floor' | 'buildingAge' | 'furnished' | 'elevator'): boolean {
   if (type === 'arsa') return false; // arsa'da hiçbiri
   if (type === 'is_yeri') return field === 'floor' || field === 'buildingAge' || field === 'elevator';
   if (type === 'proje' || type === 'bina') return field !== 'furnished';
   return true;
+}
+
+/**
+ * İlan FORMU (new-listing) için tipe göre alan görünürlüğü (Madde 3 — akıllı ayrıştırma).
+ * arsa → sadece tapu/izin alanları; iş yeri/bina → oda & konut tipi yok, gerisi var;
+ * konut/villa/proje vb. → tam set.
+ */
+export type FormDetailField =
+  | 'rooms' | 'bathrooms' | 'housingType' | 'energyClass' | 'facade'
+  | 'buildingStatus' | 'structureType' | 'buildingAge' | 'floor' | 'totalFloors'
+  | 'dues' | 'heating' | 'parking' | 'occupancy' | 'titleDeed' | 'permits';
+
+export function formShows(type: string, field: FormDetailField): boolean {
+  if (type === 'arsa') {
+    // Arsada yalnızca tapu durumu ve izin/parsel alanları anlamlı; konut alanları gizli.
+    return field === 'titleDeed' || field === 'permits';
+  }
+  if (type === 'is_yeri' || type === 'bina') {
+    // İş yeri / bina: oda sayısı ve konut tipi sorulmaz; kat/yapı/alan/ısıtma vb. sorulur.
+    if (field === 'rooms' || field === 'housingType') return false;
+    return true;
+  }
+  // konut, luks_konut, villa, proje, turistik_tesis, devre_mulk → tam set
+  return true;
+}
+
+/** Tipe göre evet/hayır özellik (amenity) listesi. */
+export function amenitiesFor(type: string): { k: string; l: string }[] {
+  if (type === 'arsa') {
+    return [
+      { k: 'groundSurvey', l: 'Zemin etüdü' },
+      { k: 'swappable', l: 'Takasa uygun' },
+    ];
+  }
+  if (type === 'is_yeri' || type === 'bina') {
+    return [
+      { k: 'elevator', l: 'Asansör' },
+      { k: 'balcony', l: 'Balkon' },
+      { k: 'swappable', l: 'Takasa uygun' },
+    ];
+  }
+  // Konut tarzı tipler — tam amenity seti
+  return [
+    { k: 'elevator', l: 'Asansör' },
+    { k: 'furnished', l: 'Eşyalı' },
+    { k: 'balcony', l: 'Balkon' },
+    { k: 'pool', l: 'Yüzme havuzu' },
+    { k: 'gym', l: 'Spor alanı' },
+    { k: 'inSite', l: 'Site içerisinde' },
+    { k: 'swappable', l: 'Takasa uygun' },
+  ];
 }
 
 export const DEMOGRAPHIC_LABELS: Record<string, string> = {

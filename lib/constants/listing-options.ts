@@ -54,18 +54,19 @@ export const ROOM_OPTIONS: { value: string; label: string }[] = [
 
 export const ROOM_VALUES = ROOM_OPTIONS.map((r) => r.value) as [string, ...string[]];
 
-/** Konut tipi (dubleks, tribleks, vb.). `belirtilmemis` varsayılan. */
+/** Konut tipi (dubleks, tribleks, vb.). `belirtilmemis` varsayılan.
+ *  Sıra site sahibinin talebine göre: Giriş kat → ... → Forleks (Madde 8c). */
 export const HOUSING_TYPE_VALUES = [
-  'belirtilmemis', 'dubleks', 'tribleks', 'en_ust_kat', 'ara_kat', 'ara_kat_dubleks',
-  'bahce_dubleksi', 'cati_dubleksi', 'forleks', 'ters_dubleks',
+  'belirtilmemis', 'giris_kat', 'ara_kat', 'en_ust_kat', 'dubleks', 'bahce_dubleksi',
+  'ara_kat_dubleks', 'cati_dubleksi', 'ters_dubleks', 'tribleks', 'forleks',
 ] as const;
 export type HousingType = (typeof HOUSING_TYPE_VALUES)[number];
 
 const HOUSING_TYPE_LABELS: Record<HousingType, string> = {
-  belirtilmemis: 'Belirtilmemiş', dubleks: 'Dubleks', tribleks: 'Tribleks',
-  en_ust_kat: 'En Üst Kat', ara_kat: 'Ara Kat', ara_kat_dubleks: 'Ara Kat Dubleks',
-  bahce_dubleksi: 'Bahçe Dubleksi', cati_dubleksi: 'Çatı Dubleksi',
-  forleks: 'Forleks', ters_dubleks: 'Ters Dubleks',
+  belirtilmemis: 'Belirtilmemiş', giris_kat: 'Giriş Kat', ara_kat: 'Ara Kat',
+  en_ust_kat: 'En Üst Kat', dubleks: 'Dubleks', bahce_dubleksi: 'Bahçe Dubleksi',
+  ara_kat_dubleks: 'Ara Kat Dubleks', cati_dubleksi: 'Çatı Dubleksi',
+  ters_dubleks: 'Ters Dubleks', tribleks: 'Tribleks', forleks: 'Forleks',
 };
 export const HOUSING_TYPE_OPTIONS: { value: HousingType; label: string }[] =
   HOUSING_TYPE_VALUES.map((v) => ({ value: v, label: HOUSING_TYPE_LABELS[v] }));

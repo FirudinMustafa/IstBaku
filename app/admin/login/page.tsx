@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/Button';
 import { Input, Label } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
 import { useToast } from '@/components/ui/Toast';
+import { useLang } from '@/components/layout/LangProvider';
 import { adminSignInAction } from '@/lib/auth-actions';
 
 // MC-01 fix: hardcoded demo credentials removed from this client bundle.
@@ -17,6 +18,7 @@ import { adminSignInAction } from '@/lib/auth-actions';
 export default function AdminLoginPage() {
   const router = useRouter();
   const { toast } = useToast();
+  const { t } = useLang();
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
   const [err, setErr] = React.useState('');
@@ -29,14 +31,14 @@ export default function AdminLoginPage() {
     const res = await adminSignInAction(email, password);
     setBusy(false);
     if (res.ok) {
-      toast({ variant: 'success', title: `Hoş geldin, ${res.name}`, description: `Rol: ${res.role}` });
+      toast({ variant: 'success', title: t('admin.login.welcome').replace('{name}', res.name ?? ''), description: t('admin.login.role').replace('{role}', res.role ?? '') });
       router.replace('/admin');
     } else {
       // PB-02 / PF-14: always populate [role=alert] on failure. The generic
       // copy preserves the no-enumeration property — wrong email and wrong
       // password produce the same message — so attackers can't probe for
       // valid admin emails.
-      setErr(res.error ?? 'E-posta veya şifre hatalı.');
+      setErr(res.error ?? t('admin.login.error'));
     }
   }
 
@@ -46,20 +48,20 @@ export default function AdminLoginPage() {
       <div className="relative w-full max-w-md">
         <Card>
           <CardBody className="p-6 md:p-8">
-            <Badge variant="ai" className="!py-1"><ShieldCheck size={11} /> Admin Console</Badge>
-            <h1 className="mt-3 text-2xl font-bold tracking-tight">Yönetim Paneli Girişi</h1>
-            <p className="text-sm text-[color:var(--fg-muted)] mt-1">Sadece yetkili personel erişebilir.</p>
+            <Badge variant="ai" className="!py-1"><ShieldCheck size={11} /> {t('admin.console')}</Badge>
+            <h1 className="mt-3 text-2xl font-bold tracking-tight">{t('admin.login.title')}</h1>
+            <p className="text-sm text-[color:var(--fg-muted)] mt-1">{t('admin.login.subtitle')}</p>
 
             <form onSubmit={onSubmit} className="mt-6 space-y-4" autoComplete="off">
               <div>
-                <Label htmlFor="admin-email">E-posta</Label>
+                <Label htmlFor="admin-email">{t('admin.login.email')}</Label>
                 <div className="relative">
                   <Mail size={15} className="absolute left-3 top-3 text-[color:var(--fg-muted)]" />
                   <Input id="admin-email" type="email" className="pl-9" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="username" />
                 </div>
               </div>
               <div>
-                <Label htmlFor="admin-password">Şifre</Label>
+                <Label htmlFor="admin-password">{t('admin.login.password')}</Label>
                 <div className="relative">
                   <Lock size={15} className="absolute left-3 top-3 text-[color:var(--fg-muted)]" />
                   <Input id="admin-password" type="password" className="pl-9" value={password} onChange={(e) => setPassword(e.target.value)} required autoComplete="current-password" />
@@ -73,10 +75,10 @@ export default function AdminLoginPage() {
               )}
 
               <Button type="submit" variant="gold" size="lg" className="w-full" loading={busy}>
-                <ShieldCheck size={14} /> Güvenli Giriş
+                <ShieldCheck size={14} /> {t('admin.login.submit')}
               </Button>
               <p className="text-[11px] text-[color:var(--fg-faint)] text-center">
-                * Production'da MFA + IP allow-list zorunlu.
+                {t('admin.login.prodNote')}
               </p>
             </form>
           </CardBody>

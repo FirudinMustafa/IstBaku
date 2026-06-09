@@ -6,6 +6,7 @@ import { Card, CardBody } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input, Label } from '@/components/ui/Input';
 import { useToast } from '@/components/ui/Toast';
+import { useLang } from '@/components/layout/LangProvider';
 import { useUser } from '@/lib/user-auth';
 import { createDailyBookingAction } from '@/lib/daily-booking-actions';
 import { formatPrice } from '@/lib/currency';
@@ -38,6 +39,7 @@ export function DailyBookingCard({
   listingId, pricePerNight, currency, minNights, notes, occupied,
 }: Props) {
   const { toast } = useToast();
+  const { t } = useLang();
   const { user } = useUser();
   const today = new Date();
   const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000);
@@ -76,15 +78,15 @@ export function DailyBookingCard({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!user) {
-      toast({ variant: 'error', title: 'Giriş gerekli', description: 'Rezervasyon için giriş yap.' });
+      toast({ variant: 'error', title: t('daily.loginRequired.title'), description: t('daily.loginRequired.desc') });
       return;
     }
     if (!validRange) {
-      toast({ variant: 'error', title: 'Tarih hatası', description: 'Çıkış tarihi giriş tarihinden sonra olmalı.' });
+      toast({ variant: 'error', title: t('daily.dateError.title'), description: t('daily.dateError.desc') });
       return;
     }
     if (nights < minNights) {
-      toast({ variant: 'error', title: 'Minimum gece', description: `En az ${minNights} gece rezervasyon yap.` });
+      toast({ variant: 'error', title: t('daily.minNights.title'), description: t('daily.minNights.desc').replace('{n}', String(minNights)) });
       return;
     }
     setSubmitting(true);
@@ -101,9 +103,9 @@ export function DailyBookingCard({
     setSubmitting(false);
     if (res.ok) {
       setSubmitted(true);
-      toast({ variant: 'success', title: 'Talep gönderildi', description: 'İlan sahibi onayladığında bildirim alacaksın.' });
+      toast({ variant: 'success', title: t('daily.requestSent.title'), description: t('daily.requestSent.desc') });
     } else {
-      toast({ variant: 'error', title: 'Hata', description: res.error });
+      toast({ variant: 'error', title: t('common.error'), description: res.error });
     }
   }
 
@@ -112,10 +114,9 @@ export function DailyBookingCard({
       <Card glass>
         <CardBody className="p-5 text-center">
           <CheckCircle2 size={32} className="text-success mx-auto" />
-          <h3 className="mt-3 font-semibold">Rezervasyon talebin alındı</h3>
+          <h3 className="mt-3 font-semibold">{t('daily.received.heading')}</h3>
           <p className="mt-2 text-sm text-[color:var(--fg-muted)]">
-            İlan sahibi onayladığında bildirim ve e-posta alırsın.
-            <br />Panelinden takip edebilirsin.
+            {t('daily.received.desc')}
           </p>
         </CardBody>
       </Card>
@@ -128,7 +129,7 @@ export function DailyBookingCard({
         <div className="flex items-baseline justify-between">
           <div>
             <div className="text-xl font-bold text-gold-300">{formatPrice(pricePerNight, currency)}</div>
-            <div className="text-xs text-[color:var(--fg-muted)]">/ gece · min {minNights} gece</div>
+            <div className="text-xs text-[color:var(--fg-muted)]">{t('daily.perNight').replace('{n}', String(minNights))}</div>
           </div>
           <CalendarDays size={18} className="text-gold-300" />
         </div>
@@ -150,7 +151,7 @@ export function DailyBookingCard({
         <form onSubmit={handleSubmit} className="space-y-3">
 
           <div>
-            <Label className="!text-[10px]"><Users size={11} className="inline -mt-0.5" /> Misafir sayısı</Label>
+            <Label className="!text-[10px]"><Users size={11} className="inline -mt-0.5" /> {t('daily.guestCount')}</Label>
             <Input
               type="number"
               min={1}
@@ -163,36 +164,36 @@ export function DailyBookingCard({
           {user ? (
             <div className="space-y-2">
               <div>
-                <Label className="!text-[10px]">Ad Soyad</Label>
+                <Label className="!text-[10px]">{t('daily.fullName')}</Label>
                 <Input value={guestName} onChange={(e) => setGuestName(e.target.value)} required />
               </div>
               <div>
-                <Label className="!text-[10px]">E-posta</Label>
+                <Label className="!text-[10px]">{t('daily.email')}</Label>
                 <Input type="email" value={guestEmail} onChange={(e) => setGuestEmail(e.target.value)} required />
               </div>
               <div>
-                <Label className="!text-[10px]">Telefon (opsiyonel)</Label>
+                <Label className="!text-[10px]">{t('daily.phoneOpt')}</Label>
                 <Input value={guestPhone} onChange={(e) => setGuestPhone(e.target.value)} />
               </div>
               <div>
-                <Label className="!text-[10px]">Not (opsiyonel)</Label>
+                <Label className="!text-[10px]">{t('daily.noteOpt')}</Label>
                 <Input
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
-                  placeholder="Geliş saati, özel istek vb."
+                  placeholder={t('daily.notePh')}
                 />
               </div>
             </div>
           ) : (
             <div className="rounded-lg border border-gold-400/30 bg-gold-400/5 p-3 text-xs">
-              Rezervasyon talebi için <a href="/auth/sign-in" className="text-gold-300 underline">giriş yap</a>.
+              {t('daily.loginPrompt.pre')} <a href="/auth/sign-in" className="text-gold-300 underline">{t('daily.loginPrompt.link')}</a>.
             </div>
           )}
 
           {validRange && (
             <div className="rounded-xl border bg-[color:var(--bg-elev)] p-3">
               <div className="flex items-center justify-between text-sm">
-                <span className="text-[color:var(--fg-muted)]">{nights} gece × {formatPrice(pricePerNight, currency)}</span>
+                <span className="text-[color:var(--fg-muted)]">{t('daily.nightsX').replace('{n}', String(nights))} {formatPrice(pricePerNight, currency)}</span>
                 <span className="font-bold text-gold-300">{formatPrice(total, currency)}</span>
               </div>
             </div>
@@ -200,7 +201,7 @@ export function DailyBookingCard({
 
           {hasConflict && (
             <div className="rounded-lg bg-danger/10 border border-danger/30 p-2 text-xs text-danger">
-              ⚠ Seçtiğin tarih başka bir rezervasyonla çakışıyor.
+              {t('daily.conflict')}
             </div>
           )}
 
@@ -211,7 +212,7 @@ export function DailyBookingCard({
             disabled={!user || submitting || !validRange || hasConflict || nights < minNights}
           >
             {submitting ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
-            Rezervasyon Talep Et
+            {t('daily.submit')}
           </Button>
         </form>
       </CardBody>

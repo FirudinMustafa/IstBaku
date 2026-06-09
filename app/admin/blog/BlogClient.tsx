@@ -9,6 +9,7 @@ import { Input, Label, Select, Textarea } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
 import { Modal } from '@/components/ui/Modal';
 import { useToast } from '@/components/ui/Toast';
+import { useLang } from '@/components/layout/LangProvider';
 import {
   createBlogPostAction,
   updateBlogPostAction,
@@ -51,11 +52,11 @@ type FormData = {
 /* Constants                                                           */
 /* ------------------------------------------------------------------ */
 
-const CATEGORY_LABELS: Record<string, { l: string; v: 'gold' | 'success' | 'navy' | 'ai' }> = {
-  news: { l: 'Haber', v: 'gold' },
-  market: { l: 'Piyasa', v: 'navy' },
-  guide: { l: 'Rehber', v: 'success' },
-  partner: { l: 'Partner', v: 'ai' },
+const CATEGORY_LABELS: Record<string, { k: string; v: 'gold' | 'success' | 'navy' | 'ai' }> = {
+  news: { k: 'admin.blog.cat.news', v: 'gold' },
+  market: { k: 'admin.blog.cat.market', v: 'navy' },
+  guide: { k: 'admin.blog.cat.guide', v: 'success' },
+  partner: { k: 'admin.blog.cat.partner', v: 'ai' },
 };
 
 const EMPTY_FORM: FormData = {
@@ -79,6 +80,7 @@ function BlogForm({ editingId, initialForm, onClose, onSaved }: {
   onClose: () => void;
   onSaved: () => void;
 }) {
+  const { t } = useLang();
   const { toast } = useToast();
   const [form, setForm] = React.useState<FormData>(initialForm);
   const [working, setWorking] = React.useState(false);
@@ -98,11 +100,11 @@ function BlogForm({ editingId, initialForm, onClose, onSaved }: {
       fd.append('file', file);
       const res = await fetch('/api/blog/upload', { method: 'POST', body: fd });
       const json = await res.json();
-      if (!res.ok) throw new Error(json.error || 'Yükleme başarısız.');
+      if (!res.ok) throw new Error(json.error || t('admin.blog.toast.uploadFail'));
       patch('coverImage', json.url);
-      toast({ variant: 'success', title: 'Görsel yüklendi' });
+      toast({ variant: 'success', title: t('admin.blog.toast.imageUploaded') });
     } catch (err: unknown) {
-      toast({ variant: 'error', title: err instanceof Error ? err.message : 'Yükleme hatası' });
+      toast({ variant: 'error', title: err instanceof Error ? err.message : t('admin.blog.toast.uploadError') });
     } finally {
       setUploading(false);
       if (fileRef.current) fileRef.current.value = '';
@@ -111,7 +113,7 @@ function BlogForm({ editingId, initialForm, onClose, onSaved }: {
 
   async function handleSave() {
     if (!form.title.trim()) {
-      toast({ variant: 'error', title: 'Başlık gerekli' });
+      toast({ variant: 'error', title: t('admin.blog.toast.titleRequired') });
       return;
     }
     setWorking(true);
@@ -121,7 +123,7 @@ function BlogForm({ editingId, initialForm, onClose, onSaved }: {
       content: form.content,
       coverImage: form.coverImage,
       category: form.category,
-      tags: form.tagsRaw.split(',').map((t) => t.trim()).filter(Boolean),
+      tags: form.tagsRaw.split(',').map((tag) => tag.trim()).filter(Boolean),
       language: form.language,
       published: form.published,
     };
@@ -133,50 +135,50 @@ function BlogForm({ editingId, initialForm, onClose, onSaved }: {
     setWorking(false);
 
     if (res.ok) {
-      toast({ variant: 'success', title: editingId ? 'Yazı güncellendi' : 'Yazı oluşturuldu' });
+      toast({ variant: 'success', title: editingId ? t('admin.blog.toast.postUpdated') : t('admin.blog.toast.postCreated') });
       onSaved();
     } else {
-      toast({ variant: 'error', title: 'Hata', description: res.error });
+      toast({ variant: 'error', title: t('common.error'), description: res.error });
     }
   }
 
   return (
     <div className="space-y-4">
       <div>
-        <Label>Başlık *</Label>
+        <Label>{t('admin.blog.fTitle')}</Label>
         <Input
           value={form.title}
           onChange={(e) => patch('title', e.target.value)}
-          placeholder="Yazı başlığı"
+          placeholder={t('admin.blog.fTitlePh')}
         />
       </div>
 
       <div>
-        <Label>Özet</Label>
+        <Label>{t('admin.blog.fExcerpt')}</Label>
         <Textarea
           rows={2}
           value={form.excerpt}
           onChange={(e) => patch('excerpt', e.target.value)}
-          placeholder="Kısa açıklama (listeleme ve SEO için)"
+          placeholder={t('admin.blog.fExcerptPh')}
         />
       </div>
 
       <div>
-        <Label>İçerik</Label>
+        <Label>{t('admin.blog.fContent')}</Label>
         <Textarea
           rows={12}
           value={form.content}
           onChange={(e) => patch('content', e.target.value)}
-          placeholder="Yazı içeriği (ileride zengin metin editörüyle değiştirilecek)"
+          placeholder={t('admin.blog.fContentPh')}
           className="font-mono text-sm"
         />
       </div>
 
       <div>
-        <Label>Kapak Görseli</Label>
+        <Label>{t('admin.blog.fCover')}</Label>
         {form.coverImage ? (
           <div className="relative w-full max-w-xs">
-            <img src={form.coverImage} alt="Kapak" className="rounded-lg border object-cover w-full aspect-video" />
+            <img src={form.coverImage} alt={t('admin.blog.coverAlt')} className="rounded-lg border object-cover w-full aspect-video" />
             <button
               type="button"
               onClick={() => patch('coverImage', '')}
@@ -193,8 +195,8 @@ function BlogForm({ editingId, initialForm, onClose, onSaved }: {
             className="w-full border-2 border-dashed rounded-xl p-6 flex flex-col items-center gap-2 text-[color:var(--fg-muted)] hover:border-gold-400/60 hover:text-gold-300 transition-colors"
           >
             <ImagePlus size={24} />
-            <span className="text-sm font-medium">{uploading ? 'Yükleniyor…' : 'Görsel Seç'}</span>
-            <span className="text-xs">JPG, PNG, WebP — maks 5 MB</span>
+            <span className="text-sm font-medium">{uploading ? t('common.loading') : t('admin.blog.pickImage')}</span>
+            <span className="text-xs">{t('admin.blog.imageHint')}</span>
           </button>
         )}
         <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp,image/avif" className="hidden" onChange={handleFileUpload} />
@@ -202,39 +204,39 @@ function BlogForm({ editingId, initialForm, onClose, onSaved }: {
 
       <div className="grid sm:grid-cols-2 gap-4">
         <div>
-          <Label>Kategori</Label>
+          <Label>{t('admin.blog.fCategory')}</Label>
           <Select
             value={form.category}
             onChange={(e) => patch('category', e.target.value as FormData['category'])}
           >
-            <option value="news">Haber</option>
-            <option value="market">Piyasa</option>
-            <option value="guide">Rehber</option>
-            <option value="partner">Partner</option>
+            <option value="news">{t('admin.blog.cat.news')}</option>
+            <option value="market">{t('admin.blog.cat.market')}</option>
+            <option value="guide">{t('admin.blog.cat.guide')}</option>
+            <option value="partner">{t('admin.blog.cat.partner')}</option>
           </Select>
         </div>
         <div>
-          <Label>Dil</Label>
+          <Label>{t('admin.blog.fLanguage')}</Label>
           <Select
             value={form.language}
             onChange={(e) => patch('language', e.target.value)}
           >
-            <option value="tr">Türkçe</option>
-            <option value="az">Azərbaycan</option>
-            <option value="en">English</option>
-            <option value="ru">Русский</option>
-            <option value="de">Deutsch</option>
-            <option value="zh">中文</option>
+            <option value="tr">{t('common.lang_tr')}</option>
+            <option value="az">{t('common.lang_az')}</option>
+            <option value="en">{t('common.lang_en')}</option>
+            <option value="ru">{t('common.lang_ru')}</option>
+            <option value="de">{t('common.lang_de')}</option>
+            <option value="zh">{t('common.lang_zh')}</option>
           </Select>
         </div>
       </div>
 
       <div>
-        <Label>Etiketler</Label>
+        <Label>{t('admin.blog.fTags')}</Label>
         <Input
           value={form.tagsRaw}
           onChange={(e) => patch('tagsRaw', e.target.value)}
-          placeholder="emlak, istanbul, yatırım (virgülle ayırın)"
+          placeholder={t('admin.blog.fTagsPh')}
         />
       </div>
 
@@ -250,17 +252,17 @@ function BlogForm({ editingId, initialForm, onClose, onSaved }: {
         </label>
         <span className="text-sm flex items-center gap-1.5">
           {form.published ? (
-            <><Eye size={14} className="text-success" /> Yayında</>
+            <><Eye size={14} className="text-success" /> {t('status.published')}</>
           ) : (
-            <><EyeOff size={14} className="text-[color:var(--fg-muted)]" /> Taslak</>
+            <><EyeOff size={14} className="text-[color:var(--fg-muted)]" /> {t('status.draft')}</>
           )}
         </span>
       </div>
 
       <div className="flex justify-end gap-2 pt-3 border-t">
-        <Button variant="ghost" onClick={onClose}>İptal</Button>
+        <Button variant="ghost" onClick={onClose}>{t('common.cancel')}</Button>
         <Button variant="gold" onClick={handleSave} loading={working}>
-          <Save size={14} /> {editingId ? 'Güncelle' : 'Oluştur'}
+          <Save size={14} /> {editingId ? t('common.update') : t('common.create')}
         </Button>
       </div>
     </div>
@@ -273,6 +275,7 @@ function BlogForm({ editingId, initialForm, onClose, onSaved }: {
 
 export function BlogClient({ initial }: { initial: BlogPost[] }) {
   const router = useRouter();
+  const { t } = useLang();
   const { toast } = useToast();
   const [posts, setPosts] = React.useState<BlogPost[]>(initial);
   const [open, setOpen] = React.useState(false);
@@ -301,14 +304,14 @@ export function BlogClient({ initial }: { initial: BlogPost[] }) {
   }
 
   async function handleDelete(p: BlogPost) {
-    if (!confirm(`"${p.title}" yazısını silmek istediğinize emin misiniz?`)) return;
+    if (!confirm(t('admin.blog.confirmDelete').replace('{title}', p.title))) return;
     const res = await deleteBlogPostAction(p.id);
     if (res.ok) {
       setPosts((cur) => cur.filter((x) => x.id !== p.id));
-      toast({ variant: 'info', title: 'Yazı silindi' });
+      toast({ variant: 'info', title: t('admin.blog.toast.deleted') });
       router.refresh();
     } else {
-      toast({ variant: 'error', title: 'Silinemedi', description: res.error });
+      toast({ variant: 'error', title: t('admin.blog.toast.deleteFail'), description: res.error });
     }
   }
 
@@ -327,13 +330,13 @@ export function BlogClient({ initial }: { initial: BlogPost[] }) {
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Blog / Haberler</h1>
+          <h1 className="text-2xl font-bold tracking-tight">{t('admin.blog.title')}</h1>
           <p className="text-sm text-[color:var(--fg-muted)] mt-1">
-            Blog yazılarını buradan oluştur, düzenle ve yayınla.
+            {t('admin.blog.subtitle')}
           </p>
         </div>
         <Button variant="gold" onClick={openCreate}>
-          <Plus size={14} /> Yeni Yazı
+          <Plus size={14} /> {t('admin.blog.newPost')}
         </Button>
       </div>
 
@@ -342,8 +345,8 @@ export function BlogClient({ initial }: { initial: BlogPost[] }) {
         <Card>
           <CardBody className="text-center py-16 text-[color:var(--fg-muted)]">
             <Newspaper size={32} className="mx-auto text-gold-300" />
-            <p className="mt-3 font-medium">Henüz yazı yok</p>
-            <p className="text-xs mt-1">Yukarıdaki butona tıklayarak ilk yazını oluştur.</p>
+            <p className="mt-3 font-medium">{t('admin.blog.empty')}</p>
+            <p className="text-xs mt-1">{t('admin.blog.emptyHint')}</p>
           </CardBody>
         </Card>
       ) : (
@@ -352,18 +355,19 @@ export function BlogClient({ initial }: { initial: BlogPost[] }) {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b text-left text-xs text-[color:var(--fg-muted)]">
-                  <th className="px-4 py-3 font-medium">Başlık</th>
-                  <th className="px-4 py-3 font-medium hidden sm:table-cell">Kategori</th>
-                  <th className="px-4 py-3 font-medium hidden md:table-cell">Dil</th>
-                  <th className="px-4 py-3 font-medium">Durum</th>
-                  <th className="px-4 py-3 font-medium hidden lg:table-cell">Yayın Tarihi</th>
-                  <th className="px-4 py-3 font-medium hidden lg:table-cell">Yazar</th>
-                  <th className="px-4 py-3 font-medium text-right">İşlemler</th>
+                  <th className="px-4 py-3 font-medium">{t('admin.blog.th.title')}</th>
+                  <th className="px-4 py-3 font-medium hidden sm:table-cell">{t('admin.blog.th.category')}</th>
+                  <th className="px-4 py-3 font-medium hidden md:table-cell">{t('admin.blog.th.language')}</th>
+                  <th className="px-4 py-3 font-medium">{t('admin.blog.th.status')}</th>
+                  <th className="px-4 py-3 font-medium hidden lg:table-cell">{t('admin.blog.th.publishedAt')}</th>
+                  <th className="px-4 py-3 font-medium hidden lg:table-cell">{t('admin.blog.th.author')}</th>
+                  <th className="px-4 py-3 font-medium text-right">{t('admin.blog.th.actions')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[color:var(--border)]">
                 {posts.map((p) => {
-                  const cat = CATEGORY_LABELS[p.category] ?? { l: p.category, v: 'gold' as const };
+                  const cat = CATEGORY_LABELS[p.category] ?? { k: '', v: 'gold' as const };
+                  const catLabel = cat.k ? t(cat.k) : p.category;
                   return (
                     <tr
                       key={p.id}
@@ -372,11 +376,11 @@ export function BlogClient({ initial }: { initial: BlogPost[] }) {
                       <td className="px-4 py-3">
                         <div className="font-medium truncate max-w-[280px]">{p.title}</div>
                         <div className="text-xs text-[color:var(--fg-faint)] truncate max-w-[280px] mt-0.5 sm:hidden">
-                          {cat.l}
+                          {catLabel}
                         </div>
                       </td>
                       <td className="px-4 py-3 hidden sm:table-cell">
-                        <Badge variant={cat.v}>{cat.l}</Badge>
+                        <Badge variant={cat.v}>{catLabel}</Badge>
                       </td>
                       <td className="px-4 py-3 hidden md:table-cell">
                         <span className="text-xs uppercase">{p.language}</span>
@@ -389,7 +393,7 @@ export function BlogClient({ initial }: { initial: BlogPost[] }) {
                             }`}
                           />
                           <span className="text-xs">
-                            {p.published ? 'Yayında' : 'Taslak'}
+                            {p.published ? t('status.published') : t('status.draft')}
                           </span>
                         </span>
                       </td>
@@ -407,7 +411,7 @@ export function BlogClient({ initial }: { initial: BlogPost[] }) {
                             onClick={() => openEdit(p)}
                             className="gap-1"
                           >
-                            <Pencil size={12} /> Düzenle
+                            <Pencil size={12} /> {t('common.edit')}
                           </Button>
                           <Button
                             variant="ghost"
@@ -432,7 +436,7 @@ export function BlogClient({ initial }: { initial: BlogPost[] }) {
       <Modal
         open={open}
         onClose={() => setOpen(false)}
-        title={editingId ? 'Yazıyı Düzenle' : 'Yeni Yazı Oluştur'}
+        title={editingId ? t('admin.blog.editDialog') : t('admin.blog.newDialog')}
         size="xl"
       >
         {open && (

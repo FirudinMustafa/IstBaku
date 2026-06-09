@@ -2,7 +2,7 @@
 
 import { db } from '@/db/client';
 import { payments, listings, notifications, approvalRequests, users } from '@/db/schema';
-import { eq, sql } from 'drizzle-orm';
+import { eq, and, sql } from 'drizzle-orm';
 import { sendEmail, tplPaymentReceipt, APP_URL } from './email';
 
 /**
@@ -90,7 +90,30 @@ export async function confirmPayment(
                 updatedAt: new Date(),
               })
               .where(eq(listings.id, payment.listingId));
-            // Approval request should already exist (created by the owner action)
+            // Madde 4 fix: rozet onay talebi ARTIK burada (ödeme 'paid' olduktan SONRA)
+            // oluşturulur — eskiden ödeme öncesi oluşturulduğu için admin panele
+            // ödeme yapılmasa bile düşüyordu. Idempotent: zaten pending talep varsa ekleme.
+            {
+              const [existingReq] = await db
+                .select({ id: approvalRequests.id })
+                .from(approvalRequests)
+                .where(and(
+                  eq(approvalRequests.listingId, payment.listingId),
+                  eq(approvalRequests.type, 'tier_upgrade'),
+                  eq(approvalRequests.status, 'pending'),
+                ))
+                .limit(1);
+              if (!existingReq) {
+                await db.insert(approvalRequests).values({
+                  listingId: payment.listingId,
+                  submittedById: payment.userId,
+                  type: 'tier_upgrade',
+                  aiQualityScore: 0,
+                  aiFlags: [],
+                  status: 'pending',
+                });
+              }
+            }
             break;
 
           case 'tier_upgrade': {

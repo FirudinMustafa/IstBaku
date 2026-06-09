@@ -22,11 +22,11 @@ interface Props {
   posts: BlogPost[];
 }
 
-const CATEGORY_LABELS: Record<string, string> = {
-  news: 'Haberler',
-  market: 'Piyasa',
-  guide: 'Rehber',
-  partner: 'Partner',
+const CATEGORY_LABEL_KEYS: Record<string, string> = {
+  news: 'blog.cat.news',
+  market: 'blog.cat.market',
+  guide: 'blog.cat.guide',
+  partner: 'blog.cat.partner',
 };
 
 const CATEGORY_VARIANTS: Record<string, 'gold' | 'navy' | 'success' | 'premium'> = {
@@ -85,7 +85,7 @@ export function BlogNews({ posts }: Props) {
                 {/* Category badge overlay */}
                 <div className="absolute top-3 left-3">
                   <Badge variant={CATEGORY_VARIANTS[post.category] ?? 'navy'} className="backdrop-blur-sm">
-                    {CATEGORY_LABELS[post.category] ?? post.category}
+                    {CATEGORY_LABEL_KEYS[post.category] ? t(CATEGORY_LABEL_KEYS[post.category]) : post.category}
                   </Badge>
                 </div>
               </div>
@@ -126,7 +126,7 @@ export function BlogNews({ posts }: Props) {
           href="/blog"
           className="inline-flex items-center gap-1.5 text-sm font-medium text-gold-300 hover:text-gold-400 transition-colors"
         >
-          Tumunu Gor <ArrowRight size={14} />
+          {t('blog.viewAll')} <ArrowRight size={14} />
         </Link>
       </div>
     </section>

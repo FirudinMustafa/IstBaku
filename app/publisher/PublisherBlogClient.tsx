@@ -13,6 +13,7 @@ import {
   createBlogPostAction,
   updateBlogPostAction,
 } from '@/lib/blog-actions';
+import { useLang } from '@/components/layout/LangProvider';
 
 interface BlogPost {
   id: string;
@@ -41,11 +42,11 @@ type FormData = {
   language: string;
 };
 
-const CATEGORY_LABELS: Record<string, { l: string; v: 'gold' | 'success' | 'navy' | 'ai' }> = {
-  news: { l: 'Haber', v: 'gold' },
-  market: { l: 'Piyasa', v: 'navy' },
-  guide: { l: 'Rehber', v: 'success' },
-  partner: { l: 'Partner', v: 'ai' },
+const CATEGORY_META: Record<string, { tk: string; v: 'gold' | 'success' | 'navy' | 'ai' }> = {
+  news: { tk: 'blog.cat.newsSingular', v: 'gold' },
+  market: { tk: 'blog.cat.market', v: 'navy' },
+  guide: { tk: 'blog.cat.guide', v: 'success' },
+  partner: { tk: 'blog.cat.partner', v: 'ai' },
 };
 
 const EMPTY_FORM: FormData = {
@@ -64,6 +65,7 @@ function PublisherForm({ editingId, initialForm, onClose, onSaved }: {
   onSaved: () => void;
 }) {
   const { toast } = useToast();
+  const { t } = useLang();
   const [form, setForm] = React.useState<FormData>(initialForm);
   const [working, setWorking] = React.useState(false);
   const [uploading, setUploading] = React.useState(false);
@@ -82,11 +84,11 @@ function PublisherForm({ editingId, initialForm, onClose, onSaved }: {
       fd.append('file', file);
       const res = await fetch('/api/blog/upload', { method: 'POST', body: fd });
       const json = await res.json();
-      if (!res.ok) throw new Error(json.error || 'Yükleme başarısız.');
+      if (!res.ok) throw new Error(json.error || t('blog.pub.toast.uploadFail'));
       patch('coverImage', json.url);
-      toast({ variant: 'success', title: 'Görsel yüklendi' });
+      toast({ variant: 'success', title: t('blog.pub.toast.uploaded') });
     } catch (err: unknown) {
-      toast({ variant: 'error', title: err instanceof Error ? err.message : 'Yükleme hatası' });
+      toast({ variant: 'error', title: err instanceof Error ? err.message : t('blog.pub.toast.uploadErr') });
     } finally {
       setUploading(false);
       if (fileRef.current) fileRef.current.value = '';
@@ -95,7 +97,7 @@ function PublisherForm({ editingId, initialForm, onClose, onSaved }: {
 
   async function handleSave() {
     if (!form.title.trim()) {
-      toast({ variant: 'error', title: 'Başlık gerekli' });
+      toast({ variant: 'error', title: t('blog.pub.toast.titleRequired') });
       return;
     }
     setWorking(true);
@@ -110,32 +112,32 @@ function PublisherForm({ editingId, initialForm, onClose, onSaved }: {
       : await createBlogPostAction(payload);
     setWorking(false);
     if (res.ok) {
-      toast({ variant: 'success', title: editingId ? 'Yazı güncellendi' : 'Yazı oluşturuldu — admin onayı bekleniyor' });
+      toast({ variant: 'success', title: editingId ? t('blog.pub.toast.updated') : t('blog.pub.toast.created') });
       onSaved();
     } else {
-      toast({ variant: 'error', title: 'Hata', description: (res as { error: string }).error });
+      toast({ variant: 'error', title: t('blog.pub.toast.error'), description: (res as { error: string }).error });
     }
   }
 
   return (
     <div className="space-y-4">
       <div>
-        <Label>Başlık *</Label>
-        <Input value={form.title} onChange={(e) => patch('title', e.target.value)} placeholder="Yazı başlığı" />
+        <Label>{t('blog.pub.heading')}</Label>
+        <Input value={form.title} onChange={(e) => patch('title', e.target.value)} placeholder={t('blog.pub.headingPh')} />
       </div>
       <div>
-        <Label>Özet</Label>
-        <Textarea rows={2} value={form.excerpt} onChange={(e) => patch('excerpt', e.target.value)} placeholder="Kısa açıklama" />
+        <Label>{t('blog.pub.excerpt')}</Label>
+        <Textarea rows={2} value={form.excerpt} onChange={(e) => patch('excerpt', e.target.value)} placeholder={t('blog.pub.excerptPh')} />
       </div>
       <div>
-        <Label>İçerik</Label>
-        <Textarea rows={10} value={form.content} onChange={(e) => patch('content', e.target.value)} placeholder="Yazı içeriği" className="font-mono text-sm" />
+        <Label>{t('blog.pub.content')}</Label>
+        <Textarea rows={10} value={form.content} onChange={(e) => patch('content', e.target.value)} placeholder={t('blog.pub.contentPh')} className="font-mono text-sm" />
       </div>
       <div>
-        <Label>Kapak Görseli</Label>
+        <Label>{t('blog.pub.cover')}</Label>
         {form.coverImage ? (
           <div className="relative w-full max-w-xs">
-            <img src={form.coverImage} alt="Kapak" className="rounded-lg border object-cover w-full aspect-video" />
+            <img src={form.coverImage} alt={t('blog.pub.coverAlt')} className="rounded-lg border object-cover w-full aspect-video" />
             <button type="button" onClick={() => patch('coverImage', '')} className="absolute top-1 right-1 size-6 rounded-full bg-danger text-white flex items-center justify-center hover:bg-danger/80">
               <XIcon size={12} />
             </button>
@@ -143,24 +145,24 @@ function PublisherForm({ editingId, initialForm, onClose, onSaved }: {
         ) : (
           <button type="button" onClick={() => fileRef.current?.click()} disabled={uploading} className="w-full border-2 border-dashed rounded-xl p-6 flex flex-col items-center gap-2 text-[color:var(--fg-muted)] hover:border-gold-400/60 hover:text-gold-300 transition-colors">
             <ImagePlus size={24} />
-            <span className="text-sm font-medium">{uploading ? 'Yükleniyor…' : 'Görsel Seç'}</span>
-            <span className="text-xs">JPG, PNG, WebP — maks 5 MB</span>
+            <span className="text-sm font-medium">{uploading ? t('common.loading') : t('blog.pub.pickImage')}</span>
+            <span className="text-xs">{t('blog.pub.imageHint')}</span>
           </button>
         )}
         <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp,image/avif" className="hidden" onChange={handleFileUpload} />
       </div>
       <div className="grid sm:grid-cols-2 gap-4">
         <div>
-          <Label>Kategori</Label>
+          <Label>{t('blog.pub.category')}</Label>
           <Select value={form.category} onChange={(e) => patch('category', e.target.value as FormData['category'])}>
-            <option value="news">Haber</option>
-            <option value="market">Piyasa</option>
-            <option value="guide">Rehber</option>
-            <option value="partner">Partner</option>
+            <option value="news">{t('blog.cat.newsSingular')}</option>
+            <option value="market">{t('blog.cat.market')}</option>
+            <option value="guide">{t('blog.cat.guide')}</option>
+            <option value="partner">{t('blog.cat.partner')}</option>
           </Select>
         </div>
         <div>
-          <Label>Dil</Label>
+          <Label>{t('blog.pub.language')}</Label>
           <Select value={form.language} onChange={(e) => patch('language', e.target.value)}>
             <option value="tr">Türkçe</option>
             <option value="az">Azərbaycan</option>
@@ -172,17 +174,17 @@ function PublisherForm({ editingId, initialForm, onClose, onSaved }: {
         </div>
       </div>
       <div>
-        <Label>Etiketler</Label>
-        <Input value={form.tagsRaw} onChange={(e) => patch('tagsRaw', e.target.value)} placeholder="emlak, istanbul, yatırım (virgülle ayırın)" />
+        <Label>{t('blog.pub.tags')}</Label>
+        <Input value={form.tagsRaw} onChange={(e) => patch('tagsRaw', e.target.value)} placeholder={t('blog.pub.tagsPh')} />
       </div>
       <div className="flex items-center gap-2 py-2 text-sm text-[color:var(--fg-muted)]">
         <EyeOff size={14} />
-        Yazınız oluşturulduktan sonra admin onayına gönderilecektir.
+        {t('blog.pub.approvalNote')}
       </div>
       <div className="flex justify-end gap-2 pt-3 border-t">
-        <Button variant="ghost" onClick={onClose}>İptal</Button>
+        <Button variant="ghost" onClick={onClose}>{t('blog.pub.cancel')}</Button>
         <Button variant="gold" onClick={handleSave} loading={working}>
-          <Save size={14} /> {editingId ? 'Güncelle' : 'Gönder'}
+          <Save size={14} /> {editingId ? t('blog.pub.update') : t('blog.pub.send')}
         </Button>
       </div>
     </div>
@@ -195,6 +197,7 @@ function PublisherForm({ editingId, initialForm, onClose, onSaved }: {
 
 export function PublisherBlogClient({ initial }: { initial: BlogPost[] }) {
   const router = useRouter();
+  const { t } = useLang();
   const [posts] = React.useState<BlogPost[]>(initial);
   const [open, setOpen] = React.useState(false);
   const [editingId, setEditingId] = React.useState<string | null>(null);
@@ -225,13 +228,13 @@ export function PublisherBlogClient({ initial }: { initial: BlogPost[] }) {
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Yazılarım</h1>
+          <h1 className="text-2xl font-bold tracking-tight">{t('blog.pub.title')}</h1>
           <p className="text-sm text-[color:var(--fg-muted)] mt-1">
-            Yazdığınız blog yazıları burada listelenir. Yeni yazılar admin onayından sonra yayına alınır.
+            {t('blog.pub.subtitle')}
           </p>
         </div>
         <Button variant="gold" onClick={openCreate}>
-          <Plus size={14} /> Yeni Yazı
+          <Plus size={14} /> {t('blog.pub.new')}
         </Button>
       </div>
 
@@ -239,34 +242,34 @@ export function PublisherBlogClient({ initial }: { initial: BlogPost[] }) {
         <Card>
           <CardBody className="text-center py-16 text-[color:var(--fg-muted)]">
             <Newspaper size={32} className="mx-auto text-gold-300" />
-            <p className="mt-3 font-medium">Henüz yazınız yok</p>
-            <p className="text-xs mt-1">İlk yazınızı oluşturmak için butona tıklayın.</p>
+            <p className="mt-3 font-medium">{t('blog.pub.empty.title')}</p>
+            <p className="text-xs mt-1">{t('blog.pub.empty.body')}</p>
           </CardBody>
         </Card>
       ) : (
         <div className="space-y-3">
           {posts.map((p) => {
-            const cat = CATEGORY_LABELS[p.category] ?? { l: p.category, v: 'gold' as const };
+            const cat = CATEGORY_META[p.category] ?? { tk: '', v: 'gold' as const };
             return (
               <Card key={p.id} className="overflow-hidden">
                 <CardBody className="p-4 flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <Badge variant={cat.v}>{cat.l}</Badge>
+                      <Badge variant={cat.v}>{cat.tk ? t(cat.tk) : p.category}</Badge>
                       {p.published ? (
-                        <Badge variant="success">Yayında</Badge>
+                        <Badge variant="success">{t('blog.pub.published')}</Badge>
                       ) : (
-                        <Badge variant="default" className="gap-1"><Clock size={10} /> Onay Bekliyor</Badge>
+                        <Badge variant="default" className="gap-1"><Clock size={10} /> {t('blog.pub.pending')}</Badge>
                       )}
                     </div>
                     <h3 className="font-semibold truncate">{p.title}</h3>
                     <p className="text-xs text-[color:var(--fg-muted)] mt-1 line-clamp-1">{p.excerpt}</p>
                     <div className="text-[11px] text-[color:var(--fg-faint)] mt-2">
-                      Oluşturulma: {fmtDate(p.createdAt)} · Yayın: {fmtDate(p.publishedAt)}
+                      {t('blog.pub.created')} {fmtDate(p.createdAt)} · {t('blog.pub.publishLabel')} {fmtDate(p.publishedAt)}
                     </div>
                   </div>
                   <Button variant="outline" size="sm" className="gap-1 shrink-0" onClick={() => openEdit(p)}>
-                    <Pencil size={12} /> Düzenle
+                    <Pencil size={12} /> {t('blog.pub.edit')}
                   </Button>
                 </CardBody>
               </Card>
@@ -275,7 +278,7 @@ export function PublisherBlogClient({ initial }: { initial: BlogPost[] }) {
         </div>
       )}
 
-      <Modal open={open} onClose={() => setOpen(false)} title={editingId ? 'Yazıyı Düzenle' : 'Yeni Yazı'} size="xl">
+      <Modal open={open} onClose={() => setOpen(false)} title={editingId ? t('blog.pub.editTitle') : t('blog.pub.new')} size="xl">
         {open && (
           <PublisherForm
             editingId={editingId}

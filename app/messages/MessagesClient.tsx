@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/Button';
 import { Textarea } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
 import { useToast } from '@/components/ui/Toast';
+import { useLang } from '@/components/layout/LangProvider';
 import { timeAgo, cn } from '@/lib/utils';
 import {
   type ThreadSummary, type MessageRow,
@@ -25,6 +26,7 @@ interface Props {
 export function MessagesClient({ threads: initialThreads, initialThreadId, meId }: Props) {
   const router = useRouter();
   const { toast } = useToast();
+  const { t: tr } = useLang();
   const [threads, setThreads] = React.useState(initialThreads);
   const [activeId, setActiveId] = React.useState<string | null>(
     initialThreadId ?? initialThreads[0]?.id ?? null,
@@ -70,14 +72,14 @@ export function MessagesClient({ threads: initialThreads, initialThreadId, meId 
     });
     if (!parsed.success) {
       const errs = fieldErrors(parsed);
-      toast({ variant: 'error', title: errs.content ?? 'Mesaj geçersiz' });
+      toast({ variant: 'error', title: errs.content ?? tr('messages.invalid') });
       return;
     }
     setSending(true);
     const res = await sendMessageAction(parsed.data);
     setSending(false);
     if (!res.ok) {
-      toast({ variant: 'error', title: 'Gönderilemedi', description: res.error });
+      toast({ variant: 'error', title: tr('messages.sendFailed'), description: res.error });
       return;
     }
     setDraft('');
@@ -95,17 +97,17 @@ export function MessagesClient({ threads: initialThreads, initialThreadId, meId 
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6">
       <div className="mb-5">
         <h1 className="text-2xl font-bold tracking-tight inline-flex items-center gap-2">
-          <MessageSquare size={20} className="text-gold-300" /> Mesajlar
+          <MessageSquare size={20} className="text-gold-300" /> {tr('messages.title')}
         </h1>
-        <p className="text-sm text-[color:var(--fg-muted)] mt-1">İlanlar üzerinden başlattığın tüm konuşmalar.</p>
+        <p className="text-sm text-[color:var(--fg-muted)] mt-1">{tr('messages.subtitle')}</p>
       </div>
 
       {threads.length === 0 ? (
         <Card><CardBody className="text-center py-16">
           <MessageSquare size={32} className="mx-auto text-gold-300/60" />
-          <p className="mt-3 font-medium">Henüz hiç mesajın yok</p>
-          <p className="text-sm text-[color:var(--fg-muted)] mt-1">İlan sayfasındaki "Mesaj Gönder" butonuyla bir konuşma başlatabilirsin.</p>
-          <Link href="/listings"><Button variant="gold" className="mt-4">İlanlara Göz At</Button></Link>
+          <p className="mt-3 font-medium">{tr('messages.empty.title')}</p>
+          <p className="text-sm text-[color:var(--fg-muted)] mt-1">{tr('messages.empty.desc')}</p>
+          <Link href="/listings"><Button variant="gold" className="mt-4">{tr('messages.browse')}</Button></Link>
         </CardBody></Card>
       ) : (
         <Card>
@@ -134,7 +136,7 @@ export function MessagesClient({ threads: initialThreads, initialThreadId, meId 
                           <Badge variant="outline" className="!text-[10px] !py-0">{t.listingTitle.slice(0, 24)}{t.listingTitle.length > 24 ? '…' : ''}</Badge>
                         )}
                         {t.unread > 0 && (
-                          <Badge variant="gold" className="!text-[10px] !py-0">{t.unread} yeni</Badge>
+                          <Badge variant="gold" className="!text-[10px] !py-0">{t.unread} {tr('messages.new')}</Badge>
                         )}
                       </div>
                     </div>
@@ -147,7 +149,7 @@ export function MessagesClient({ threads: initialThreads, initialThreadId, meId 
             <div className={cn('flex flex-col', !activeId && 'hidden md:flex')}>
               {!active ? (
                 <div className="flex-1 flex items-center justify-center text-[color:var(--fg-muted)]">
-                  Bir konuşma seç →
+                  {tr('messages.pick')}
                 </div>
               ) : (
                 <>
@@ -168,9 +170,9 @@ export function MessagesClient({ threads: initialThreads, initialThreadId, meId 
 
                   <div className="flex-1 overflow-y-auto p-4 space-y-3" style={{ maxHeight: '50vh' }}>
                     {loading ? (
-                      <div className="text-center text-[color:var(--fg-muted)] text-sm">Yükleniyor…</div>
+                      <div className="text-center text-[color:var(--fg-muted)] text-sm">{tr('common.loading')}</div>
                     ) : messages.length === 0 ? (
-                      <div className="text-center text-[color:var(--fg-muted)] text-sm">Bu konuşma boş. İlk mesajı sen at!</div>
+                      <div className="text-center text-[color:var(--fg-muted)] text-sm">{tr('messages.threadEmpty')}</div>
                     ) : (
                       messages.map((m) => {
                         const mine = m.senderId === meId;
@@ -187,7 +189,7 @@ export function MessagesClient({ threads: initialThreads, initialThreadId, meId 
                               <div className="whitespace-pre-wrap break-words">{m.content}</div>
                               <div className={cn('text-[10px] mt-1', mine ? 'text-navy-700/70' : 'text-[color:var(--fg-faint)]')}>
                                 {new Date(m.createdAt).toLocaleString('tr-TR', { dateStyle: 'short', timeStyle: 'short' })}
-                                {mine && (m.read ? ' · okundu' : ' · iletildi')}
+                                {mine && (m.read ? ` · ${tr('messages.read')}` : ` · ${tr('messages.delivered')}`)}
                               </div>
                             </div>
                           </div>
@@ -200,11 +202,11 @@ export function MessagesClient({ threads: initialThreads, initialThreadId, meId 
                   <div className="border-t p-3 flex items-end gap-2">
                     <Textarea
                       id="message-compose"
-                      aria-label={`${active.otherName} için mesaj yaz`}
+                      aria-label={tr('messages.composeAria').replace('{name}', active.otherName)}
                       rows={2}
                       value={draft}
                       onChange={(e) => setDraft(e.target.value)}
-                      placeholder="Mesajını yaz…"
+                      placeholder={tr('messages.composePh')}
                       maxLength={4000}
                       className="!min-h-[44px] resize-none"
                       onKeyDown={(e) => {

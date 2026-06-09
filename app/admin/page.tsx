@@ -10,6 +10,7 @@ import { db } from '@/db/client';
 import { payments, users } from '@/db/schema';
 import { sql, gte } from 'drizzle-orm';
 import { formatNumber, timeAgo } from '@/lib/utils';
+import { T } from '@/components/i18n/T';
 import dynamicImport from 'next/dynamic';
 
 // MH-23 — Recharts (~80 KB gz) is code-split into its own chunk. The chart
@@ -54,22 +55,22 @@ export default async function AdminDashboard() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Genel Bakış</h1>
-        <p className="text-sm text-[color:var(--fg-muted)] mt-1">Bugün, {new Date().toLocaleDateString('tr-TR', { dateStyle: 'long' })}</p>
+        <h1 className="text-2xl font-bold tracking-tight"><T k="admin.dash.title" /></h1>
+        <p className="text-sm text-[color:var(--fg-muted)] mt-1"><T k="admin.dash.today" vars={{ date: new Date().toLocaleDateString('tr-TR', { dateStyle: 'long' }) }} /></p>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
-          { l: 'Toplam Kullanıcı', v: stats.users, sub: 'DB toplamı', i: Users, c: 'text-navy-300' },
-          { l: 'Aktif İlan', v: stats.listings, sub: `${stats.pendingApproval} onay bekliyor`, i: Home, c: 'text-gold-300' },
-          { l: 'Bekleyen KYC', v: stats.pendingKyc, sub: 'Manuel inceleme', i: ShieldCheck, c: 'text-success' },
-          { l: 'Açık Şikayet', v: stats.openAbuse, sub: 'Moderasyon kuyruğu', i: AlertTriangle, c: 'text-danger' },
+          { k: 'admin.dash.stat.users', v: stats.users, subK: 'admin.dash.stat.usersSub', subVars: undefined, i: Users, c: 'text-navy-300' },
+          { k: 'admin.dash.stat.listings', v: stats.listings, subK: 'admin.dash.stat.listingsSub', subVars: { n: stats.pendingApproval }, i: Home, c: 'text-gold-300' },
+          { k: 'admin.dash.stat.kyc', v: stats.pendingKyc, subK: 'admin.dash.stat.kycSub', subVars: undefined, i: ShieldCheck, c: 'text-success' },
+          { k: 'admin.dash.stat.abuse', v: stats.openAbuse, subK: 'admin.dash.stat.abuseSub', subVars: undefined, i: AlertTriangle, c: 'text-danger' },
         ].map((stat) => (
-          <Card key={stat.l}><CardBody className="p-4">
+          <Card key={stat.k}><CardBody className="p-4">
             <stat.i size={16} className={stat.c} />
-            <div className="text-xs text-[color:var(--fg-muted)] mt-2">{stat.l}</div>
+            <div className="text-xs text-[color:var(--fg-muted)] mt-2"><T k={stat.k} /></div>
             <div className="text-2xl font-bold mt-0.5">{stat.v}</div>
-            <div className="text-[10px] text-[color:var(--fg-faint)] mt-1">{stat.sub}</div>
+            <div className="text-[10px] text-[color:var(--fg-faint)] mt-1"><T k={stat.subK} vars={stat.subVars} /></div>
           </CardBody></Card>
         ))}
       </div>
@@ -86,13 +87,13 @@ export default async function AdminDashboard() {
         <Card>
           <CardBody>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold">Bekleyen Onaylar</h3>
-              <Link href="/admin/approvals" className="text-xs text-gold-300 hover:text-gold-400">Tümü →</Link>
+              <h3 className="font-semibold"><T k="admin.dash.pendingApprovals" /></h3>
+              <Link href="/admin/approvals" className="text-xs text-gold-300 hover:text-gold-400"><T k="admin.dash.viewAll" /></Link>
             </div>
             {pendingApprovals.length === 0 ? (
               <div className="text-center py-6 text-sm text-[color:var(--fg-muted)]">
                 <CheckCircle2 size={20} className="mx-auto text-success mb-1" />
-                Bekleyen onay yok
+                <T k="admin.dash.noPending" />
               </div>
             ) : (
               <div className="space-y-2">
@@ -110,7 +111,7 @@ export default async function AdminDashboard() {
                         <span>·</span>
                         <span>{timeAgo(q.request.createdAt.toISOString())}</span>
                         {q.request.aiFlags.length > 0 && (
-                          <Badge variant="danger" className="!py-0 text-[9px]">{q.request.aiFlags.length} bayrak</Badge>
+                          <Badge variant="danger" className="!py-0 text-[9px]"><T k="admin.dash.flags" vars={{ n: q.request.aiFlags.length }} /></Badge>
                         )}
                       </div>
                     </div>
@@ -125,11 +126,11 @@ export default async function AdminDashboard() {
         <Card>
           <CardBody>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold">Son Denetim Logu</h3>
-              <Link href="/admin/audit" className="text-xs text-gold-300 hover:text-gold-400">Tümü →</Link>
+              <h3 className="font-semibold"><T k="admin.dash.recentAudit" /></h3>
+              <Link href="/admin/audit" className="text-xs text-gold-300 hover:text-gold-400"><T k="admin.dash.viewAll" /></Link>
             </div>
             {recentAudit.length === 0 ? (
-              <div className="text-center py-6 text-sm text-[color:var(--fg-muted)]">Henüz audit kaydı yok.</div>
+              <div className="text-center py-6 text-sm text-[color:var(--fg-muted)]"><T k="admin.dash.noAudit" /></div>
             ) : (
               <div className="space-y-2">
                 {recentAudit.slice(0, 5).map((a) => (
@@ -154,13 +155,13 @@ export default async function AdminDashboard() {
 
       <div className="rounded-2xl border border-gold-400/30 bg-gradient-to-br from-navy-700 to-navy-900 p-6 flex items-center justify-between flex-wrap gap-3">
         <div>
-          <div className="text-xs uppercase tracking-wider text-gold-300 font-semibold">Hızlı Aksiyon</div>
-          <h3 className="text-xl font-bold text-white mt-1">{stats.pendingKyc} KYC + {stats.pendingApproval} ilan onayı bekliyor</h3>
-          <p className="text-sm text-navy-200 mt-1">Toplu olarak inceleyip işle.</p>
+          <div className="text-xs uppercase tracking-wider text-gold-300 font-semibold"><T k="admin.dash.quickAction" /></div>
+          <h3 className="text-xl font-bold text-white mt-1"><T k="admin.dash.quickTitle" vars={{ kyc: stats.pendingKyc, approval: stats.pendingApproval }} /></h3>
+          <p className="text-sm text-navy-200 mt-1"><T k="admin.dash.quickSub" /></p>
         </div>
         <div className="flex gap-2">
-          <Link href="/admin/kyc"><Button variant="gold">KYC İncele</Button></Link>
-          <Link href="/admin/approvals"><Button variant="outline" className="bg-white/5 text-white border-white/20">İlan Onayla</Button></Link>
+          <Link href="/admin/kyc"><Button variant="gold"><T k="admin.dash.reviewKyc" /></Button></Link>
+          <Link href="/admin/approvals"><Button variant="outline" className="bg-white/5 text-white border-white/20"><T k="admin.dash.approveListing" /></Button></Link>
         </div>
       </div>
     </div>

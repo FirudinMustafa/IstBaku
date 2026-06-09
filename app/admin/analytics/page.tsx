@@ -4,6 +4,7 @@ import { db } from '@/db/client';
 import { users, listings, messages, savedSearches, auditLog } from '@/db/schema';
 import { sql, gte, desc } from 'drizzle-orm';
 import { formatNumber } from '@/lib/utils';
+import { T } from '@/components/i18n/T';
 import dynamicImport from 'next/dynamic';
 
 // MH-23 — defer Recharts to the client; reduces analytics route bundle.
@@ -65,14 +66,16 @@ export default async function AnalyticsPage() {
     .orderBy(desc(sql`COUNT(*)`));
 
   const totalCountry = countryRows.reduce((acc, r) => acc + r.c, 0) || 1;
-  const COUNTRY_LABEL: Record<string, string> = {
-    TR: '🇹🇷 Türkiye', AZ: '🇦🇿 Azerbaycan', RU: '🇷🇺 Rusya', IR: '🇮🇷 İran',
-    DE: '🇩🇪 Almanya', GB: '🇬🇧 İngiltere', US: '🇺🇸 ABD',
+  const COUNTRY_KEY: Record<string, string> = {
+    TR: 'admin.country.tr', AZ: 'admin.country.az', RU: 'admin.country.ru', IR: 'admin.country.ir',
+    DE: 'admin.country.de', GB: 'admin.country.gb', US: 'admin.country.us',
   };
   const geo = countryRows.map((r) => {
     const iso = r.country ?? '—';
     return {
-      c: COUNTRY_LABEL[iso] ?? `🌍 ${iso}`,
+      iso,
+      key: COUNTRY_KEY[iso] ?? null,
+      label: `🌍 ${iso}`,
       share: Math.max(1, Math.round((r.c / totalCountry) * 100)),
     };
   });
@@ -86,31 +89,31 @@ export default async function AnalyticsPage() {
   const engagementMap = new Map(engagementRows.map((r) => [r.action, r.c]));
   const maxEng = Math.max(1, ...engagementRows.map((r) => r.c));
   const engagement = [
-    { topic: 'Arama', a: scale(engagementMap.get('search_executed') ?? 0, maxEng) },
-    { topic: 'İlan tıklama', a: scale(engagementMap.get('listing_view') ?? viewsAgg.total, Math.max(maxEng, viewsAgg.total)) },
-    { topic: 'WhatsApp', a: scale(engagementMap.get('whatsapp_click') ?? 0, maxEng) },
-    { topic: 'AI Eşleşme', a: scale(aiAgg.c, maxEng) },
-    { topic: 'Hesaplayıcı', a: scale(engagementMap.get('calculator_used') ?? 0, maxEng) },
-    { topic: 'Karşılaştırma', a: scale(engagementMap.get('compare_added') ?? 0, maxEng) },
+    { topicKey: 'admin.analytics.eng.search', a: scale(engagementMap.get('search_executed') ?? 0, maxEng) },
+    { topicKey: 'admin.analytics.eng.listingClick', a: scale(engagementMap.get('listing_view') ?? viewsAgg.total, Math.max(maxEng, viewsAgg.total)) },
+    { topicKey: 'admin.analytics.eng.whatsapp', a: scale(engagementMap.get('whatsapp_click') ?? 0, maxEng) },
+    { topicKey: 'admin.analytics.eng.aiMatch', a: scale(aiAgg.c, maxEng) },
+    { topicKey: 'admin.analytics.eng.calculator', a: scale(engagementMap.get('calculator_used') ?? 0, maxEng) },
+    { topicKey: 'admin.analytics.eng.compare', a: scale(engagementMap.get('compare_added') ?? 0, maxEng) },
   ];
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Analitik</h1>
-        <p className="text-sm text-[color:var(--fg-muted)] mt-1">Gerçek DB metrikleri — son 30 gün baz</p>
+        <h1 className="text-2xl font-bold tracking-tight"><T k="admin.analytics.title" /></h1>
+        <p className="text-sm text-[color:var(--fg-muted)] mt-1"><T k="admin.analytics.subtitle" /></p>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
-          { l: 'Kullanıcı', v: formatNumber(usersAgg.c), i: Users },
-          { l: 'Toplam Görüntülenme', v: formatNumber(viewsAgg.total), i: Eye },
-          { l: 'Mesaj Gönderildi', v: formatNumber(msgAgg.c), i: MessageCircle },
-          { l: 'AI Etkinliği', v: formatNumber(aiAgg.c), i: Sparkles },
+          { k: 'admin.analytics.stat.users', v: formatNumber(usersAgg.c), i: Users },
+          { k: 'admin.analytics.stat.views', v: formatNumber(viewsAgg.total), i: Eye },
+          { k: 'admin.analytics.stat.messages', v: formatNumber(msgAgg.c), i: MessageCircle },
+          { k: 'admin.analytics.stat.ai', v: formatNumber(aiAgg.c), i: Sparkles },
         ].map((s) => (
-          <Card key={s.l}><CardBody className="p-4">
+          <Card key={s.k}><CardBody className="p-4">
             <s.i size={16} className="text-gold-300" />
-            <div className="text-xs text-[color:var(--fg-muted)] mt-2">{s.l}</div>
+            <div className="text-xs text-[color:var(--fg-muted)] mt-2"><T k={s.k} /></div>
             <div className="text-2xl font-bold mt-0.5">{s.v}</div>
           </CardBody></Card>
         ))}
@@ -119,20 +122,20 @@ export default async function AnalyticsPage() {
       <AnalyticsCharts
         visits={visitsTrend.length > 0 ? visitsTrend : [{ d: '—', dau: 0, sessions: 0 }]}
         engagement={engagement}
-        queries={popularRows.length > 0 ? popularRows : [{ q: 'Henüz arama yok', c: 0 }]}
+        queries={popularRows.length > 0 ? popularRows : []}
       />
 
       <Card>
         <CardBody>
-          <h3 className="font-semibold mb-4 inline-flex items-center gap-2"><MapPin size={15} className="text-gold-300" /> Trafik Coğrafyası</h3>
+          <h3 className="font-semibold mb-4 inline-flex items-center gap-2"><MapPin size={15} className="text-gold-300" /> <T k="admin.analytics.trafficGeo" /></h3>
           {geo.length === 0 ? (
-            <div className="text-sm text-[color:var(--fg-muted)]">Veri yok.</div>
+            <div className="text-sm text-[color:var(--fg-muted)]"><T k="admin.analytics.noData" /></div>
           ) : (
             <div className="space-y-2.5">
               {geo.map((r) => (
-                <div key={r.c}>
+                <div key={r.iso}>
                   <div className="flex items-center justify-between text-sm">
-                    <span>{r.c}</span>
+                    <span>{r.key ? <T k={r.key} /> : r.label}</span>
                     <span className="font-bold text-gold-300">%{r.share}</span>
                   </div>
                   <div className="h-2 rounded-full bg-[color:var(--bg-card-hover)] mt-1 overflow-hidden">

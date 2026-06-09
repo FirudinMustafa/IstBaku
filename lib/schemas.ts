@@ -396,7 +396,18 @@ export const kycSchema = z.object({
   acceptedTerms: z.literal(true, {
     errorMap: () => ({ message: 'KVKK metnini kabul etmelisin' }),
   }),
-});
+  // Ofis/şirket KYC alanları (tur3 #4/#5) — bireysel başvuruda boş bırakılır.
+  isOfficeKyc: z.boolean().optional(),
+  companyName: z.string().trim().max(160).optional(),
+  taxId: z.string().trim().max(64).optional(),
+  authorizationNo: z.string().trim().max(64).optional(),
+  officeAddress: z.string().trim().max(300).optional(),
+  officeCity: z.string().trim().max(80).optional(),
+  officeDistrict: z.string().trim().max(80).optional(),
+}).refine(
+  (d) => !d.isOfficeKyc || (!!d.companyName && !!d.taxId && !!d.officeCity),
+  { message: 'Ofis için şirket adı, vergi/VÖEN no ve şehir zorunlu', path: ['companyName'] },
+);
 export type KycInput = z.infer<typeof kycSchema>;
 
 /** Profile update — for the missing user profile form. */

@@ -73,7 +73,7 @@ export function Header() {
       <header
         className={cn(
           'sticky top-0 z-50 transition-all safe-top',
-          scrolled ? 'glass backdrop-blur-xl shadow-[0_2px_24px_rgba(0,0,0,0.18)]' : 'bg-[color:var(--bg)]/40 backdrop-blur-md md:bg-transparent',
+          scrolled ? 'glass backdrop-blur-md shadow-[0_2px_24px_rgba(0,0,0,0.18)]' : 'bg-[color:var(--bg)]/40 backdrop-blur-sm md:bg-transparent',
         )}
       >
         <div className="w-full px-4">

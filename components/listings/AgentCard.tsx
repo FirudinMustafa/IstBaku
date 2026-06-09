@@ -15,6 +15,7 @@ import { Textarea, Input, Label } from '@/components/ui/Input';
 import { useToast } from '@/components/ui/Toast';
 import { membershipDuration } from '@/lib/labels';
 import { createAppointmentAction, getBookedSlotsAction } from '@/lib/appointment-actions';
+import { wallClockToUtcIso } from '@/lib/datetime';
 import { sendMessageAction } from '@/lib/message-actions';
 import { messageSchema, appointmentSchema, fieldErrors } from '@/lib/schemas';
 import { useLang } from '@/components/layout/LangProvider';
@@ -28,12 +29,14 @@ interface AgentCardProps {
   agent: Agent;
   propertyId: string;
   propertyTitle: string;
+  /** İlanın ülkesi — randevu saatini doğru saat diliminde yorumlamak için (Madde 7). */
+  propertyCountry?: string | null;
   /** Kartın görünmesi gerekmeyen yerlerde sadece modal yöneticisi olarak kullan */
   hideCard?: boolean;
 }
 
 export const AgentCard = React.forwardRef<AgentCardHandle, AgentCardProps>(function AgentCard(
-  { agent, propertyId, propertyTitle, hideCard },
+  { agent, propertyId, propertyTitle, propertyCountry, hideCard },
   ref,
 ) {
   const { toast } = useToast();
@@ -122,15 +125,13 @@ export const AgentCard = React.forwardRef<AgentCardHandle, AgentCardProps>(funct
 
           <Badge variant="success" className="mt-3">{t('agent.performance')}: {agent.performance}/100</Badge>
 
-          {/* Ofis public sayfası — sadece ofis hesapları (Madde 12) */}
-          {agent.isOffice && (
-            <Link href={`/office/${agent.id}`} className="mt-3 flex items-center justify-between gap-2 rounded-xl border border-gold-400/30 bg-gold-400/5 px-3 py-2.5 hover:border-gold-400/60 transition-colors">
-              <span className="inline-flex items-center gap-2 text-sm font-medium">
-                <Building2 size={15} className="text-gold-300" /> {t('agent.officePage')}
-              </span>
-              <ArrowUpRight size={16} className="text-gold-300" />
-            </Link>
-          )}
+          {/* Ajan/ofis public profili — TÜM ajanlarda (tur3 #2) */}
+          <Link href={`/office/${agent.id}`} className="mt-3 flex items-center justify-between gap-2 rounded-xl border border-gold-400/30 bg-gold-400/5 px-3 py-2.5 hover:border-gold-400/60 transition-colors">
+            <span className="inline-flex items-center gap-2 text-sm font-medium">
+              <Building2 size={15} className="text-gold-300" /> {agent.isOffice ? t('agent.officePage') : t('agent.profilePage')}
+            </span>
+            <ArrowUpRight size={16} className="text-gold-300" />
+          </Link>
 
           <div className="mt-4 grid grid-cols-3 gap-2">
             <a href={`tel:${agent.phone}`}>
@@ -168,7 +169,7 @@ export const AgentCard = React.forwardRef<AgentCardHandle, AgentCardProps>(funct
         </p>
       </Modal>
 
-      <AppointmentModal open={openAppt} onClose={() => setOpenAppt(false)} agent={agent} propertyId={propertyId} propertyTitle={propertyTitle} />
+      <AppointmentModal open={openAppt} onClose={() => setOpenAppt(false)} agent={agent} propertyId={propertyId} propertyTitle={propertyTitle} propertyCountry={propertyCountry} />
     </>
   );
 });
@@ -201,21 +202,21 @@ function nextDates(n = 7): string[] {
 
 const TIME_SLOTS = ['10:00', '11:00', '12:00', '14:00', '15:00', '16:00', '17:00'];
 
-/** Build a local ISO timestamp (with offset) for an agent slot. */
-function slotIso(date: string, time: string) {
-  // date = YYYY-MM-DD, time = HH:MM. Treat as local time of the agent.
-  const d = new Date(`${date}T${time}:00`);
-  return d.toISOString();
+/** İlanın ülkesinin saat diliminde slot ISO'su üretir (Madde 7 — saat kayması fix). */
+function slotIso(date: string, time: string, country?: string | null) {
+  // date = YYYY-MM-DD, time = HH:MM. İlan bölgesinin duvar saati olarak yorumlanır.
+  return wallClockToUtcIso(date, time, country);
 }
 
 function AppointmentModal({
-  open, onClose, agent, propertyId, propertyTitle,
+  open, onClose, agent, propertyId, propertyTitle, propertyCountry,
 }: {
   open: boolean;
   onClose: () => void;
   agent: Agent;
   propertyId: string;
   propertyTitle: string;
+  propertyCountry?: string | null;
 }) {
   const { toast } = useToast();
   const [bookedIso, setBookedIso] = React.useState<Set<string>>(new Set());
@@ -237,7 +238,7 @@ function AppointmentModal({
   }, [open, agent.id]);
 
   const dates = nextDates(7);
-  const isBooked = (d: string, t: string) => bookedIso.has(slotIso(d, t));
+  const isBooked = (d: string, t: string) => bookedIso.has(slotIso(d, t, propertyCountry));
 
   async function confirm() {
     // MC-14: validate the booking payload via zod (future-only, email/phone format, etc.).
@@ -265,7 +266,7 @@ function AppointmentModal({
     const res = await createAppointmentAction({
       listingId: propertyId,
       agentId: agent.id,
-      scheduledAtIso: slotIso(date, time),
+      scheduledAtIso: slotIso(date, time, propertyCountry),
       name: parsed.data.visitorName,
       email: parsed.data.visitorEmail,
       phone: parsed.data.visitorPhone || undefined,
@@ -274,11 +275,11 @@ function AppointmentModal({
     if (!res.ok) {
       toast({ variant: 'error', title: 'Randevu oluşturulamadı', description: res.error });
       if (res.error === 'Bu saat dolu.') {
-        setBookedIso((cur) => new Set(cur).add(slotIso(date, time)));
+        setBookedIso((cur) => new Set(cur).add(slotIso(date, time, propertyCountry)));
       }
       return;
     }
-    setBookedIso((cur) => new Set(cur).add(slotIso(date, time)));
+    setBookedIso((cur) => new Set(cur).add(slotIso(date, time, propertyCountry)));
     toast({
       variant: 'success',
       title: 'Randevu oluşturuldu',

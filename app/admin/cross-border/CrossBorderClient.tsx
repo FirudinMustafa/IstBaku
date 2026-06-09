@@ -10,6 +10,7 @@ import { Input, Label, Select, Textarea } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
 import { Modal } from '@/components/ui/Modal';
 import { useToast } from '@/components/ui/Toast';
+import { useLang } from '@/components/layout/LangProvider';
 import {
   listCrossBorderStepsAction,
   createCrossBorderStepAction,
@@ -24,27 +25,27 @@ import {
   type StepLang,
 } from '@/lib/cross-border-actions';
 
-const NATIONALITIES: { v: Nationality; l: string }[] = [
-  { v: 'TR', l: 'Türk vatandaşı' },
-  { v: 'AZ', l: 'Azerbaycan vatandaşı' },
-  { v: 'OTHER', l: 'Diğer / Yabancı' },
+const NATIONALITIES: { v: Nationality; k: string }[] = [
+  { v: 'TR', k: 'admin.cb.nat.tr' },
+  { v: 'AZ', k: 'admin.cb.nat.az' },
+  { v: 'OTHER', k: 'admin.cb.nat.other' },
 ];
-const COUNTRIES: { v: Country; l: string }[] = [
-  { v: 'TR', l: 'Türkiye' },
-  { v: 'AZ', l: 'Azerbaycan' },
+const COUNTRIES: { v: Country; k: string }[] = [
+  { v: 'TR', k: 'admin.cb.country.tr' },
+  { v: 'AZ', k: 'admin.cb.country.az' },
 ];
-const PURPOSES: { v: Purpose; l: string }[] = [
-  { v: 'oturum', l: 'Oturum' },
-  { v: 'yatirim', l: 'Yatırım' },
-  { v: 'isyeri', l: 'İş yeri' },
+const PURPOSES: { v: Purpose; k: string }[] = [
+  { v: 'oturum', k: 'admin.cb.purpose.oturum' },
+  { v: 'yatirim', k: 'admin.cb.purpose.yatirim' },
+  { v: 'isyeri', k: 'admin.cb.purpose.isyeri' },
 ];
-const LANGS: { v: StepLang; l: string }[] = [
-  { v: 'tr', l: 'Türkçe' },
-  { v: 'az', l: 'Azərbaycan' },
-  { v: 'en', l: 'English' },
-  { v: 'ru', l: 'Русский' },
-  { v: 'de', l: 'Deutsch' },
-  { v: 'zh', l: '中文' },
+const LANGS: { v: StepLang; k: string }[] = [
+  { v: 'tr', k: 'common.lang_tr' },
+  { v: 'az', k: 'common.lang_az' },
+  { v: 'en', k: 'common.lang_en' },
+  { v: 'ru', k: 'common.lang_ru' },
+  { v: 'de', k: 'common.lang_de' },
+  { v: 'zh', k: 'common.lang_zh' },
 ];
 
 const ICON_HINTS = 'FileCheck2, Scale, Coins, Globe2, BookOpen, CheckCircle2, Home, Building2, Banknote, Stamp';
@@ -58,6 +59,7 @@ interface EditState {
 }
 
 export function CrossBorderClient() {
+  const { t } = useLang();
   const { toast } = useToast();
 
   const [nationality, setNationality] = React.useState<Nationality>('OTHER');
@@ -85,9 +87,9 @@ export function CrossBorderClient() {
     if (res.ok && res.steps) setSteps(res.steps);
     else {
       setSteps([]);
-      if (res.error) toast({ variant: 'error', title: 'Yüklenemedi', description: res.error });
+      if (res.error) toast({ variant: 'error', title: t('admin.cb.toast.loadFail'), description: res.error });
     }
-  }, [filter, toast]);
+  }, [filter, toast, t]);
 
   React.useEffect(() => { void load(); }, [load]);
 
@@ -117,41 +119,41 @@ export function CrossBorderClient() {
     if (res.ok) {
       setOpen(false);
       setEditing(null);
-      toast({ variant: 'success', title: editing.id ? 'Adım güncellendi' : 'Adım eklendi' });
+      toast({ variant: 'success', title: editing.id ? t('admin.cb.toast.updated') : t('admin.cb.toast.added') });
       void load();
     } else {
-      toast({ variant: 'error', title: 'Kaydedilemedi', description: res.error });
+      toast({ variant: 'error', title: t('admin.cb.toast.saveFail'), description: res.error });
     }
   }
 
   async function remove(id: string) {
-    if (!confirm('Bu adımı silmek istediğine emin misin?')) return;
+    if (!confirm(t('admin.cb.confirmDelete'))) return;
     const res = await deleteCrossBorderStepAction(id);
     if (res.ok) {
-      toast({ variant: 'info', title: 'Adım silindi' });
+      toast({ variant: 'info', title: t('admin.cb.toast.deleted') });
       void load();
     } else {
-      toast({ variant: 'error', title: 'Silinemedi', description: res.error });
+      toast({ variant: 'error', title: t('admin.cb.toast.deleteFail'), description: res.error });
     }
   }
 
   async function move(id: string, direction: 'up' | 'down') {
     const res = await reorderCrossBorderStepAction(id, direction);
     if (res.ok) void load();
-    else toast({ variant: 'error', title: 'Sıralama değişmedi', description: res.error });
+    else toast({ variant: 'error', title: t('admin.cb.toast.reorderFail'), description: res.error });
   }
 
   async function seed() {
-    if (!confirm('Hardcoded adımları DB\'ye aktar? (Tabloda kayıt varsa atlanır.)')) return;
+    if (!confirm(t('admin.cb.confirmSeed'))) return;
     setSeeding(true);
     const res = await seedCrossBorderStepsAction();
     setSeeding(false);
     if (res.ok) {
-      if (res.skipped) toast({ variant: 'info', title: 'Atlandı', description: 'Tabloda zaten kayıt var.' });
-      else toast({ variant: 'success', title: 'İçe aktarıldı', description: `${res.inserted} adım eklendi.` });
+      if (res.skipped) toast({ variant: 'info', title: t('admin.cb.toast.skipped'), description: t('admin.cb.toast.skippedDesc') });
+      else toast({ variant: 'success', title: t('admin.cb.toast.imported'), description: t('admin.cb.toast.importedDesc').replace('{n}', String(res.inserted)) });
       void load();
     } else {
-      toast({ variant: 'error', title: 'Aktarılamadı', description: res.error });
+      toast({ variant: 'error', title: t('admin.cb.toast.importFail'), description: res.error });
     }
   }
 
@@ -160,18 +162,17 @@ export function CrossBorderClient() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold tracking-tight inline-flex items-center gap-2">
-            <Route size={20} className="text-gold-300" /> Sınır Ötesi Adımlar
+            <Route size={20} className="text-gold-300" /> {t('admin.cb.title')}
           </h1>
           <p className="text-sm text-[color:var(--fg-muted)] mt-1">
-            &quot;Adım adım sınır ötesi alım&quot; rehberinin adımlarını buradan yönetirsin.
-            Vatandaşlık + hedef ülke + amaç + dil seç, ardından adımları düzenle.
+            {t('admin.cb.subtitle')}
           </p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={seed} loading={seeding}>
-            <DownloadCloud size={14} /> Hardcoded verileri içe aktar
+            <DownloadCloud size={14} /> {t('admin.cb.seed')}
           </Button>
-          <Button variant="gold" onClick={startCreate}><Plus size={14} /> Yeni Adım</Button>
+          <Button variant="gold" onClick={startCreate}><Plus size={14} /> {t('admin.cb.newStep')}</Button>
         </div>
       </div>
 
@@ -179,27 +180,27 @@ export function CrossBorderClient() {
         <CardBody>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <div>
-              <Label>Vatandaşlık</Label>
+              <Label>{t('admin.cb.fNationality')}</Label>
               <Select value={nationality} onChange={(e) => setNationality(e.target.value as Nationality)}>
-                {NATIONALITIES.map((o) => <option key={o.v} value={o.v}>{o.l}</option>)}
+                {NATIONALITIES.map((o) => <option key={o.v} value={o.v}>{t(o.k)}</option>)}
               </Select>
             </div>
             <div>
-              <Label>Hedef ülke</Label>
+              <Label>{t('admin.cb.fCountry')}</Label>
               <Select value={country} onChange={(e) => setCountry(e.target.value as Country)}>
-                {COUNTRIES.map((o) => <option key={o.v} value={o.v}>{o.l}</option>)}
+                {COUNTRIES.map((o) => <option key={o.v} value={o.v}>{t(o.k)}</option>)}
               </Select>
             </div>
             <div>
-              <Label>Amaç</Label>
+              <Label>{t('admin.cb.fPurpose')}</Label>
               <Select value={purpose} onChange={(e) => setPurpose(e.target.value as Purpose)}>
-                {PURPOSES.map((o) => <option key={o.v} value={o.v}>{o.l}</option>)}
+                {PURPOSES.map((o) => <option key={o.v} value={o.v}>{t(o.k)}</option>)}
               </Select>
             </div>
             <div>
-              <Label>Dil</Label>
+              <Label>{t('admin.cb.fLanguage')}</Label>
               <Select value={language} onChange={(e) => setLanguage(e.target.value as StepLang)}>
-                {LANGS.map((o) => <option key={o.v} value={o.v}>{o.l}</option>)}
+                {LANGS.map((o) => <option key={o.v} value={o.v}>{t(o.k)}</option>)}
               </Select>
             </div>
           </div>
@@ -207,13 +208,12 @@ export function CrossBorderClient() {
       </Card>
 
       {loading ? (
-        <div className="text-sm text-[color:var(--fg-muted)] py-8 text-center">Yükleniyor…</div>
+        <div className="text-sm text-[color:var(--fg-muted)] py-8 text-center">{t('common.loading')}</div>
       ) : steps.length === 0 ? (
         <Card>
           <CardBody className="py-10 text-center">
             <p className="text-sm text-[color:var(--fg-muted)]">
-              Bu kombinasyon için kayıtlı adım yok. &quot;Yeni Adım&quot; ile ekle veya
-              &quot;Hardcoded verileri içe aktar&quot; ile başlat.
+              {t('admin.cb.empty')}
             </p>
           </CardBody>
         </Card>
@@ -229,19 +229,19 @@ export function CrossBorderClient() {
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-semibold text-sm">{s.title}</span>
                     <Badge variant="outline" className="!text-[10px]">{s.icon ?? '—'}</Badge>
-                    {!s.active && <Badge variant="outline" className="!text-[10px] text-danger">Pasif</Badge>}
+                    {!s.active && <Badge variant="outline" className="!text-[10px] text-danger">{t('admin.cb.passive')}</Badge>}
                   </div>
                   <p className="text-xs text-[color:var(--fg-muted)] mt-0.5 line-clamp-2">{s.description}</p>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
-                  <Button variant="ghost" size="sm" disabled={i === 0} onClick={() => move(s.id, 'up')} aria-label="Yukarı">
+                  <Button variant="ghost" size="sm" disabled={i === 0} onClick={() => move(s.id, 'up')} aria-label={t('admin.cb.up')}>
                     <ArrowUp size={13} />
                   </Button>
-                  <Button variant="ghost" size="sm" disabled={i === steps.length - 1} onClick={() => move(s.id, 'down')} aria-label="Aşağı">
+                  <Button variant="ghost" size="sm" disabled={i === steps.length - 1} onClick={() => move(s.id, 'down')} aria-label={t('admin.cb.down')}>
                     <ArrowDown size={13} />
                   </Button>
-                  <Button variant="outline" size="sm" onClick={() => startEdit(s)}>Düzenle</Button>
-                  <Button variant="ghost" size="sm" className="text-danger hover:bg-danger/10" onClick={() => remove(s.id)} aria-label="Sil">
+                  <Button variant="outline" size="sm" onClick={() => startEdit(s)}>{t('common.edit')}</Button>
+                  <Button variant="ghost" size="sm" className="text-danger hover:bg-danger/10" onClick={() => remove(s.id)} aria-label={t('common.delete')}>
                     <Trash2 size={12} />
                   </Button>
                 </div>
@@ -251,21 +251,21 @@ export function CrossBorderClient() {
         </div>
       )}
 
-      <Modal open={open} onClose={() => setOpen(false)} title={editing?.id ? 'Adımı Düzenle' : 'Yeni Adım'} size="lg">
+      <Modal open={open} onClose={() => setOpen(false)} title={editing?.id ? t('admin.cb.editStep') : t('admin.cb.newStep')} size="lg">
         {editing && (
           <div className="space-y-3">
             <div>
-              <Label>Başlık</Label>
-              <Input value={editing.title} onChange={(e) => setEditing({ ...editing, title: e.target.value })} placeholder="Vergi numarası al" />
+              <Label>{t('admin.cb.fTitle')}</Label>
+              <Input value={editing.title} onChange={(e) => setEditing({ ...editing, title: e.target.value })} placeholder={t('admin.cb.fTitlePh')} />
             </div>
             <div>
-              <Label>Açıklama</Label>
+              <Label>{t('admin.cb.fDescription')}</Label>
               <Textarea rows={3} value={editing.description} onChange={(e) => setEditing({ ...editing, description: e.target.value })} />
             </div>
             <div>
-              <Label>Lucide ikon adı</Label>
+              <Label>{t('admin.cb.fIcon')}</Label>
               <Input value={editing.icon} onChange={(e) => setEditing({ ...editing, icon: e.target.value })} placeholder="FileCheck2" />
-              <p className="text-[11px] text-[color:var(--fg-faint)] mt-1">Örnek: {ICON_HINTS}</p>
+              <p className="text-[11px] text-[color:var(--fg-faint)] mt-1">{t('admin.cb.iconExample').replace('{hints}', ICON_HINTS)}</p>
             </div>
             {editing.id && (
               <button
@@ -274,12 +274,12 @@ export function CrossBorderClient() {
                 className="inline-flex items-center gap-2 text-sm text-[color:var(--fg-muted)] hover:text-[color:var(--fg)]"
               >
                 {editing.active ? <Eye size={15} className="text-gold-300" /> : <EyeOff size={15} />}
-                {editing.active ? 'Aktif (yayında)' : 'Pasif (gizli)'}
+                {editing.active ? t('admin.cb.activeState') : t('admin.cb.passiveState')}
               </button>
             )}
             <div className="flex justify-end gap-2 pt-3 border-t">
-              <Button variant="ghost" onClick={() => setOpen(false)}>İptal</Button>
-              <Button variant="gold" onClick={save} loading={working}><Save size={14} /> Kaydet</Button>
+              <Button variant="ghost" onClick={() => setOpen(false)}>{t('common.cancel')}</Button>
+              <Button variant="gold" onClick={save} loading={working}><Save size={14} /> {t('common.save')}</Button>
             </div>
           </div>
         )}

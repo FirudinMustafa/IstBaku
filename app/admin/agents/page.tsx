@@ -3,6 +3,7 @@ import { Card, CardBody } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { getAllAgents } from '@/lib/admin-queries';
+import { T } from '@/components/i18n/T';
 import { db } from '@/db/client';
 import { listings } from '@/db/schema';
 import { eq, count } from 'drizzle-orm';
@@ -26,20 +27,20 @@ export default async function AgentsAdminPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Ofisler & Emlakçılar</h1>
-        <p className="text-sm text-[color:var(--fg-muted)] mt-1">{total} aktif ajan · {verified} doğrulanmış</p>
+        <h1 className="text-2xl font-bold tracking-tight"><T k="admin.agents.title" /></h1>
+        <p className="text-sm text-[color:var(--fg-muted)] mt-1"><T k="admin.agents.subtitle" vars={{ total, verified }} /></p>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
-          { l: 'Toplam Ajan', v: total },
-          { l: 'Doğrulanmış', v: verified },
-          { l: 'Ort. Yanıt', v: `${avgResponse} dk` },
-          { l: 'Ort. Performans', v: avgPerf },
+          { k: 'admin.agents.stat.total', node: <>{total}</> },
+          { k: 'admin.agents.stat.verified', node: <>{verified}</> },
+          { k: 'admin.agents.stat.avgResponse', node: <T k="admin.agents.stat.avgResponseVal" vars={{ n: avgResponse }} /> },
+          { k: 'admin.agents.stat.avgPerf', node: <>{avgPerf}</> },
         ].map((s) => (
-          <Card key={s.l}><CardBody className="p-4">
-            <div className="text-xs text-[color:var(--fg-muted)]">{s.l}</div>
-            <div className="text-2xl font-bold mt-1 text-gold-300">{s.v}</div>
+          <Card key={s.k}><CardBody className="p-4">
+            <div className="text-xs text-[color:var(--fg-muted)]"><T k={s.k} /></div>
+            <div className="text-2xl font-bold mt-1 text-gold-300">{s.node}</div>
           </CardBody></Card>
         ))}
       </div>
@@ -64,7 +65,7 @@ export default async function AgentsAdminPage() {
                       <span className="inline-flex items-center gap-0.5 text-gold-300">
                         <Star size={10} fill="currentColor" /> {a.rating.toFixed(1)}
                       </span>
-                      <span className="text-[color:var(--fg-muted)]">~{a.responseMins} dk</span>
+                      <span className="text-[color:var(--fg-muted)]"><T k="admin.agents.responseMins" vars={{ n: a.responseMins }} /></span>
                     </div>
                   </div>
                 </div>
@@ -73,15 +74,15 @@ export default async function AgentsAdminPage() {
                   <div className="rounded-lg border bg-[color:var(--bg-elev)] p-2 text-center">
                     <Eye size={11} className="text-[color:var(--fg-muted)] mx-auto" />
                     <div className="font-bold mt-1">{listingsCount}</div>
-                    <div className="text-[10px] text-[color:var(--fg-muted)]">İlan</div>
+                    <div className="text-[10px] text-[color:var(--fg-muted)]"><T k="admin.agents.listing" /></div>
                   </div>
                   <div className="rounded-lg border bg-[color:var(--bg-elev)] p-2 text-center">
                     <TrendingUp size={11} className="text-success mx-auto" />
                     <div className="font-bold mt-1 text-success">{a.performance}</div>
-                    <div className="text-[10px] text-[color:var(--fg-muted)]">Performans</div>
+                    <div className="text-[10px] text-[color:var(--fg-muted)]"><T k="admin.agents.performance" /></div>
                   </div>
                   <div className="rounded-lg border bg-[color:var(--bg-elev)] p-2 text-center">
-                    <div className="text-[10px] text-[color:var(--fg-muted)]">Yorum</div>
+                    <div className="text-[10px] text-[color:var(--fg-muted)]"><T k="admin.agents.review" /></div>
                     <div className="font-bold mt-1">{a.reviewsCount}</div>
                   </div>
                 </div>
@@ -95,7 +96,7 @@ export default async function AgentsAdminPage() {
                   <a href={`https://wa.me/${(a.whatsappNumber ?? '').replace(/[^0-9]/g, '')}`} target="_blank" rel="noreferrer">
                     <Button variant="outline" size="sm" className="gap-1 w-full"><MessageCircle size={12} /></Button>
                   </a>
-                  <a href={`mailto:${u.email}`}><Button variant="ghost" size="sm" className="w-full">Detay →</Button></a>
+                  <a href={`mailto:${u.email}`}><Button variant="ghost" size="sm" className="w-full"><T k="admin.agents.detail" /></Button></a>
                 </div>
               </CardBody>
             </Card>

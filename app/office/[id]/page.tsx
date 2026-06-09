@@ -43,7 +43,7 @@ export default async function OfficePage({ params }: { params: Promise<{ id: str
             <div className="flex items-center gap-2">
               <h1 className="text-2xl font-bold truncate">{agent.agency || agent.name}</h1>
               {agent.verified && <BadgeCheck size={18} className="text-gold-300 shrink-0" />}
-              <Badge variant="navy" className="gap-1"><Building2 size={11} /> <T k="office.badge" /></Badge>
+              <Badge variant="navy" className="gap-1"><Building2 size={11} /> {agent.isOffice ? <T k="office.badge" /> : <T k="office.agentBadge" />}</Badge>
             </div>
             <div className="mt-1 text-sm text-[color:var(--fg-muted)]">{agent.name}</div>
             <div className="mt-2 flex items-center gap-4 text-sm flex-wrap">

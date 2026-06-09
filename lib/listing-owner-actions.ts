@@ -1,7 +1,7 @@
 'use server';
 
 import { db } from '@/db/client';
-import { listings, payments, approvalRequests, notifications, users } from '@/db/schema';
+import { listings, payments, notifications, users } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { getCurrentUser } from './auth-actions';
 import { getPrice } from './pricing';
@@ -93,15 +93,8 @@ export async function requestPremiumUpgradeAction(
       status: 'pending',
     }).returning();
 
-    // Admin onay talebi (ödeme sonrası admin istbakuApproved'a karar verir)
-    await db.insert(approvalRequests).values({
-      listingId,
-      submittedById: user.id,
-      type: 'tier_upgrade',
-      aiQualityScore: 0,
-      aiFlags: [],
-      status: 'pending',
-    });
+    // Madde 4 fix: admin onay talebi ödeme onaylanınca (confirmPayment) oluşturulur,
+    // burada DEĞİL — aksi halde ödeme yapılmasa bile admin panele düşüyordu.
 
     const checkoutUrl = await maybeStartCheckout({
       paymentId: paymentRow.id, amount, currency: 'USD', description: 'İstBaku Onaylı rozet',
@@ -150,16 +143,9 @@ export async function createWizardExtrasPaymentAction(
       status: 'pending',
     }).returning();
 
-    if (opts.badge) {
-      await db.insert(approvalRequests).values({
-        listingId,
-        submittedById: user.id,
-        type: 'tier_upgrade',
-        aiQualityScore: 0,
-        aiFlags: [],
-        status: 'pending',
-      });
-    }
+    // Madde 4 fix: rozet (tier_upgrade) onay talebi ödeme onaylanınca confirmPayment
+    // içinde oluşturulur — burada DEĞİL. Böylece ödeme yapılmadan admin panele
+    // ikinci kart düşmez.
 
     const checkoutUrl = await maybeStartCheckout({
       paymentId: paymentRow.id, amount, currency: 'USD', description: 'İlan eklentileri',

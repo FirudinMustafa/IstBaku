@@ -25,6 +25,7 @@ export function PropertyDetailActions({ property, agent }: Props) {
           agent={agent}
           propertyId={property.id}
           propertyTitle={property.title}
+          propertyCountry={property.country}
         />
       )}
       {agent && (

@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import { getPrivateListings } from '@/lib/db-queries';
 import { getCurrentUser } from '@/lib/auth-actions';
 import { PrivatePortfolioClient } from './PrivatePortfolioClient';
+import { T } from '@/components/i18n/T';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,18 +16,18 @@ export default async function PrivatePortfolioPage() {
     // KYC pending or rejected: 403 page.
     return (
       <div className="mx-auto max-w-2xl px-4 py-16 text-center">
-        <h1 className="mb-3 text-2xl font-semibold">Gizli portföy erişimi kısıtlı</h1>
+        <h1 className="mb-3 text-2xl font-semibold"><T k="portfolio.restricted.title" /></h1>
         <p className="text-[color:var(--fg-muted)]">
-          Bu sayfayı görüntülemek için KYC doğrulamanın <strong>onaylanmış</strong> olması gerekiyor.
+          <T k="portfolio.restricted.body" />
         </p>
         <p className="mt-4 text-sm text-[color:var(--fg-muted)]">
-          Mevcut KYC durumun: <code>{user.kycStatus}</code>
+          <T k="portfolio.restricted.current" /> <code>{user.kycStatus}</code>
         </p>
         <a
           href="/kyc"
           className="mt-6 inline-flex items-center gap-2 rounded-xl bg-gold-400 px-5 py-2.5 text-sm font-semibold text-navy-900 hover:bg-gold-300"
         >
-          {user.kycStatus === 'pending' ? 'KYC başvurunu görüntüle' : 'KYC doğrulamasını başlat'}
+          {user.kycStatus === 'pending' ? <T k="portfolio.restricted.viewKyc" /> : <T k="portfolio.restricted.startKyc" />}
         </a>
       </div>
     );

@@ -23,7 +23,7 @@ interface Props {
   compact?: boolean;
 }
 
-export function ListingCard({ property: p, compact }: Props) {
+function ListingCardInner({ property: p, compact }: Props) {
   const { toast } = useToast();
   const { t } = useLang();
   const compare = useCompare();
@@ -231,3 +231,10 @@ export function ListingCard({ property: p, compact }: Props) {
     </article>
   );
 }
+
+// Perf (Madde 14): harita marker hover'ında parent re-render'ında kartların
+// gereksiz yeniden render'ını önle — id/compact aynıysa atla.
+export const ListingCard = React.memo(
+  ListingCardInner,
+  (prev, next) => prev.property.id === next.property.id && prev.compact === next.compact,
+);

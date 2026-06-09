@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { Label, Select } from './Input';
 import { citiesOf, districtsOf, defaultCity, defaultDistrict } from '@/lib/data/locations';
+import { useLang } from '@/components/layout/LangProvider';
 
 interface Props {
   country: string;
@@ -19,6 +20,7 @@ interface Props {
 export function LocationSelector({
   country, city, district, onCityChange, onDistrictChange, autoReset = true,
 }: Props) {
+  const { t } = useLang();
   const cities = citiesOf(country);
   const districts = districtsOf(country, city);
 
@@ -46,7 +48,7 @@ export function LocationSelector({
   return (
     <>
       <div>
-        <Label>Şehir</Label>
+        <Label>{t('filter.city')}</Label>
         <Select value={city} onChange={(e) => onCityChange(e.target.value)}>
           {cities.map((c) => (
             <option key={c.name} value={c.name}>{c.name}</option>
@@ -54,14 +56,14 @@ export function LocationSelector({
         </Select>
       </div>
       <div>
-        <Label>İlçe / Rayon</Label>
+        <Label>{t('loc.districtRayon')}</Label>
         <Select
           value={district}
           onChange={(e) => onDistrictChange(e.target.value)}
           disabled={districts.length === 0}
         >
           {districts.length === 0 ? (
-            <option value="">— Şehir seç —</option>
+            <option value="">{t('loc.pickCity')}</option>
           ) : (
             districts.map((d) => (
               <option key={d} value={d}>{d}</option>

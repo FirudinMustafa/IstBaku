@@ -24,7 +24,7 @@ export const statusEnum = pgEnum('listing_status', ['bos', 'kiracili', 'mulk_sah
 export const titleDeedEnum = pgEnum('title_deed', ['kat_mulkiyeti', 'kat_irtifaki', 'arsa_payi', 'cikti_belgesi', 'belirsiz']);
 export const energyClassEnum = pgEnum('energy_class', ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'muaf', 'belirsiz']);
 export const housingTypeEnum = pgEnum('housing_type', [
-  'belirtilmemis', 'dubleks', 'tribleks', 'en_ust_kat', 'ara_kat', 'ara_kat_dubleks',
+  'belirtilmemis', 'giris_kat', 'dubleks', 'tribleks', 'en_ust_kat', 'ara_kat', 'ara_kat_dubleks',
   'bahce_dubleksi', 'cati_dubleksi', 'forleks', 'ters_dubleks',
 ]);
 export const facadeEnum = pgEnum('facade', [
@@ -35,7 +35,7 @@ export const buildingStatusEnum = pgEnum('building_status', ['belirtilmemis', 's
 export const structureTypeEnum = pgEnum('structure_type', ['belirtilmemis', 'betonarme', 'celik', 'ahsap', 'yigma', 'prefabrik']);
 export const parkingEnum = pgEnum('parking', ['kapali', 'acik', 'yok']);
 export const approvalStatusEnum = pgEnum('approval_status', ['pending', 'approved', 'rejected']);
-export const appointmentStatusEnum = pgEnum('appointment_status', ['pending', 'confirmed', 'cancelled', 'completed']);
+export const appointmentStatusEnum = pgEnum('appointment_status', ['pending', 'confirmed', 'cancelled', 'completed', 'rejected', 'rescheduled']);
 export const dailyBookingStatusEnum = pgEnum('daily_booking_status', ['pending', 'approved', 'rejected', 'cancelled', 'completed']);
 export const notificationTypeEnum = pgEnum('notification_type', ['match', 'price_drop', 'message', 'system', 'appointment', 'approval', 'kyc', 'payment', 'daily_booking']);
 export const abuseReasonEnum = pgEnum('abuse_reason', ['fake', 'spam', 'scam', 'inappropriate', 'duplicate', 'wrong_info']);
@@ -342,11 +342,17 @@ export const appointments = pgTable('appointments', {
   visitorEmail: text('visitor_email').notNull(),
   visitorPhone: text('visitor_phone'),
   scheduledAt: timestamp('scheduled_at', { withTimezone: true }).notNull(),
-  status: appointmentStatusEnum('status').notNull().default('confirmed'),
+  // Ofisin önerdiği alternatif saat (Madde 7) — ziyaretçi kabul edince scheduledAt'e taşınır.
+  proposedAt: timestamp('proposed_at', { withTimezone: true }),
+  status: appointmentStatusEnum('status').notNull().default('pending'),
   notes: text('notes'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 }, (t) => ({
-  agentScheduleIdx: uniqueIndex('appointments_agent_slot_idx').on(t.agentId, t.scheduledAt),
+  // Kısmi unique: sadece AKTİF randevular slotu kilitler. Reddedilen/iptal/tamamlanan
+  // randevular aynı (agent, saat) için yeni talebe izin verir (Madde 7).
+  agentScheduleIdx: uniqueIndex('appointments_agent_slot_idx')
+    .on(t.agentId, t.scheduledAt)
+    .where(sql`status in ('pending','confirmed','rescheduled')`),
   listingIdx: index('appointments_listing_idx').on(t.listingId),
   // MH-24 — explicit composite FK index mirroring 0002_perf_indexes.sql.
   // The unique index above already covers this prefix, but we declare it

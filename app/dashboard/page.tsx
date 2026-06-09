@@ -6,6 +6,7 @@ import { getMyListings, getMySavedSearchesAction, getMyPayments } from '@/lib/li
 import { getMyFavoritesAction } from '@/lib/favorite-actions';
 import { getMyNotifications } from '@/lib/notification-actions';
 import { getOwnerDailyBookings } from '@/lib/daily-booking-actions';
+import { getMyAppointments } from '@/lib/appointment-actions';
 import { getAllPrices } from '@/lib/pricing';
 import { getMyRpaReports } from '@/lib/rpa-actions';
 import { rowToProperty } from '@/lib/db-mappers';
@@ -16,12 +17,13 @@ export default async function DashboardPage() {
   const user = await getCurrentUser();
   if (!user) redirect('/auth/sign-in?next=/dashboard');
 
-  const [myListings, favorites, savedSearches, notifications, dailyBookings, payments, prices, rpaReports] = await Promise.all([
+  const [myListings, favorites, savedSearches, notifications, dailyBookings, myAppointments, payments, prices, rpaReports] = await Promise.all([
     getMyListings(),
     getMyFavoritesAction(),
     getMySavedSearchesAction(),
     getMyNotifications(),
     getOwnerDailyBookings(user.id).catch(() => []),
+    getMyAppointments().catch(() => []),
     getMyPayments(),
     getAllPrices(),
     getMyRpaReports(),
@@ -72,6 +74,16 @@ export default async function DashboardPage() {
           notes: b.notes,
           ownerResponseNote: b.ownerResponseNote,
           createdAt: b.createdAt.toISOString(),
+        }))}
+        myAppointments={myAppointments.map((a) => ({
+          id: a.id,
+          scheduledAt: a.scheduledAt.toISOString(),
+          proposedAt: a.proposedAt ? a.proposedAt.toISOString() : null,
+          status: a.status,
+          listingTitle: a.listingTitle,
+          listingSlug: a.listingSlug,
+          listingCountry: a.listingCountry,
+          agentName: a.agentName,
         }))}
         rpaReports={rpaReports}
         prices={{

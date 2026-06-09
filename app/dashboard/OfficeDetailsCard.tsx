@@ -72,7 +72,7 @@ export function OfficeDetailsCard() {
     });
     setSaving(false);
     if (res.ok) toast({ variant: 'success', title: t('office.docs.saved') });
-    else toast({ variant: 'error', title: 'Hata', description: res.error });
+    else toast({ variant: 'error', title: t('common.error'), description: res.error });
   }
 
   if (loading) return null;
@@ -99,7 +99,7 @@ export function OfficeDetailsCard() {
             {docs.map((d, i) => (
               <span key={i} className="inline-flex items-center gap-1.5 rounded-lg border bg-[color:var(--bg-elev)] px-2.5 py-1.5 text-xs">
                 <a href={d.url} target="_blank" rel="noreferrer" className="hover:text-gold-300 truncate max-w-[160px]">{d.name || 'belge'}</a>
-                <button type="button" onClick={() => setDocs((prev) => prev.filter((_, idx) => idx !== i))} aria-label="Kaldır" className="text-[color:var(--fg-muted)] hover:text-danger"><X size={13} /></button>
+                <button type="button" onClick={() => setDocs((prev) => prev.filter((_, idx) => idx !== i))} aria-label={t('compare.remove')} className="text-[color:var(--fg-muted)] hover:text-danger"><X size={13} /></button>
               </span>
             ))}
             <input ref={fileRef} type="file" accept="image/*,application/pdf" multiple className="hidden" onChange={onPickDocs} />

@@ -7,6 +7,7 @@ import { TextStyle } from '@tiptap/extension-text-style';
 import { Color } from '@tiptap/extension-color';
 import { Bold, Italic, Underline as UnderlineIcon, List, ListOrdered, Pilcrow } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useLang } from '@/components/layout/LangProvider';
 
 const COLORS = ['#121F30', '#CAAE99', '#b91c1c', '#15803d', '#1d4ed8', '#a16207'];
 
@@ -19,6 +20,7 @@ interface Props {
 
 /** Tiptap tabanlı zengin metin editörü — kalın/eğik/altı çizili/liste/renk. HTML üretir. */
 export function RichTextEditor({ value, onChange, invalid }: Props) {
+  const { t } = useLang();
   const editor = useEditor({
     extensions: [
       StarterKit,
@@ -74,23 +76,23 @@ export function RichTextEditor({ value, onChange, invalid }: Props) {
   return (
     <div className={cn('rounded-xl border bg-[color:var(--bg-elev)] overflow-hidden', invalid ? 'border-danger ring-2 ring-danger/40' : 'border-[color:var(--border)]')}>
       <div className="flex flex-wrap items-center gap-1 border-b border-[color:var(--border)] p-1.5 bg-[color:var(--bg-card)]">
-        <Btn label="Kalın" active={editor.isActive('bold')} onClick={() => editor.chain().focus().toggleBold().run()}><Bold size={15} /></Btn>
-        <Btn label="Eğik" active={editor.isActive('italic')} onClick={() => editor.chain().focus().toggleItalic().run()}><Italic size={15} /></Btn>
-        <Btn label="Altı çizili" active={editor.isActive('underline')} onClick={() => editor.chain().focus().toggleUnderline().run()}><UnderlineIcon size={15} /></Btn>
-        <Btn label="Madde listesi" active={editor.isActive('bulletList')} onClick={() => editor.chain().focus().toggleBulletList().run()}><List size={15} /></Btn>
-        <Btn label="Numaralı liste" active={editor.isActive('orderedList')} onClick={() => editor.chain().focus().toggleOrderedList().run()}><ListOrdered size={15} /></Btn>
+        <Btn label={t('editor.bold')} active={editor.isActive('bold')} onClick={() => editor.chain().focus().toggleBold().run()}><Bold size={15} /></Btn>
+        <Btn label={t('editor.italic')} active={editor.isActive('italic')} onClick={() => editor.chain().focus().toggleItalic().run()}><Italic size={15} /></Btn>
+        <Btn label={t('editor.underline')} active={editor.isActive('underline')} onClick={() => editor.chain().focus().toggleUnderline().run()}><UnderlineIcon size={15} /></Btn>
+        <Btn label={t('editor.bulletList')} active={editor.isActive('bulletList')} onClick={() => editor.chain().focus().toggleBulletList().run()}><List size={15} /></Btn>
+        <Btn label={t('editor.orderedList')} active={editor.isActive('orderedList')} onClick={() => editor.chain().focus().toggleOrderedList().run()}><ListOrdered size={15} /></Btn>
         <div className="w-px h-6 bg-[color:var(--border)] mx-0.5" />
         {COLORS.map((c) => (
           <button
             key={c}
             type="button"
-            aria-label={`Renk ${c}`}
+            aria-label={t('editor.color').replace('{c}', c)}
             onMouseDown={(e) => { e.preventDefault(); editor.chain().focus().setColor(c).run(); }}
             className="size-6 rounded-full border border-[color:var(--border-strong)]"
             style={{ background: c }}
           />
         ))}
-        <Btn label="Rengi temizle" onClick={() => editor.chain().focus().unsetColor().run()}><Pilcrow size={14} /></Btn>
+        <Btn label={t('editor.clearColor')} onClick={() => editor.chain().focus().unsetColor().run()}><Pilcrow size={14} /></Btn>
       </div>
       <EditorContent editor={editor} />
     </div>

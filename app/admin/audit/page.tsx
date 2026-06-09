@@ -1,6 +1,7 @@
 import { Shield, Bot, AlertCircle } from 'lucide-react';
 import { Card, CardBody } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
+import { T } from '@/components/i18n/T';
 import { getAuditLog } from '@/lib/admin-queries';
 import { timeAgo } from '@/lib/utils';
 
@@ -12,9 +13,9 @@ export default async function AuditPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Denetim Logu</h1>
+        <h1 className="text-2xl font-bold tracking-tight"><T k="admin.audit.title" /></h1>
         <p className="text-sm text-[color:var(--fg-muted)] mt-1">
-          Tüm admin ve sistem aksiyonlarının değiştirilemez kaydı ({rows.length} kayıt)
+          <T k="admin.audit.subtitle" vars={{ n: rows.length }} />
         </p>
       </div>
 
@@ -22,7 +23,7 @@ export default async function AuditPage() {
         <CardBody className="p-0">
           {rows.length === 0 ? (
             <div className="p-12 text-center text-[color:var(--fg-muted)]">
-              Henüz audit kaydı yok.
+              <T k="admin.audit.empty" />
             </div>
           ) : (
             <div className="divide-y">
@@ -60,9 +61,9 @@ export default async function AuditPage() {
       <div className="rounded-2xl border border-gold-400/30 bg-gold-400/5 p-4 text-sm flex items-start gap-3">
         <AlertCircle size={16} className="text-gold-300 mt-0.5" />
         <div>
-          <strong>Production'da:</strong>
+          <strong><T k="admin.audit.prodLabel" /></strong>
           <p className="text-[color:var(--fg-muted)] text-xs mt-1">
-            Tüm log kayıtları immutable storage'a yazılır (append-only). KVKK/GDPR uyumlu, en az 5 yıl saklanır. Webhook ile SIEM'e iletilir.
+            <T k="admin.audit.prodNote" />
           </p>
         </div>
       </div>

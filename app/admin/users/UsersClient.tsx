@@ -10,6 +10,7 @@ import { Select } from '@/components/ui/Input';
 import { timeAgo, cn } from '@/lib/utils';
 import { suspendUserAction, reactivateUserAction } from '@/lib/admin-actions';
 import { useToast } from '@/components/ui/Toast';
+import { useLang } from '@/components/layout/LangProvider';
 
 interface User {
   id: string;
@@ -25,16 +26,19 @@ interface User {
   lastSeen: string;
 }
 
-const KYC_BADGE: Record<User['kyc'], { l: string; v: 'success' | 'gold' | 'default' | 'danger' }> = {
-  approved: { l: 'KYC ✓', v: 'success' },
-  pending: { l: 'KYC bekliyor', v: 'gold' },
-  rejected: { l: 'KYC red', v: 'danger' },
-  none: { l: 'KYC yok', v: 'default' },
+const KYC_BADGE: Record<User['kyc'], { k: string; v: 'success' | 'gold' | 'default' | 'danger' }> = {
+  approved: { k: 'admin.users.kyc.approved', v: 'success' },
+  pending: { k: 'admin.users.kyc.pending', v: 'gold' },
+  rejected: { k: 'admin.users.kyc.rejected', v: 'danger' },
+  none: { k: 'admin.users.kyc.none', v: 'default' },
 };
+
+const COUNTRY_KEY: Record<string, string> = { TR: 'admin.country.tr', AZ: 'admin.country.az' };
 
 export function UsersClient({ initial }: { initial: User[] }) {
   const router = useRouter();
   const { toast } = useToast();
+  const { t } = useLang();
   const [users, setUsers] = React.useState<User[]>(initial);
   const [q, setQ] = React.useState('');
   const [role, setRole] = React.useState<'all' | string>('all');
@@ -50,7 +54,7 @@ export function UsersClient({ initial }: { initial: User[] }) {
     if (res.ok) {
       const newStatus = u.status === 'suspended' ? 'active' as const : 'suspended' as const;
       setUsers((cur) => cur.map((x) => (x.id === u.id ? { ...x, status: newStatus } : x)));
-      toast({ variant: 'success', title: newStatus === 'suspended' ? 'Kullanıcı askıya alındı' : 'Kullanıcı tekrar aktif' });
+      toast({ variant: 'success', title: newStatus === 'suspended' ? t('admin.users.toast.suspended') : t('admin.users.toast.reactivated') });
       router.refresh();
     }
   }
@@ -66,8 +70,8 @@ export function UsersClient({ initial }: { initial: User[] }) {
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Kullanıcılar</h1>
-          <p className="text-sm text-[color:var(--fg-muted)] mt-1">{filtered.length} sonuç · Toplam {users.length}</p>
+          <h1 className="text-2xl font-bold tracking-tight">{t('admin.users.title')}</h1>
+          <p className="text-sm text-[color:var(--fg-muted)] mt-1">{t('admin.users.count').replace('{filtered}', String(filtered.length)).replace('{total}', String(users.length))}</p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <div className="relative">
@@ -75,23 +79,23 @@ export function UsersClient({ initial }: { initial: User[] }) {
             <input
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              placeholder="Ad veya e-posta…"
+              placeholder={t('admin.users.searchPlaceholder')}
               className="h-9 w-64 pl-9 pr-3 rounded-lg bg-[color:var(--bg-elev)] border text-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--ring)]"
             />
           </div>
           <Select className="w-36" value={role} onChange={(e) => setRole(e.target.value)}>
-            <option value="all">Tüm roller</option>
-            <option value="user">Kullanıcı</option>
-            <option value="agent">Emlakçı</option>
-            <option value="admin">Admin</option>
-            <option value="moderator">Moderator</option>
-            <option value="super_admin">Süper Admin</option>
+            <option value="all">{t('admin.users.role.all')}</option>
+            <option value="user">{t('admin.users.role.user')}</option>
+            <option value="agent">{t('admin.users.role.agent')}</option>
+            <option value="admin">{t('admin.users.role.admin')}</option>
+            <option value="moderator">{t('admin.users.role.moderator')}</option>
+            <option value="super_admin">{t('admin.users.role.superAdmin')}</option>
           </Select>
           <Select className="w-36" value={status} onChange={(e) => setStatus(e.target.value as typeof status)}>
-            <option value="all">Tüm durumlar</option>
-            <option value="active">Aktif</option>
-            <option value="pending">Onay bekliyor</option>
-            <option value="suspended">Askıda</option>
+            <option value="all">{t('admin.users.status.all')}</option>
+            <option value="active">{t('admin.users.status.active')}</option>
+            <option value="pending">{t('admin.users.status.pending')}</option>
+            <option value="suspended">{t('admin.users.status.suspended')}</option>
           </Select>
         </div>
       </div>
@@ -101,13 +105,13 @@ export function UsersClient({ initial }: { initial: User[] }) {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b text-left text-[10px] uppercase tracking-wider text-[color:var(--fg-muted)]">
-                <th className="px-4 py-3">Kullanıcı</th>
-                <th className="px-4 py-3">Rol</th>
-                <th className="px-4 py-3">Ülke</th>
-                <th className="px-4 py-3">Durum</th>
-                <th className="px-4 py-3">KYC</th>
-                <th className="px-4 py-3">Son Görülme</th>
-                <th className="px-4 py-3 text-right">İşlemler</th>
+                <th className="px-4 py-3">{t('admin.users.col.user')}</th>
+                <th className="px-4 py-3">{t('admin.users.col.role')}</th>
+                <th className="px-4 py-3">{t('admin.users.col.country')}</th>
+                <th className="px-4 py-3">{t('admin.users.col.status')}</th>
+                <th className="px-4 py-3">{t('admin.users.col.kyc')}</th>
+                <th className="px-4 py-3">{t('admin.users.col.lastSeen')}</th>
+                <th className="px-4 py-3 text-right">{t('admin.users.col.actions')}</th>
               </tr>
             </thead>
             <tbody>
@@ -126,7 +130,7 @@ export function UsersClient({ initial }: { initial: User[] }) {
                     </div>
                   </td>
                   <td className="px-4 py-3"><Badge variant={u.role.includes('admin') ? 'gold' : u.role === 'agent' ? 'ai' : 'outline'}>{u.role}</Badge></td>
-                  <td className="px-4 py-3 text-xs">{u.country === 'TR' ? '🇹🇷 Türkiye' : u.country === 'AZ' ? '🇦🇿 Azerbaycan' : '🌍 —'}</td>
+                  <td className="px-4 py-3 text-xs">{t(COUNTRY_KEY[u.country] ?? 'admin.country.other')}</td>
                   <td className="px-4 py-3">
                     <span className={cn('inline-flex items-center gap-1 text-xs',
                       u.status === 'active' && 'text-success',
@@ -138,10 +142,10 @@ export function UsersClient({ initial }: { initial: User[] }) {
                         u.status === 'suspended' && 'bg-danger',
                         u.status === 'pending' && 'bg-gold-400',
                       )} />
-                      {u.status}
+                      {t(`admin.users.status.${u.status}`)}
                     </span>
                   </td>
-                  <td className="px-4 py-3"><Badge variant={KYC_BADGE[u.kyc].v}>{KYC_BADGE[u.kyc].l}</Badge></td>
+                  <td className="px-4 py-3"><Badge variant={KYC_BADGE[u.kyc].v}>{t(KYC_BADGE[u.kyc].k)}</Badge></td>
                   <td className="px-4 py-3 text-xs text-[color:var(--fg-muted)]">{timeAgo(u.lastSeen)}</td>
                   <td className="px-4 py-3 text-right">
                     <div className="inline-flex gap-1">
@@ -154,7 +158,7 @@ export function UsersClient({ initial }: { initial: User[] }) {
                         className={cn('size-8', u.status === 'suspended' ? 'text-success hover:bg-success/10' : 'text-danger hover:bg-danger/10')}
                         onClick={() => toggleStatus(u)}
                         loading={working === u.id}
-                        title={u.status === 'suspended' ? 'Tekrar aktif et' : 'Askıya al'}
+                        title={u.status === 'suspended' ? t('admin.users.reactivate') : t('admin.users.suspend')}
                       >
                         {u.status === 'suspended' ? <BadgeCheck size={13} /> : <Ban size={13} />}
                       </Button>

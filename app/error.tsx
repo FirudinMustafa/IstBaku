@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import Link from 'next/link';
+import { useLang } from '@/components/layout/LangProvider';
 
 export default function GlobalError({
   error,
@@ -10,6 +11,7 @@ export default function GlobalError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const { t } = useLang();
   useEffect(() => {
     if (process.env.NODE_ENV === 'development') {
       console.error('[GlobalError]', error);
@@ -37,11 +39,10 @@ export default function GlobalError({
 
         <div className="space-y-2">
           <h1 className="text-2xl font-bold text-[color:var(--fg)]">
-            Bir hata olustu
+            {t('error.title')}
           </h1>
           <p className="text-sm text-[color:var(--fg-muted)]">
-            Beklenmedik bir sorun meydana geldi. Sayfayi yeniden yuklemeyi
-            deneyebilir veya ana sayfaya donebilirsiniz.
+            {t('error.body')}
           </p>
         </div>
 
@@ -50,13 +51,13 @@ export default function GlobalError({
             onClick={reset}
             className="inline-flex items-center justify-center rounded-lg bg-[color:var(--accent)] px-5 py-2.5 text-sm font-semibold text-white hover:opacity-90 transition-opacity"
           >
-            Tekrar Dene
+            {t('error.retry')}
           </button>
           <Link
             href="/"
             className="inline-flex items-center justify-center rounded-lg border border-[color:var(--border)] px-5 py-2.5 text-sm font-semibold text-[color:var(--fg-muted)] hover:text-[color:var(--fg)] transition-colors"
           >
-            Ana Sayfa
+            {t('error.home')}
           </Link>
         </div>
       </div>

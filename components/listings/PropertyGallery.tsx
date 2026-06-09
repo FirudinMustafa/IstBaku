@@ -199,7 +199,7 @@ export function PropertyGallery({ images, has360, video, listingNumber }: { imag
       {/* Lightbox */}
       {open && (
         <FocusTrap active={open} onEscape={() => setOpen(false)}>
-        <div className="fixed inset-0 z-[1000] bg-black/95 flex flex-col" role="dialog" aria-modal="true" aria-label="Galeri">
+        <div className="fixed inset-0 z-[1000] h-[100dvh] bg-black/95 flex flex-col" role="dialog" aria-modal="true" aria-label="Galeri">
           <div className="flex items-center justify-between p-3 sm:p-4 safe-top">
             <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap min-w-0">
               <button onClick={() => setTab('photos')} className={cn('rounded-full px-2.5 sm:px-3 py-1 text-xs sm:text-sm', tab === 'photos' ? 'bg-gold-400 text-navy-900' : 'text-white border border-white/20')}>
@@ -222,7 +222,7 @@ export function PropertyGallery({ images, has360, video, listingNumber }: { imag
           </div>
 
           <div
-            className="flex-1 flex items-center justify-center p-2 sm:p-4 relative"
+            className="flex-1 min-h-0 flex items-center justify-center p-2 sm:p-4 relative"
             onTouchStart={onTouchStart}
             onTouchEnd={onTouchEnd}
           >

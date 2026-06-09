@@ -70,9 +70,9 @@ export function AccountSettings() {
     const res = await updateOfficeAboutAction(about);
     setSavingAbout(false);
     if (res.ok) {
-      toast({ variant: 'success', title: 'Kaydedildi', description: 'Hakkımızda metni güncellendi.' });
+      toast({ variant: 'success', title: t('settings.saved'), description: t('settings.aboutSaved') });
     } else {
-      toast({ variant: 'error', title: 'Hata', description: res.error });
+      toast({ variant: 'error', title: t('common.error'), description: res.error });
     }
   }
 
@@ -81,7 +81,7 @@ export function AccountSettings() {
     e.target.value = ''; // aynı dosyayı tekrar seçebilmek için
     if (!file) return;
     if (!file.type.startsWith('image/')) {
-      toast({ variant: 'error', title: 'Geçersiz dosya', description: 'Lütfen bir görsel seç.' });
+      toast({ variant: 'error', title: t('settings.invalidFile'), description: t('settings.invalidFile.desc') });
       return;
     }
     setUploadingAvatar(true);
@@ -91,18 +91,18 @@ export function AccountSettings() {
       const res = await fetch('/api/avatars/upload', { method: 'POST', body: fd });
       const data = await res.json().catch(() => ({}));
       if (!res.ok || !data.url) {
-        toast({ variant: 'error', title: 'Yüklenemedi', description: data.error ?? 'Profil fotoğrafı yüklenemedi.' });
+        toast({ variant: 'error', title: t('settings.uploadFailed'), description: data.error ?? t('settings.uploadFailed.desc') });
         return;
       }
       const save = await updateAvatarAction(data.url);
       if (!save.ok) {
-        toast({ variant: 'error', title: 'Kaydedilemedi', description: save.error });
+        toast({ variant: 'error', title: t('settings.saveFailed'), description: save.error });
         return;
       }
       setAvatar(data.url);
-      toast({ variant: 'success', title: 'Profil fotoğrafı güncellendi' });
+      toast({ variant: 'success', title: t('settings.avatarUpdated') });
     } catch {
-      toast({ variant: 'error', title: 'Hata', description: 'Bağlantı hatası.' });
+      toast({ variant: 'error', title: t('common.error'), description: t('settings.connError') });
     } finally {
       setUploadingAvatar(false);
     }
@@ -115,10 +115,10 @@ export function AccountSettings() {
     const res = await updateProfileAction({ name, phoneDial, phone });
     setSavingProfile(false);
     if (res.ok) {
-      toast({ variant: 'success', title: 'Kaydedildi', description: 'Profil bilgilerin güncellendi.' });
+      toast({ variant: 'success', title: t('settings.saved'), description: t('settings.profileSaved') });
       load();
     } else {
-      toast({ variant: 'error', title: 'Hata', description: res.error });
+      toast({ variant: 'error', title: t('common.error'), description: res.error });
     }
   }
 
@@ -129,9 +129,9 @@ export function AccountSettings() {
     if (res.ok) {
       setEmailStep('verify');
       setEmailPassword('');
-      toast({ variant: 'success', title: 'Kod gönderildi', description: `${newEmail} adresine 6 haneli doğrulama kodu yolladık.` });
+      toast({ variant: 'success', title: t('settings.codeSent'), description: t('settings.codeSent.desc').replace('{email}', newEmail) });
     } else {
-      toast({ variant: 'error', title: 'Hata', description: res.error });
+      toast({ variant: 'error', title: t('common.error'), description: res.error });
     }
   }
 
@@ -140,29 +140,29 @@ export function AccountSettings() {
     const res = await verifyCodeAction(newEmail, emailCode);
     setSavingEmail(false);
     if (res.ok) {
-      toast({ variant: 'success', title: 'E-posta doğrulandı', description: 'Yeni e-postan aktif.' });
+      toast({ variant: 'success', title: t('settings.emailVerified'), description: t('settings.emailVerified.desc') });
       setEmailStep('idle');
       setNewEmail('');
       setEmailCode('');
       load();
     } else {
-      toast({ variant: 'error', title: 'Kod hatalı', description: res.error });
+      toast({ variant: 'error', title: t('settings.codeWrong'), description: res.error });
     }
   }
 
   async function savePassword() {
     if (newPw !== newPw2) {
-      toast({ variant: 'error', title: 'Şifreler eşleşmiyor' });
+      toast({ variant: 'error', title: t('settings.pwMismatch') });
       return;
     }
     setSavingPw(true);
     const res = await changePasswordAction({ currentPassword: curPw, newPassword: newPw });
     setSavingPw(false);
     if (res.ok) {
-      toast({ variant: 'success', title: 'Şifre değiştirildi' });
+      toast({ variant: 'success', title: t('settings.pwChanged') });
       setCurPw(''); setNewPw(''); setNewPw2('');
     } else {
-      toast({ variant: 'error', title: 'Hata', description: res.error });
+      toast({ variant: 'error', title: t('common.error'), description: res.error });
     }
   }
 

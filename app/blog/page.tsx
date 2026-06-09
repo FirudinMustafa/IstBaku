@@ -5,6 +5,7 @@ import { Newspaper, Calendar, User } from 'lucide-react';
 import { getPublishedBlogPosts } from '@/lib/blog-actions';
 import { Badge } from '@/components/ui/Badge';
 import { Card, CardBody } from '@/components/ui/Card';
+import { T } from '@/components/i18n/T';
 
 export const revalidate = 1800; // ISR 30 min
 
@@ -14,18 +15,18 @@ export const metadata: Metadata = {
 };
 
 const CATEGORIES = [
-  { key: undefined, label: 'Tumu' },
-  { key: 'news' as const, label: 'Haberler' },
-  { key: 'market' as const, label: 'Piyasa' },
-  { key: 'guide' as const, label: 'Rehber' },
-  { key: 'partner' as const, label: 'Partner' },
+  { key: undefined, tk: 'common.all' },
+  { key: 'news' as const, tk: 'blog.cat.news' },
+  { key: 'market' as const, tk: 'blog.cat.market' },
+  { key: 'guide' as const, tk: 'blog.cat.guide' },
+  { key: 'partner' as const, tk: 'blog.cat.partner' },
 ];
 
-const CATEGORY_LABELS: Record<string, string> = {
-  news: 'Haberler',
-  market: 'Piyasa',
-  guide: 'Rehber',
-  partner: 'Partner',
+const CATEGORY_LABEL_KEYS: Record<string, string> = {
+  news: 'blog.cat.news',
+  market: 'blog.cat.market',
+  guide: 'blog.cat.guide',
+  partner: 'blog.cat.partner',
 };
 
 const CATEGORY_VARIANTS: Record<string, 'gold' | 'navy' | 'success' | 'premium'> = {
@@ -66,10 +67,10 @@ export default async function BlogPage({ searchParams }: Props) {
         <div className="text-center max-w-2xl mx-auto">
           <Badge variant="navy"><Newspaper size={11} /> Blog</Badge>
           <h1 className="mt-3 text-3xl sm:text-5xl font-bold tracking-tight">
-            Blog &amp; Haberler
+            <T k="blog.title" />
           </h1>
           <p className="mt-4 text-[color:var(--fg-muted)] text-lg text-pretty">
-            Piyasa analizleri, yatirim rehberleri ve sektordeki son gelismeler.
+            <T k="blog.subtitle" />
           </p>
         </div>
 
@@ -80,7 +81,7 @@ export default async function BlogPage({ searchParams }: Props) {
             const href = cat.key ? `/blog?category=${cat.key}` : '/blog';
             return (
               <Link
-                key={cat.label}
+                key={cat.tk}
                 href={href}
                 className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
                   isActive
@@ -88,7 +89,7 @@ export default async function BlogPage({ searchParams }: Props) {
                     : 'bg-[color:var(--bg-elev)] text-[color:var(--fg-muted)] border border-[color:var(--border)] hover:border-gold-400/40 hover:text-gold-300'
                 }`}
               >
-                {cat.label}
+                <T k={cat.tk} />
               </Link>
             );
           })}
@@ -100,8 +101,8 @@ export default async function BlogPage({ searchParams }: Props) {
         {posts.length === 0 ? (
           <div className="text-center py-20 text-[color:var(--fg-muted)]">
             <Newspaper size={48} className="mx-auto mb-4 opacity-30" />
-            <p className="text-lg">Henuz yayin yok.</p>
-            <p className="mt-1 text-sm">Yakinda yeni icerikler eklenecek.</p>
+            <p className="text-lg"><T k="blog.empty.title" /></p>
+            <p className="mt-1 text-sm"><T k="blog.empty.body" /></p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 max-w-7xl mx-auto">
@@ -128,7 +129,7 @@ export default async function BlogPage({ searchParams }: Props) {
                         variant={CATEGORY_VARIANTS[post.category] ?? 'navy'}
                         className="backdrop-blur-sm"
                       >
-                        {CATEGORY_LABELS[post.category] ?? post.category}
+                        {CATEGORY_LABEL_KEYS[post.category] ? <T k={CATEGORY_LABEL_KEYS[post.category]} /> : post.category}
                       </Badge>
                     </div>
                   </div>

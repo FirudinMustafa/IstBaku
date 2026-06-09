@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useLang } from '@/components/layout/LangProvider';
 
 /* ────────────────────────────────────────── types ── */
 
@@ -13,14 +14,6 @@ interface AvailabilityCalendarProps {
   onCheckInChange: (date: string) => void;
   onCheckOutChange: (date: string) => void;
 }
-
-/* ──────────────────────────────────── constants ── */
-
-const DAY_LABELS = ['Pt', 'Sa', 'Ça', 'Pe', 'Cu', 'Ct', 'Pz'] as const;
-const MONTH_NAMES = [
-  'Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran',
-  'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık',
-] as const;
 
 /* ──────────────────────────────────── helpers ── */
 
@@ -57,6 +50,8 @@ export function AvailabilityCalendar({
   onCheckInChange,
   onCheckOutChange,
 }: AvailabilityCalendarProps) {
+  const { t } = useLang();
+  const dayLabels = [0, 1, 2, 3, 4, 5, 6].map((i) => t(`cal.day.${i}`));
   const todayStr = toISO(new Date());
 
   /* ── which month is displayed ── */
@@ -177,18 +172,18 @@ export function AvailabilityCalendar({
           type="button"
           onClick={goBack}
           className="p-1 rounded-lg hover:bg-[color:var(--bg-elev)] transition-colors text-[color:var(--fg-muted)]"
-          aria-label="Önceki ay"
+          aria-label={t('cal.prevMonth')}
         >
           <ChevronLeft size={16} />
         </button>
         <span className="text-sm font-semibold">
-          {MONTH_NAMES[viewMonth]} {viewYear}
+          {t(`cal.month.${viewMonth}`)} {viewYear}
         </span>
         <button
           type="button"
           onClick={goForward}
           className="p-1 rounded-lg hover:bg-[color:var(--bg-elev)] transition-colors text-[color:var(--fg-muted)]"
-          aria-label="Sonraki ay"
+          aria-label={t('cal.nextMonth')}
         >
           <ChevronRight size={16} />
         </button>
@@ -196,8 +191,8 @@ export function AvailabilityCalendar({
 
       {/* ── day-of-week labels ── */}
       <div className="grid grid-cols-7 gap-0.5 mb-1">
-        {DAY_LABELS.map((l) => (
-          <div key={l} className="text-center text-[10px] font-medium text-[color:var(--fg-muted)]">
+        {dayLabels.map((l, i) => (
+          <div key={i} className="text-center text-[10px] font-medium text-[color:var(--fg-muted)]">
             {l}
           </div>
         ))}
@@ -211,13 +206,13 @@ export function AvailabilityCalendar({
       {/* ── legend ── */}
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2.5 text-[10px] text-[color:var(--fg-muted)]">
         <span className="flex items-center gap-1">
-          <span className="inline-block w-2.5 h-2.5 rounded bg-danger/30" /> Dolu
+          <span className="inline-block w-2.5 h-2.5 rounded bg-danger/30" /> {t('cal.legend.full')}
         </span>
         <span className="flex items-center gap-1">
-          <span className="inline-block w-2.5 h-2.5 rounded bg-warning/30" /> Beklemede
+          <span className="inline-block w-2.5 h-2.5 rounded bg-warning/30" /> {t('cal.legend.pending')}
         </span>
         <span className="flex items-center gap-1">
-          <span className="inline-block w-2.5 h-2.5 rounded border border-gold-400 bg-gold-400/20" /> Seçili
+          <span className="inline-block w-2.5 h-2.5 rounded border border-gold-400 bg-gold-400/20" /> {t('cal.legend.selected')}
         </span>
       </div>
     </div>

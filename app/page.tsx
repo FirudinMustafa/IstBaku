@@ -61,13 +61,17 @@ export default async function HomePage() {
       {/* Hero sonrası bölümler için ince marka renk dokusu — büyük, bulanık
           tan/navy lekeleri + çok hafif grid dokusu (boş zemini canlandırır). */}
       <div className="relative">
+        {/* Ucuz (blur'suz) marka renk katmanı — HER ekranda görünür (mobil dahil),
+            compositing maliyeti yok. Boş zemine renk/derinlik katar (Madde 13). */}
         <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
-          {/* Hafif dikey marka gradyanı — boş zemine renk derinliği katar (Madde 4) */}
           <div
             className="absolute inset-0"
-            style={{ background: 'linear-gradient(180deg, rgba(202,174,153,0.05) 0%, transparent 22%, transparent 78%, rgba(138,160,190,0.05) 100%)' }}
+            style={{ background: 'linear-gradient(180deg, rgba(202,174,153,0.07) 0%, transparent 18%, transparent 60%, rgba(138,160,190,0.06) 100%)' }}
           />
-          <div className="absolute inset-0 grid-bg opacity-[0.08]" />
+          <div className="absolute inset-0 grid-bg opacity-[0.06]" />
+        </div>
+        {/* Perf (Madde 14): ağır blur-3xl lekeler yalnızca md+ — mobilde kasma azalır. */}
+        <div aria-hidden className="hidden md:block pointer-events-none absolute inset-0 overflow-hidden">
           <div
             className="absolute top-[4%] -left-40 w-[560px] h-[560px] rounded-full blur-3xl opacity-[0.24]"
             style={{ background: 'radial-gradient(circle, #CAAE99 0%, transparent 70%)' }}

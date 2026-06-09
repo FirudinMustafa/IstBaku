@@ -17,6 +17,9 @@ import {
   PROPERTY_TYPE_LABEL, PURPOSE_LABEL, OWNER_TYPE_LABEL, TITLE_DEED_LABEL,
   STATUS_LABEL, PARKING_LABEL, formatFloor,
 } from '@/lib/labels';
+import { useLang } from '@/components/layout/LangProvider';
+
+type TFn = (key: string) => string;
 
 // PP-02: tiny inline SVG used when a listing's cover URL is missing/broken so
 // /compare never logs the noisy "GET <empty> 404" or onError chain in the console.
@@ -28,6 +31,7 @@ const PLACEHOLDER_IMG =
 
 export default function ComparePage() {
   const compare = useCompare();
+  const { t } = useLang();
   const { currency: displayCurrency } = useCurrency();
   const [properties, setProperties] = React.useState<Property[]>([]);
   // SSR'da loading=false → compare.ids boş ise direkt empty state render edilir
@@ -62,12 +66,12 @@ export default function ComparePage() {
         <div className="size-20 rounded-3xl bg-gold-400/15 text-gold-300 flex items-center justify-center mx-auto">
           <GitCompare size={36} />
         </div>
-        <h1 className="mt-6 text-3xl font-bold">Henüz karşılaştırılacak ilan yok</h1>
+        <h1 className="mt-6 text-3xl font-bold">{t('compare.empty.title')}</h1>
         <p className="mt-2 text-[color:var(--fg-muted)]">
-          İlan kartlarındaki <GitCompare size={14} className="inline text-gold-300" /> butonuyla en fazla {MAX_COMPARE} ilan seçebilirsin.
+          {t('compare.empty.bodyPre')} <GitCompare size={14} className="inline text-gold-300" /> {t('compare.empty.bodyPost').replace('{n}', String(MAX_COMPARE))}
         </p>
         <div className="mt-6 flex justify-center gap-2">
-          <Link href="/listings"><Button variant="gold" size="lg"><ArrowLeft size={15} /> İlanlara Dön</Button></Link>
+          <Link href="/listings"><Button variant="gold" size="lg"><ArrowLeft size={15} /> {t('compare.backToListings')}</Button></Link>
         </div>
       </div>
     );
@@ -77,16 +81,16 @@ export default function ComparePage() {
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
       <div className="flex items-end justify-between flex-wrap gap-3 mb-6">
         <div>
-          <Badge variant="ai" className="mb-2"><GitCompare size={11} /> Karşılaştırma</Badge>
+          <Badge variant="ai" className="mb-2"><GitCompare size={11} /> {t('compare.badge')}</Badge>
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
-            {properties.length} ilanı karşılaştır
+            {t('compare.title').replace('{n}', String(properties.length))}
           </h1>
-          <p className="mt-1 text-sm text-[color:var(--fg-muted)]">Tüm özellikler yan yana — en uygun olanı seç.</p>
+          <p className="mt-1 text-sm text-[color:var(--fg-muted)]">{t('compare.subtitle')}</p>
         </div>
         <div className="flex gap-2">
-          <Link href="/listings"><Button variant="outline" size="md"><Plus size={14} /> İlan Ekle</Button></Link>
+          <Link href="/listings"><Button variant="outline" size="md"><Plus size={14} /> {t('compare.addListing')}</Button></Link>
           <Button variant="ghost" size="md" onClick={() => compare.clear()} className="text-danger hover:bg-danger/10">
-            Hepsini Kaldır
+            {t('compare.removeAll')}
           </Button>
         </div>
       </div>
@@ -94,7 +98,7 @@ export default function ComparePage() {
       {/* Mobile: stacked cards */}
       <div className="md:hidden space-y-6">
         {properties.map((p) => (
-          <MobileCompareCard key={p.id} property={p} displayCurrency={displayCurrency} onRemove={() => compare.remove(p.id)} />
+          <MobileCompareCard key={p.id} property={p} displayCurrency={displayCurrency} onRemove={() => compare.remove(p.id)} t={t} />
         ))}
       </div>
 
@@ -105,14 +109,14 @@ export default function ComparePage() {
             <thead>
               <tr className="border-b">
                 <th className="text-left text-xs uppercase text-[color:var(--fg-muted)] font-medium p-4 w-44 sticky left-0 bg-[color:var(--bg-card)] z-10">
-                  Özellik
+                  {t('compare.feature')}
                 </th>
                 {properties.map((p) => (
                   <th key={p.id} className="text-left p-4 min-w-[280px]">
                     <div className="relative">
                       <button
                         onClick={() => compare.remove(p.id)}
-                        aria-label="Kaldır"
+                        aria-label={t('compare.remove')}
                         className="absolute -top-2 -right-2 size-8 rounded-full bg-[color:var(--bg-elev)] border border-[color:var(--border-strong)] hover:border-danger hover:text-danger flex items-center justify-center"
                       >
                         <X size={14} />
@@ -146,16 +150,16 @@ export default function ComparePage() {
                       className="block aspect-[4/3] rounded-xl border-2 border-dashed border-[color:var(--border-strong)] hover:border-gold-400/60 hover:text-gold-300 transition-colors flex flex-col items-center justify-center text-[color:var(--fg-muted)]"
                     >
                       <Plus size={28} />
-                      <span className="text-sm mt-2">İlan ekle</span>
-                      <span className="text-[10px] mt-0.5">({MAX_COMPARE - properties.length} boş)</span>
+                      <span className="text-sm mt-2">{t('compare.addShort')}</span>
+                      <span className="text-[10px] mt-0.5">{t('compare.empty.slots').replace('{n}', String(MAX_COMPARE - properties.length))}</span>
                     </Link>
                   </th>
                 )}
               </tr>
             </thead>
             <tbody>
-              {buildRows(properties, displayCurrency).map((row) => (
-                <CompareRow key={row.label} {...row} count={properties.length} />
+              {buildRows(properties, displayCurrency, t).map((row) => (
+                <CompareRow key={row.label} {...row} count={properties.length} t={t} />
               ))}
             </tbody>
           </table>
@@ -173,14 +177,14 @@ interface RowSpec {
   group?: string;
 }
 
-function buildRows(items: Property[], display: Currency): RowSpec[] {
+function buildRows(items: Property[], display: Currency, t: TFn): RowSpec[] {
   const rows: RowSpec[] = [];
 
   // Fiyat — en düşük = en iyi (display currency'de göster, USD bazında karşılaştır)
   const usdPrices = items.map((p) => convert(p.price, p.currency, 'USD'));
   const bestPrice = usdPrices.indexOf(Math.min(...usdPrices));
   rows.push({
-    label: 'Fiyat',
+    label: t('compare.row.price'),
     values: items.map((p) => {
       const shown = Math.round(convert(p.price, p.currency, display));
       return (
@@ -200,7 +204,7 @@ function buildRows(items: Property[], display: Currency): RowSpec[] {
   // m² fiyatı — en düşük en iyi
   const sqmUsd = items.map((p) => convert(p.price / Math.max(1, p.area.net), p.currency, 'USD'));
   rows.push({
-    label: 'Net m² fiyatı',
+    label: t('compare.row.sqmPrice'),
     values: items.map((p) => {
       const v = Math.round(convert(p.price / Math.max(1, p.area.net), p.currency, display));
       return `${CURRENCY_SYMBOLS[display]}${formatNumber(v)} /m²`;
@@ -211,54 +215,54 @@ function buildRows(items: Property[], display: Currency): RowSpec[] {
   // AI skoru — en yüksek en iyi
   const scores = items.map((p) => p.score.total);
   rows.push({
-    label: 'AI Yatırım Skoru',
+    label: t('compare.row.aiScore'),
     values: items.map((p) => <ScoreRing value={p.score.total} size={44} stroke={4} outOf={10} />),
     bestIdx: scores.indexOf(Math.max(...scores)),
   });
 
   // Bölge
   rows.push({
-    label: 'Konum',
+    label: t('property.location'),
     values: items.map((p) => `${p.city} / ${p.district}${p.neighborhood ? ' / ' + p.neighborhood : ''}`),
   });
 
   // Tip & Amaç
-  rows.push({ label: 'Tür', values: items.map((p) => PROPERTY_TYPE_LABEL[p.type] ?? p.type) });
-  rows.push({ label: 'Amaç', values: items.map((p) => PURPOSE_LABEL[p.purpose] ?? p.purpose) });
+  rows.push({ label: t('compare.row.type'), values: items.map((p) => PROPERTY_TYPE_LABEL[p.type] ?? p.type) });
+  rows.push({ label: t('compare.row.purpose'), values: items.map((p) => PURPOSE_LABEL[p.purpose] ?? p.purpose) });
 
   // Boyut
   const nets = items.map((p) => p.area.net);
-  rows.push({ label: 'Net m²', values: items.map((p) => `${p.area.net} m²`), bestIdx: nets.indexOf(Math.max(...nets)) });
-  rows.push({ label: 'Brüt m²', values: items.map((p) => `${p.area.gross} m²`) });
-  rows.push({ label: 'Oda', values: items.map((p) => p.rooms) });
-  rows.push({ label: 'Banyo', values: items.map((p) => p.bathrooms) });
+  rows.push({ label: t('property.netArea'), values: items.map((p) => `${p.area.net} m²`), bestIdx: nets.indexOf(Math.max(...nets)) });
+  rows.push({ label: t('property.grossArea'), values: items.map((p) => `${p.area.gross} m²`) });
+  rows.push({ label: t('property.rooms'), values: items.map((p) => p.rooms) });
+  rows.push({ label: t('property.bathrooms'), values: items.map((p) => p.bathrooms) });
 
   // Bina
   const ages = items.map((p) => p.buildingAge);
-  rows.push({ label: 'Bina yaşı', values: items.map((p) => p.buildingAge === 0 ? 'Sıfır' : `${p.buildingAge} yıl`), bestIdx: ages.indexOf(Math.min(...ages)) });
-  rows.push({ label: 'Bulunduğu kat', values: items.map((p) => formatFloor(p.floor)) });
-  rows.push({ label: 'Toplam kat', values: items.map((p) => p.totalFloors) });
-  rows.push({ label: 'Isıtma', values: items.map((p) => p.heating) });
-  rows.push({ label: 'Otopark', values: items.map((p) => PARKING_LABEL[p.parking] ?? p.parking) });
+  rows.push({ label: t('property.buildingAge'), values: items.map((p) => p.buildingAge === 0 ? t('property.brandNew') : `${p.buildingAge} yıl`), bestIdx: ages.indexOf(Math.min(...ages)) });
+  rows.push({ label: t('property.floor'), values: items.map((p) => formatFloor(p.floor)) });
+  rows.push({ label: t('property.totalFloors'), values: items.map((p) => p.totalFloors) });
+  rows.push({ label: t('property.heating'), values: items.map((p) => p.heating) });
+  rows.push({ label: t('property.parking'), values: items.map((p) => PARKING_LABEL[p.parking] ?? p.parking) });
 
   // Özellikler
-  rows.push({ label: 'Asansör', values: items.map((p) => p.elevator ? '✓' : '—') });
-  rows.push({ label: 'Balkon', values: items.map((p) => p.balcony ? '✓' : '—') });
-  rows.push({ label: 'Eşyalı', values: items.map((p) => p.furnished ? '✓' : '—') });
-  rows.push({ label: 'Havuz', values: items.map((p) => p.pool ? '✓' : '—') });
-  rows.push({ label: 'Spor salonu', values: items.map((p) => p.gym ? '✓' : '—') });
-  rows.push({ label: 'Sauna', values: items.map((p) => p.sauna ? '✓' : '—') });
-  rows.push({ label: 'Site içi', values: items.map((p) => p.inSite ? '✓' : '—') });
+  rows.push({ label: t('property.elevator'), values: items.map((p) => p.elevator ? '✓' : '—') });
+  rows.push({ label: t('property.balcony'), values: items.map((p) => p.balcony ? '✓' : '—') });
+  rows.push({ label: t('property.furnished'), values: items.map((p) => p.furnished ? '✓' : '—') });
+  rows.push({ label: t('property.pool'), values: items.map((p) => p.pool ? '✓' : '—') });
+  rows.push({ label: t('property.gym'), values: items.map((p) => p.gym ? '✓' : '—') });
+  rows.push({ label: t('property.sauna'), values: items.map((p) => p.sauna ? '✓' : '—') });
+  rows.push({ label: t('property.inSite'), values: items.map((p) => p.inSite ? '✓' : '—') });
 
   // Tapu / durum
-  rows.push({ label: 'Tapu', values: items.map((p) => TITLE_DEED_LABEL[p.titleDeed] ?? p.titleDeed) });
-  rows.push({ label: 'Durum', values: items.map((p) => STATUS_LABEL[p.status] ?? p.status) });
-  rows.push({ label: 'Sahibi', values: items.map((p) => OWNER_TYPE_LABEL[p.ownerType] ?? p.ownerType) });
-  rows.push({ label: 'ISTBAKU Onaylı', values: items.map((p) => p.istbakuApproved ? <Badge variant="success">✓ Onaylı</Badge> : '—') });
+  rows.push({ label: t('property.titleDeed'), values: items.map((p) => TITLE_DEED_LABEL[p.titleDeed] ?? p.titleDeed) });
+  rows.push({ label: t('property.status'), values: items.map((p) => STATUS_LABEL[p.status] ?? p.status) });
+  rows.push({ label: t('property.owner'), values: items.map((p) => OWNER_TYPE_LABEL[p.ownerType] ?? p.ownerType) });
+  rows.push({ label: t('property.approved'), values: items.map((p) => p.istbakuApproved ? <Badge variant="success">{t('compare.approvedYes')}</Badge> : '—') });
 
   // Kira yield
   rows.push({
-    label: 'Kira getirisi',
+    label: t('compare.row.rentYield'),
     values: items.map((p) => `~%${(p.score.rentYield / 10).toFixed(1)}/yıl`),
     bestIdx: items.map((p) => p.score.rentYield).indexOf(Math.max(...items.map((p) => p.score.rentYield))),
   });
@@ -266,7 +270,7 @@ function buildRows(items: Property[], display: Currency): RowSpec[] {
   return rows;
 }
 
-function CompareRow({ label, values, bestIdx, count }: RowSpec & { count: number }) {
+function CompareRow({ label, values, bestIdx, count, t }: RowSpec & { count: number; t: TFn }) {
   return (
     <tr className="border-b last:border-0">
       <td className="p-4 text-xs text-[color:var(--fg-muted)] uppercase font-medium sticky left-0 bg-[color:var(--bg-card)] z-10">
@@ -282,7 +286,7 @@ function CompareRow({ label, values, bestIdx, count }: RowSpec & { count: number
         >
           {bestIdx === i && (
             <span className="absolute top-1 right-2 text-[9px] uppercase tracking-wider font-bold text-gold-300 inline-flex items-center gap-0.5">
-              <Sparkles size={9} /> En iyi
+              <Sparkles size={9} /> {t('compare.best')}
             </span>
           )}
           {v}
@@ -293,7 +297,7 @@ function CompareRow({ label, values, bestIdx, count }: RowSpec & { count: number
   );
 }
 
-function MobileCompareCard({ property: p, displayCurrency, onRemove }: { property: Property; displayCurrency: Currency; onRemove: () => void }) {
+function MobileCompareCard({ property: p, displayCurrency, onRemove, t }: { property: Property; displayCurrency: Currency; onRemove: () => void; t: TFn }) {
   const [open, setOpen] = React.useState(true);
   const shownPrice = Math.round(convert(p.price, p.currency, displayCurrency));
   const shownSqm = Math.round(convert(p.price / Math.max(1, p.area.net), p.currency, displayCurrency));
@@ -324,7 +328,7 @@ function MobileCompareCard({ property: p, displayCurrency, onRemove }: { propert
           <button
             onClick={onRemove}
             className="size-9 rounded-lg hover:bg-danger/10 hover:text-danger flex items-center justify-center"
-            aria-label="Kaldır"
+            aria-label={t('compare.remove')}
           >
             <X size={16} />
           </button>
@@ -334,22 +338,22 @@ function MobileCompareCard({ property: p, displayCurrency, onRemove }: { propert
           onClick={() => setOpen((v) => !v)}
           className="w-full mt-3 px-3 py-2 rounded-lg border border-dashed text-xs text-[color:var(--fg-muted)] inline-flex items-center justify-center gap-1"
         >
-          {open ? 'Detayları gizle' : 'Detayları göster'}
+          {open ? t('compare.hideDetails') : t('compare.showDetails')}
           <ChevronDown size={12} className={cn('transition-transform', open && 'rotate-180')} />
         </button>
 
         {open && (
           <div className="mt-3 space-y-1.5 text-sm">
-            <Row k="Net m²" v={`${p.area.net} m²`} />
-            <Row k="Oda" v={p.rooms} />
-            <Row k="Banyo" v={p.bathrooms} />
-            <Row k="Bina yaşı" v={p.buildingAge === 0 ? 'Sıfır' : `${p.buildingAge} yıl`} />
-            <Row k="m² fiyatı" v={`${CURRENCY_SYMBOLS[displayCurrency]}${formatNumber(shownSqm)}/m²`} />
-            <Row k="AI Skor" v={<strong className="text-gold-300">{(p.score.total / 10).toFixed(1)}/10</strong>} />
-            <Row k="ISTBAKU Onaylı" v={p.istbakuApproved ? '✓ Onaylı' : '—'} />
-            <Row k="Isıtma" v={p.heating} />
-            <Row k="Otopark" v={PARKING_LABEL[p.parking]} />
-            <Row k="Tapu" v={TITLE_DEED_LABEL[p.titleDeed] ?? p.titleDeed} />
+            <Row k={t('property.netArea')} v={`${p.area.net} m²`} />
+            <Row k={t('property.rooms')} v={p.rooms} />
+            <Row k={t('property.bathrooms')} v={p.bathrooms} />
+            <Row k={t('property.buildingAge')} v={p.buildingAge === 0 ? t('property.brandNew') : `${p.buildingAge} yıl`} />
+            <Row k={t('compare.row.sqmPriceShort')} v={`${CURRENCY_SYMBOLS[displayCurrency]}${formatNumber(shownSqm)}/m²`} />
+            <Row k={t('compare.row.aiScoreShort')} v={<strong className="text-gold-300">{(p.score.total / 10).toFixed(1)}/10</strong>} />
+            <Row k={t('property.approved')} v={p.istbakuApproved ? t('compare.approvedYes') : '—'} />
+            <Row k={t('property.heating')} v={p.heating} />
+            <Row k={t('property.parking')} v={PARKING_LABEL[p.parking]} />
+            <Row k={t('property.titleDeed')} v={TITLE_DEED_LABEL[p.titleDeed] ?? p.titleDeed} />
           </div>
         )}
       </CardBody>
