@@ -107,6 +107,16 @@ html, body {
   text-rendering: optimizeLegibility;
   /* Mobil tap highlight'ını kaldır */
   -webkit-tap-highlight-color: transparent;
+  /* Tarayıcı/işletim sistemi otomatik metin ölçeklemesini sabitle (Mac/iOS tutarlılığı) */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* Tur6 #2a: Mac/masaüstünde (özellikle Win %125 vs Mac %100 farkı) yazılar küçük
+   kalıyordu. lg+ ekranlarda kök font'u %6 büyüterek okunabilirliği artır; mobil/tablet
+   (taşma hassas) etkilenmez. rem-tabanlı tüm Tailwind ölçüleri orantılı büyür. */
+@media (min-width: 1024px) {
+  html { font-size: 17px; }
 }
 
 /* Tiptap zengin metin — editör ve render edilen açıklama */

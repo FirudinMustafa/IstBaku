@@ -113,7 +113,7 @@ export default async function PropertyPage({ params }: { params: Promise<{ slug:
       </div>
 
       <div className="mt-6">
-        <PropertyGallery images={property.images} has360={property.has360} video={property.video} listingNumber={formatListingNumber(property.listingNumber)} />
+        <PropertyGallery images={property.images} has360={property.has360} video={property.video} listingNumber={formatListingNumber(property.listingNumber)} approved={property.istbakuApproved || property.tier === 'premium'} />
       </div>
 
       <div className="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-6">

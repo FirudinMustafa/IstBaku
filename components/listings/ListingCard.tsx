@@ -13,6 +13,7 @@ import { timeAgo, cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/Badge';
 import { ScoreRing } from './ScoreRing';
 import { ApprovedBadge } from './ApprovedBadge';
+import { Watermark } from './Watermark';
 import { useCompare, MAX_COMPARE } from '@/lib/compare-store';
 import { useFavorites } from '@/lib/favorites-store';
 import { useToast } from '@/components/ui/Toast';
@@ -138,6 +139,7 @@ function ListingCardInner({ property: p, compact }: Props) {
         )}
 
         <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-black/10 pointer-events-none" />
+        {(p.istbakuApproved || p.tier === 'premium') && <Watermark variant="card" />}
 
         <div className="absolute top-3 left-3 right-3 flex items-start justify-between pointer-events-none">
           <div className="flex flex-col gap-1.5">

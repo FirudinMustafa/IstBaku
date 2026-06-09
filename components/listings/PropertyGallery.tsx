@@ -6,8 +6,9 @@ import { ChevronLeft, ChevronRight, Maximize2, Play, X, Image as ImageIcon } fro
 import { Badge } from '@/components/ui/Badge';
 import { cn } from '@/lib/utils';
 import { FocusTrap } from '@/components/ui/FocusTrap';
+import { Watermark } from './Watermark';
 
-export function PropertyGallery({ images, has360, video, listingNumber }: { images: string[]; has360?: boolean; video?: string; listingNumber?: string }) {
+export function PropertyGallery({ images, has360, video, listingNumber, approved }: { images: string[]; has360?: boolean; video?: string; listingNumber?: string; approved?: boolean }) {
   const [idx, setIdx] = React.useState(0);
   const [open, setOpen] = React.useState(false);
   const [tab, setTab] = React.useState<'photos' | 'video' | '360'>('photos');
@@ -144,6 +145,7 @@ export function PropertyGallery({ images, has360, video, listingNumber }: { imag
             priority
             className="object-cover group-hover:scale-[1.02] transition-transform"
           />
+          {approved && <Watermark variant="hero" />}
           {listingNumber && (
             <div className="absolute top-3 left-3">
               <Badge variant="navy" className="font-mono">#{listingNumber}</Badge>
