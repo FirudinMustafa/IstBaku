@@ -88,17 +88,17 @@ export default function ReportsPage() {
             {t('reports.pageSubtitle')}
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <Select value={country} onChange={(e) => setCountry(e.target.value as typeof country)} className="w-40">
+        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+          <Select value={country} onChange={(e) => setCountry(e.target.value as typeof country)} className="flex-1 min-w-[130px] sm:flex-none sm:w-40">
             <option value="all">{t('reports.allCountries')}</option>
             <option value="TR">🇹🇷 {t('portfolio.country.tr')}</option>
             <option value="AZ">🇦🇿 {t('portfolio.country.az')}</option>
           </Select>
-          <Select value={city} onChange={(e) => setCity(e.target.value)} className="w-40">
+          <Select value={city} onChange={(e) => setCity(e.target.value)} className="flex-1 min-w-[130px] sm:flex-none sm:w-40">
             <option value="all">{t('reports.allCities')}</option>
             {cities.map((c) => <option key={c} value={c}>{c}</option>)}
           </Select>
-          <Button variant="gold" size="md" onClick={() => window.print()}><Download size={14} /> {t('reports.pdf')}</Button>
+          <Button variant="gold" size="md" onClick={() => window.print()} className="shrink-0"><Download size={14} /> {t('reports.pdf')}</Button>
         </div>
       </div>
 
