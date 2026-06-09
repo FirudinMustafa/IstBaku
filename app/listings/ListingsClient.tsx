@@ -19,6 +19,7 @@ const MapView = dynamic(() => import('@/components/listings/MapView').then((m) =
   loading: () => <div className="h-full w-full bg-[color:var(--bg-elev)] animate-pulse" />,
 });
 import type { FilterState, Property } from '@/lib/types';
+import type { MapBounds } from '@/components/listings/MapView';
 import { cn } from '@/lib/utils';
 import { formatListingNumber, parseListingNumber } from '@/lib/listing-number';
 
@@ -161,6 +162,9 @@ export function ListingsClient({ initialListings = [], countries = [] }: Listing
   const [view, setView] = React.useState<'list' | 'map' | 'split'>('split');
   const [active, setActive] = React.useState<string | undefined>();
   const [filterSheetOpen, setFilterSheetOpen] = React.useState(false);
+  // Tur6 #3: harita görünür alanı → sol liste o bölgeyi göstersin (Airbnb tarzı)
+  const [mapBounds, setMapBounds] = React.useState<MapBounds | null>(null);
+  const [searchInArea, setSearchInArea] = React.useState(true);
   // MH-28: hide mobile filter sticky bar on scroll-down so it doesn't stack with the header.
   const [showMobileBar, setShowMobileBar] = React.useState(true);
   const lastScrollY = React.useRef(0);
@@ -188,6 +192,18 @@ export function ListingsClient({ initialListings = [], countries = [] }: Listing
 
   const results = React.useMemo(() => applyFilters(initialListings, filters, q), [filters, q, initialListings]);
   const filterCount = activeFilterCount(filters, q);
+
+  // Filtre/arama değişince harita yeni sonuçlara fit olur → eski bounds'u temizle (tüm sonuçlar görünsün).
+  React.useEffect(() => { setMapBounds(null); }, [filters, q]);
+
+  // Harita görünür alanına göre liste (Airbnb): bounds yoksa veya kapalıysa tüm sonuçlar.
+  const visibleResults = React.useMemo(() => {
+    if (!searchInArea || !mapBounds) return results;
+    return results.filter((p) =>
+      p.coords && p.coords.lat <= mapBounds.n && p.coords.lat >= mapBounds.s
+      && p.coords.lng <= mapBounds.e && p.coords.lng >= mapBounds.w,
+    );
+  }, [results, searchInArea, mapBounds]);
 
   // Madde 3: "site içi" araması için o bölgedeki mevcut site/kompleks isimleri —
   // yüklü ilanlardan (seçili şehir/ilçeye göre) distinct türetilir; yeni ilan eklendikçe büyür.
@@ -392,19 +408,30 @@ export function ListingsClient({ initialListings = [], countries = [] }: Listing
             </div>
           )}
 
-          {/* Desktop: split view */}
+          {/* Desktop: split view (Airbnb: harita oynadıkça liste o bölgeyi gösterir) */}
           {view === 'split' && (
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {results.map((p) => (
-                  <div key={p.id} onMouseEnter={() => setActive(p.id)}>
-                    <ListingCard property={p} compact />
-                  </div>
-                ))}
-                {results.length === 0 && <EmptyState />}
+              <div>
+                <div className="hidden xl:flex items-center justify-between mb-3 text-xs">
+                  <span className="text-[color:var(--fg-muted)]">
+                    {visibleResults.length} {t('listings.count')}{searchInArea && mapBounds ? ` · ${t('map.inThisArea')}` : ''}
+                  </span>
+                  <label className="inline-flex items-center gap-1.5 cursor-pointer select-none">
+                    <input type="checkbox" checked={searchInArea} onChange={(e) => setSearchInArea(e.target.checked)} className="accent-gold-400" />
+                    <span>{t('map.searchInArea')}</span>
+                  </label>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {visibleResults.map((p) => (
+                    <div key={p.id} onMouseEnter={() => setActive(p.id)}>
+                      <ListingCard property={p} compact />
+                    </div>
+                  ))}
+                  {visibleResults.length === 0 && <EmptyState />}
+                </div>
               </div>
               <div className="hidden xl:block sticky top-20 h-[calc(100vh-6rem)] rounded-2xl overflow-hidden border">
-                <MapView properties={results} activeId={active} onSelect={setActive} />
+                <MapView properties={results} activeId={active} onSelect={setActive} onBoundsChange={setMapBounds} />
               </div>
             </div>
           )}

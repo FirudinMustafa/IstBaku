@@ -12,18 +12,27 @@ import 'leaflet/dist/leaflet.css';
 import type { Property } from '@/lib/types';
 import { formatPrice } from '@/lib/currency';
 
+export interface MapBounds { n: number; s: number; e: number; w: number }
+
 interface Props {
   properties: Property[];
   activeId?: string;
   onSelect?: (id: string) => void;
+  /** Kullanıcı haritayı oynattığında görünür alan sınırlarını bildirir (Airbnb tarzı, Tur6). */
+  onBoundsChange?: (b: MapBounds) => void;
 }
 
-export function MapView({ properties, activeId, onSelect }: Props) {
+export function MapView({ properties, activeId, onSelect, onBoundsChange }: Props) {
   const containerRef = React.useRef<HTMLDivElement>(null);
   const mapRef = React.useRef<any>(null);
   const markersRef = React.useRef<Map<string, any>>(new Map());
   const onSelectRef = React.useRef(onSelect);
   onSelectRef.current = onSelect;
+  const onBoundsChangeRef = React.useRef(onBoundsChange);
+  onBoundsChangeRef.current = onBoundsChange;
+  // Programatik hareketleri (fitBounds/setView) kullanıcı hareketinden ayır →
+  // sol listeyi yalnızca KULLANICI pan/zoom yapınca filtrele (geri besleme döngüsü yok).
+  const programmaticRef = React.useRef(false);
 
   // Track latest props so the async init effect can read them without restart.
   const propsRef = React.useRef({ properties, activeId });
@@ -50,6 +59,11 @@ export function MapView({ properties, activeId, onSelect }: Props) {
         zoomControl: true,
         scrollWheelZoom: true,
         preferCanvas: true,
+        // Tur6: pürüzsüz/kademesiz zoom (Airbnb hissi)
+        zoomSnap: 0.25,
+        zoomDelta: 0.5,
+        wheelPxPerZoomLevel: 120,
+        wheelDebounceTime: 40,
       }).setView([40.7, 36], 5);
 
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -58,6 +72,13 @@ export function MapView({ properties, activeId, onSelect }: Props) {
       }).addTo(map);
 
       mapRef.current = map;
+
+      // Kullanıcı pan/zoom bitince görünür alanı bildir (programatik hareketleri atla).
+      map.on('moveend', () => {
+        if (programmaticRef.current) { programmaticRef.current = false; return; }
+        const b = map.getBounds();
+        onBoundsChangeRef.current?.({ n: b.getNorth(), s: b.getSouth(), e: b.getEast(), w: b.getWest() });
+      });
 
       // After mount, force a size recalc once styles settle.
       requestAnimationFrame(() => {
@@ -129,12 +150,15 @@ export function MapView({ properties, activeId, onSelect }: Props) {
     });
 
     // Fit bounds only when there are multiple markers and we're not zoomed in.
+    // programmaticRef ile bu hareketin sol listeyi tetiklememesini sağla.
     if (ps.length > 1) {
       try {
         const bounds = L.latLngBounds(ps.map((p) => [p.coords.lat, p.coords.lng]));
+        programmaticRef.current = true;
         map.fitBounds(bounds, { padding: [40, 40], maxZoom: 12, animate: false });
-      } catch {}
+      } catch { programmaticRef.current = false; }
     } else if (ps.length === 1) {
+      programmaticRef.current = true;
       map.setView([ps[0].coords.lat, ps[0].coords.lng], 13, { animate: false });
     }
   }
