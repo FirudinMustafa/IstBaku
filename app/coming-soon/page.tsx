@@ -4,11 +4,11 @@ import { Card, CardBody } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { T } from '@/components/i18n/T';
+import { localizedMetadata } from '@/lib/metadata-i18n';
 
-export const metadata = {
-  title: 'Çok Yakında — ISTBAKU',
-  description: 'Bu sayfa yakında yayında.',
-};
+export async function generateMetadata() {
+  return localizedMetadata('meta.comingSoon.title', 'meta.comingSoon.desc');
+}
 
 export default async function ComingSoonPage({
   searchParams,

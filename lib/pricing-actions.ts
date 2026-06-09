@@ -2,7 +2,7 @@
 
 import { db } from '@/db/client';
 import { auditLog } from '@/db/schema';
-import { getCurrentAdmin } from './auth-actions';
+import { getCurrentAdmin, requireAdminRole } from './auth-actions';
 import { setPrices, getAllPrices, PRICE_KEYS, type PriceKey } from './pricing';
 import { revalidatePath } from 'next/cache';
 
@@ -14,7 +14,9 @@ import { revalidatePath } from 'next/cache';
 export async function updatePricingAction(
   updates: Partial<Record<PriceKey, number>>,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
-  const admin = await getCurrentAdmin();
+  // adminScope session'a güvenmek "Yetkisiz." bug'ına yol açıyordu; rol-tabanlı
+  // doğrulama (DB) ile super_admin/admin her durumda kaydedebilsin.
+  const admin = (await getCurrentAdmin()) ?? (await requireAdminRole(['admin', 'super_admin']));
   if (!admin) return { ok: false, error: 'Yetkisiz.' };
 
   // Yalnızca bilinen anahtarları, makul aralıkta (0–10.000 USD = 1.000.000 cent) al.

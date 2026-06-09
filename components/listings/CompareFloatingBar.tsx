@@ -6,10 +6,12 @@ import { usePathname } from 'next/navigation';
 import { GitCompare, X, ArrowRight } from 'lucide-react';
 import { useCompare, MAX_COMPARE } from '@/lib/compare-store';
 import { cn } from '@/lib/utils';
+import { useLang } from '@/components/layout/LangProvider';
 
 export function CompareFloatingBar() {
   const pathname = usePathname();
   const compare = useCompare();
+  const { t } = useLang();
   const [mounted, setMounted] = React.useState(false);
 
   React.useEffect(() => setMounted(true), []);
@@ -30,12 +32,12 @@ export function CompareFloatingBar() {
         <div className="inline-flex items-center gap-1.5 text-sm">
           <GitCompare size={15} className="text-gold-300" />
           <span className="font-semibold">{compare.count}</span>
-          <span className="text-[color:var(--fg-muted)] text-xs hidden sm:inline">/ {MAX_COMPARE} seçili</span>
+          <span className="text-[color:var(--fg-muted)] text-xs hidden sm:inline">/ {MAX_COMPARE} {t('compare.selected')}</span>
         </div>
         <button
           type="button"
           onClick={() => compare.clear()}
-          aria-label="Karşılaştırma listesini temizle"
+          aria-label={t('compare.removeAll')}
           className="touch-target min-h-11 min-w-11 -m-1 p-1 rounded-lg hover:bg-[color:var(--bg-card-hover)] flex items-center justify-center text-[color:var(--fg-muted)]"
         >
           <X size={16} aria-hidden="true" />
@@ -51,7 +53,7 @@ export function CompareFloatingBar() {
               : 'bg-[color:var(--bg-elev)] text-[color:var(--fg-muted)] cursor-not-allowed pointer-events-none',
           )}
         >
-          Karşılaştır <ArrowRight size={14} />
+          {t('compare.cta')} <ArrowRight size={14} />
         </Link>
       </div>
     </div>

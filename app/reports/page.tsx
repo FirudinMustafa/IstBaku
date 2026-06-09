@@ -8,9 +8,12 @@ import {
 import { Card, CardBody } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
-import { Select } from '@/components/ui/Input';
+import { Select, Input, Textarea } from '@/components/ui/Input';
+import { Modal } from '@/components/ui/Modal';
+import { useToast } from '@/components/ui/Toast';
 import { REGIONS } from '@/lib/data/regions';
 import { useLang } from '@/components/layout/LangProvider';
+import { submitDemoRequestAction } from '@/lib/report-actions';
 
 const TREND = [
   { m: 'Eki', tr: 100, az: 100 },
@@ -42,7 +45,25 @@ const PROFILE = [
 
 export default function ReportsPage() {
   const { t } = useLang();
+  const { toast } = useToast();
   const [country, setCountry] = React.useState<'all' | 'TR' | 'AZ'>('all');
+  // B2B demo talep modalı (Tur6 #1d)
+  const [demoOpen, setDemoOpen] = React.useState(false);
+  const [demo, setDemo] = React.useState({ name: '', email: '', company: '', message: '' });
+  const [demoBusy, setDemoBusy] = React.useState(false);
+
+  async function sendDemo() {
+    setDemoBusy(true);
+    const res = await submitDemoRequestAction(demo);
+    setDemoBusy(false);
+    if (res.ok) {
+      setDemoOpen(false);
+      setDemo({ name: '', email: '', company: '', message: '' });
+      toast({ variant: 'success', title: t('reports.demo.sent'), description: t('reports.demo.sentDesc') });
+    } else {
+      toast({ variant: 'error', title: t('common.error'), description: res.error });
+    }
+  }
   const regions = REGIONS.filter((r) => country === 'all' || r.country === country)
     .sort((a, b) => b.demandIndex - a.demandIndex)
     .slice(0, 8);
@@ -171,10 +192,20 @@ export default function ReportsPage() {
         <h3 className="mt-3 text-2xl font-bold">{t('reports.b2b.title')}</h3>
         <p className="mt-2 text-navy-200 max-w-2xl">{t('reports.b2b.body')}</p>
         <div className="mt-5 flex flex-wrap gap-3">
-          <Button variant="gold">{t('reports.b2b.demo')}</Button>
-          <Button variant="outline" className="bg-white/5 text-white border-white/20">{t('reports.b2b.sample')}</Button>
+          <Button variant="gold" onClick={() => setDemoOpen(true)}>{t('reports.b2b.demo')}</Button>
+          <Button variant="outline" className="bg-white/5 text-white border-white/20" onClick={() => window.print()}>{t('reports.b2b.sample')}</Button>
         </div>
       </div>
+
+      <Modal open={demoOpen} onClose={() => setDemoOpen(false)} title={t('reports.demo.title')}>
+        <div className="space-y-3">
+          <Input label={t('reports.demo.name')} value={demo.name} onChange={(e) => setDemo((d) => ({ ...d, name: e.target.value }))} />
+          <Input label={t('reports.demo.email')} type="email" value={demo.email} onChange={(e) => setDemo((d) => ({ ...d, email: e.target.value }))} />
+          <Input label={t('reports.demo.company')} value={demo.company} onChange={(e) => setDemo((d) => ({ ...d, company: e.target.value }))} />
+          <Textarea label={t('reports.demo.message')} rows={3} value={demo.message} onChange={(e) => setDemo((d) => ({ ...d, message: e.target.value }))} />
+          <Button variant="gold" className="w-full" onClick={sendDemo} loading={demoBusy}>{t('reports.demo.send')}</Button>
+        </div>
+      </Modal>
     </div>
   );
 }

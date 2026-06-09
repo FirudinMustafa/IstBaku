@@ -1,11 +1,12 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import {
-  MapPin, BedDouble, Bath, Maximize2, Building2, ShieldCheck,
+  MapPin, BedDouble, Bath, Maximize2, Building2,
   Eye, Sparkles, Car, Trees, Waves, Dumbbell, Hash,
 } from 'lucide-react';
 import { PropertyHeaderActions } from '@/components/listings/PropertyHeaderActions';
 import { BackButton } from '@/components/listings/BackButton';
+import { ApprovedBadge } from '@/components/listings/ApprovedBadge';
 import { getListingBySlug, getListingByNumber, getSimilarListings, getAgentById, getAllSlugs } from '@/lib/db-queries';
 import { formatListingNumber, parseListingNumber } from '@/lib/listing-number';
 import { sanitizeHtml } from '@/lib/sanitize';
@@ -89,11 +90,7 @@ export default async function PropertyPage({ params }: { params: Promise<{ slug:
           <div className="flex flex-wrap items-center gap-2 mb-2">
             <Badge variant="outline"><E g="purpose" v={property.purpose} /></Badge>
             <Badge variant="outline"><E g="type" v={property.type} /></Badge>
-            {(property.istbakuApproved || property.tier === 'premium') && (
-              <Badge variant="success">
-                <ShieldCheck size={11} /> <T k="property.approved" />
-              </Badge>
-            )}
+            {(property.istbakuApproved || property.tier === 'premium') && <ApprovedBadge />}
             {property.tier === 'guclu' && <Badge variant="ai"><E g="tier" v="guclu" /></Badge>}
             {property.has360 && <Badge variant="navy"><T k="property.tour360" /></Badge>}
           </div>

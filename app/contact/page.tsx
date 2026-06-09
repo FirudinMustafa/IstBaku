@@ -2,11 +2,11 @@ import { Phone, Mail, Clock, Instagram, Send } from 'lucide-react';
 import { Card, CardBody } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { T } from '@/components/i18n/T';
+import { localizedMetadata } from '@/lib/metadata-i18n';
 
-export const metadata = {
-  title: 'İletişim — ISTBAKU',
-  description: 'ISTBAKU ile iletişime geçin: telefon, e-posta ve sosyal medya.',
-};
+export async function generateMetadata() {
+  return localizedMetadata('meta.contact.title', 'meta.contact.desc');
+}
 
 const PHONES = [
   { label: '+90 552 814 24 17', href: 'tel:+905528142417' },

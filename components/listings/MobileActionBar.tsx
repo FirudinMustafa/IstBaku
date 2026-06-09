@@ -8,6 +8,7 @@ import { useCurrency } from '@/lib/currency-store';
 import { cn } from '@/lib/utils';
 import { useFavorites } from '@/lib/favorites-store';
 import { useToast } from '@/components/ui/Toast';
+import { useLang } from '@/components/layout/LangProvider';
 
 interface Props {
   property: Property;
@@ -19,6 +20,7 @@ interface Props {
 export function MobileActionBar({ property: p, agent, onOpenAppointment, onOpenMessage }: Props) {
   const favorites = useFavorites();
   const { toast } = useToast();
+  const { t } = useLang();
   const { currency: displayCurrency } = useCurrency();
   const fav = favorites.has(p.id);
   const [shared, setShared] = React.useState(false);
@@ -30,10 +32,10 @@ export function MobileActionBar({ property: p, agent, onOpenAppointment, onOpenM
   async function toggleFav() {
     const r = await favorites.toggle(p.id);
     if (!r.ok) {
-      toast({ variant: 'error', title: 'Giriş yapmalısın', description: 'Favoriler için hesap gerekli.' });
+      toast({ variant: 'error', title: t('toast.loginRequired.title'), description: t('toast.loginRequired.fav') });
       return;
     }
-    toast({ variant: 'success', title: r.favorited ? 'Favorilere eklendi' : 'Favorilerden çıkarıldı' });
+    toast({ variant: 'success', title: r.favorited ? t('mobileBar.favAdded') : t('mobileBar.favRemoved') });
   }
 
   async function share() {
@@ -47,10 +49,10 @@ export function MobileActionBar({ property: p, agent, onOpenAppointment, onOpenM
     try {
       await navigator.clipboard.writeText(url);
       setShared(true);
-      toast({ variant: 'success', title: 'Bağlantı kopyalandı' });
+      toast({ variant: 'success', title: t('mobileBar.linkCopied') });
       setTimeout(() => setShared(false), 1800);
     } catch {
-      toast({ variant: 'error', title: 'Kopyalanamadı' });
+      toast({ variant: 'error', title: t('mobileBar.copyFailed') });
     }
   }
 
@@ -81,7 +83,7 @@ export function MobileActionBar({ property: p, agent, onOpenAppointment, onOpenM
           onClick={toggleFav}
           // PF-11: standardize aria-label + add aria-pressed + data-testid so
           // the mobile favorite button is testable and SR-friendly.
-          aria-label={fav ? 'Favorilerden çıkar' : 'Favorilere ekle'}
+          aria-label={fav ? t('card.favRemove') : t('card.favAdd')}
           aria-pressed={fav}
           data-testid="favorite-toggle"
           data-favorite-state={fav ? 'on' : 'off'}
@@ -95,7 +97,7 @@ export function MobileActionBar({ property: p, agent, onOpenAppointment, onOpenM
 
         <button
           onClick={share}
-          aria-label="Paylaş"
+          aria-label={t('common.share')}
           className="touch-target size-10 rounded-xl border border-[color:var(--border-strong)] bg-[color:var(--bg-elev)] flex items-center justify-center active:scale-95 transition-transform shrink-0"
         >
           {shared ? <Check size={16} className="text-success" /> : <Share2 size={16} />}
@@ -103,7 +105,7 @@ export function MobileActionBar({ property: p, agent, onOpenAppointment, onOpenM
 
         <button
           onClick={onOpenMessage}
-          aria-label="Mesaj gönder"
+          aria-label={t('mobileBar.sendMessage')}
           className="touch-target size-10 rounded-xl border border-[color:var(--border-strong)] bg-[color:var(--bg-elev)] flex items-center justify-center active:scale-95 transition-transform shrink-0"
         >
           <MessageCircle size={16} />
@@ -112,7 +114,7 @@ export function MobileActionBar({ property: p, agent, onOpenAppointment, onOpenM
         {agent && (
           <a
             href={`tel:${agent.phone}`}
-            aria-label="Telefonla ara"
+            aria-label={t('mobileBar.call')}
             className="touch-target size-10 rounded-xl bg-success/15 border border-success/40 text-success flex items-center justify-center active:scale-95 transition-transform shrink-0"
           >
             <Phone size={16} />
@@ -123,7 +125,7 @@ export function MobileActionBar({ property: p, agent, onOpenAppointment, onOpenM
           onClick={onOpenAppointment}
           className="touch-target h-10 px-3 rounded-xl bg-gradient-to-br from-gold-300 to-gold-500 text-navy-900 font-semibold inline-flex items-center gap-1 text-xs active:scale-95 transition-transform shadow-[0_4px_12px_-2px_rgba(212,168,67,0.5)] shrink-0"
         >
-          <Calendar size={14} /> Randevu
+          <Calendar size={14} /> {t('mobileBar.appointment')}
         </button>
       </div>
     </div>

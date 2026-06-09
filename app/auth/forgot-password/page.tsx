@@ -2,11 +2,11 @@ import { Mail } from 'lucide-react';
 import { Card, CardBody } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { ForgotPasswordForm } from './ForgotPasswordForm';
+import { localizedMetadata } from '@/lib/metadata-i18n';
 
-export const metadata = {
-  title: 'Şifremi Unuttum — ISTBAKU',
-  description: 'E-postanı gir, sıfırlama linkini gönderelim.',
-};
+export async function generateMetadata() {
+  return localizedMetadata('meta.forgot.title', 'meta.forgot.desc');
+}
 
 /**
  * MH-33: Server component shell — form interactivity is the client island only.

@@ -571,3 +571,24 @@ export async function getCurrentAdmin(): Promise<{ id: string; name: string; ema
     role: session.role ?? '',
   };
 }
+
+/**
+ * Oturumdaki kullanıcının DB rolüne göre admin yetkisini doğrular — adminScope
+ * bayrağından BAĞIMSIZ. (Bazı admin yazma aksiyonlarında session adminScope düşmüş
+ * olsa bile, rol gerçekten admin/super_admin ise işlemi engellememek için.)
+ * `roles` ile gerekli minimum rol kümesi verilir.
+ */
+export async function requireAdminRole(
+  roles: string[] = ['admin', 'super_admin'],
+): Promise<{ id: string; name: string; email: string; role: string } | null> {
+  const session = await getSession();
+  if (!session.userId) return null;
+  try {
+    const [u] = await db.select().from(users).where(eq(users.id, session.userId)).limit(1);
+    if (!u || u.status === 'suspended' || !roles.includes(u.role)) return null;
+    return { id: u.id, name: u.name, email: u.email, role: u.role };
+  } catch (err) {
+    console.error('requireAdminRole error', err);
+    return null;
+  }
+}

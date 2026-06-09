@@ -6,13 +6,13 @@ import { getPublishedBlogPosts } from '@/lib/blog-actions';
 import { Badge } from '@/components/ui/Badge';
 import { Card, CardBody } from '@/components/ui/Card';
 import { T } from '@/components/i18n/T';
+import { localizedMetadata } from '@/lib/metadata-i18n';
 
 export const revalidate = 1800; // ISR 30 min
 
-export const metadata: Metadata = {
-  title: 'Blog & Haberler',
-  description: 'Emlak piyasasi analizleri, yatirim rehberleri ve sektordeki son gelismeler.',
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return localizedMetadata('meta.blog.title', 'meta.blog.desc');
+}
 
 const CATEGORIES = [
   { key: undefined, tk: 'common.all' },

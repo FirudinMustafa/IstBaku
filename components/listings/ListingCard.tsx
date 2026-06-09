@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import {
-  Heart, MapPin, Maximize2, BedDouble, Bath, Sparkles, ShieldCheck, Video, Eye, Play, GitCompare, Check,
+  Heart, MapPin, Maximize2, BedDouble, Bath, Sparkles, Video, Eye, Play, GitCompare, Check,
 } from 'lucide-react';
 import type { Property } from '@/lib/types';
 import { formatPrice, convert } from '@/lib/currency';
@@ -12,6 +12,7 @@ import { useCurrency } from '@/lib/currency-store';
 import { timeAgo, cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/Badge';
 import { ScoreRing } from './ScoreRing';
+import { ApprovedBadge } from './ApprovedBadge';
 import { useCompare, MAX_COMPARE } from '@/lib/compare-store';
 import { useFavorites } from '@/lib/favorites-store';
 import { useToast } from '@/components/ui/Toast';
@@ -140,11 +141,9 @@ function ListingCardInner({ property: p, compact }: Props) {
 
         <div className="absolute top-3 left-3 right-3 flex items-start justify-between pointer-events-none">
           <div className="flex flex-col gap-1.5">
-            {/* Tek birleşik rozet: premium VEYA onaylı → "İstBaku Onaylı" */}
+            {/* Tur6 #1b: yazı yok — sadece rozet, hover'da açıklama tooltip'i */}
             {(p.istbakuApproved || p.tier === 'premium') && (
-              <Badge variant="success" className="bg-success/25">
-                <ShieldCheck size={11} aria-hidden="true" /> {t('home.premium.badge')}
-              </Badge>
+              <span className="pointer-events-auto"><ApprovedBadge size={13} /></span>
             )}
             {p.tier === 'guclu' && <Badge variant="ai">{t('enums.tier.guclu')}</Badge>}
           </div>

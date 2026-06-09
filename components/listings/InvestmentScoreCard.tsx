@@ -45,13 +45,12 @@ export function InvestmentScoreCard({ property: p }: { property: Property }) {
             { l: t('score.demand'), v: p.score.demand, d: t('score.demandDesc') },
           ].map((m) => (
             <div key={m.l}>
-              <div className="flex items-center justify-between text-sm">
-                <div>
-                  <span className="font-medium">{m.l}</span>
-                  <span className="ml-2 text-xs text-[color:var(--fg-faint)]">{m.d}</span>
-                </div>
-                <span className="font-bold text-gold-300 tabular-nums">{(m.v / 10).toFixed(1)} / 10</span>
+              {/* Mobil-dostu: etiket + skor üst satır, açıklama kendi satırında (Tur6 #1e) */}
+              <div className="flex items-center justify-between gap-2 text-sm">
+                <span className="font-medium">{m.l}</span>
+                <span className="font-bold text-gold-300 tabular-nums shrink-0">{(m.v / 10).toFixed(1)} / 10</span>
               </div>
+              <div className="text-xs text-[color:var(--fg-faint)] mt-0.5">{m.d}</div>
               <div className="h-1.5 rounded-full bg-[color:var(--bg-card-hover)] mt-1.5 overflow-hidden">
                 <div className="h-full bg-gradient-to-r from-gold-400 to-gold-300 transition-[width] duration-1000" style={{ width: `${m.v}%` }} />
               </div>

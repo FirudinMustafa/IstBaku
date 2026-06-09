@@ -3,11 +3,11 @@ import { Sparkles } from 'lucide-react';
 import { Card, CardBody } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { SignUpForm } from './SignUpForm';
+import { localizedMetadata } from '@/lib/metadata-i18n';
 
-export const metadata = {
-  title: 'Kayıt Ol — ISTBAKU',
-  description: '2 dakikada hesap aç, AI eşleşmeye hemen başla.',
-};
+export async function generateMetadata() {
+  return localizedMetadata('meta.signup.title', 'meta.signup.desc');
+}
 
 /**
  * MH-33: Server component shell — only the form interactivity lives in the client island.

@@ -1,12 +1,11 @@
 import type { Metadata } from 'next';
 import { Building2, Target, Compass } from 'lucide-react';
 import { T } from '@/components/i18n/T';
+import { localizedMetadata } from '@/lib/metadata-i18n';
 
-export const metadata: Metadata = {
-  title: 'Hakkımızda — ISTBAKU',
-  description:
-    'ISTBAKU\'nun hikayesi, misyonu ve vizyonu. İstanbul ve Bakü\'den dünyaya uzanan, teknoloji ve güven temelli emlak platformu.',
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return localizedMetadata('meta.about.title', 'meta.about.desc');
+}
 
 // Kurumsal içerik — i18n anahtarlarıyla (Madde 1). Dil değişince çevrilir.
 export default function HakkimizdaPage() {
