@@ -55,8 +55,9 @@ export default async function HomePage() {
   return (
     <>
       <Hero />
-      <div className="-mt-8 sm:-mt-12 relative z-10">
-        <CurrencyConverter />
+      {/* Tur6 #4g: döviz ↔ blog yer değişimi — blog hero altına geldi. */}
+      <div className="relative z-10 pt-6 sm:pt-8">
+        <BlogNews posts={blogPosts} />
       </div>
       {/* Hero sonrası bölümler için ince marka renk dokusu — büyük, bulanık
           tan/navy lekeleri + çok hafif grid dokusu (boş zemini canlandırır). */}
@@ -99,7 +100,7 @@ export default async function HomePage() {
           <PremiumListings listings={premiumListings} />
           <Calculators />
           <CountryGuides initial={guides} />
-          <BlogNews posts={blogPosts} />
+          <CurrencyConverter />
         </div>
       </div>
       <CTA />

@@ -5,7 +5,6 @@ import {
   Eye, Sparkles, Car, Trees, Waves, Dumbbell, Hash,
 } from 'lucide-react';
 import { PropertyHeaderActions } from '@/components/listings/PropertyHeaderActions';
-import { BackButton } from '@/components/listings/BackButton';
 import { ApprovedBadge } from '@/components/listings/ApprovedBadge';
 import { getListingBySlug, getListingByNumber, getSimilarListings, getAgentById, getAllSlugs } from '@/lib/db-queries';
 import { formatListingNumber, parseListingNumber } from '@/lib/listing-number';
@@ -71,9 +70,6 @@ export default async function PropertyPage({ params }: { params: Promise<{ slug:
       {/* PP-04: pb-44 (was pb-32) gives the mobile bottom-bar + global bottom-nav +
           iOS safe-area enough headroom so the agent's "Mesaj gönder" CTA at the end
           of the page is never visually clipped behind the sticky CTA. */}
-      <div className="mb-3">
-        <BackButton fallback="/listings" />
-      </div>
 
       <nav className="text-xs text-[color:var(--fg-muted)] mb-4 flex items-center gap-1.5 flex-wrap">
         <Link href="/" className="hover:text-gold-300"><T k="common.home" /></Link>

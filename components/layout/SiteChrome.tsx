@@ -6,6 +6,7 @@ import { Footer } from './Footer';
 import { MobileBottomNav } from './MobileBottomNav';
 import { ChatbotFAB } from '@/components/chat/ChatbotFAB';
 import { CompareFloatingBar } from '@/components/listings/CompareFloatingBar';
+import { BackButton } from '@/components/listings/BackButton';
 import { useLang } from './LangProvider';
 
 export function SiteChrome({ children }: { children: React.ReactNode }) {
@@ -40,7 +41,15 @@ export function SiteChrome({ children }: { children: React.ReactNode }) {
         {t('a11y.skip')}
       </a>
       <Header />
-      <main id="main" className="min-h-[calc(100vh-4rem)]">{children}</main>
+      <main id="main" className="min-h-[calc(100vh-4rem)]">
+        {/* Tur6 #4a: ana sayfa hariç tüm alt sayfalarda sol-üst "Geri" butonu */}
+        {pathname !== '/' && (
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-3 -mb-1">
+            <BackButton fallback="/" />
+          </div>
+        )}
+        {children}
+      </main>
       <Footer />
       <CompareFloatingBar />
       <ChatbotFAB />

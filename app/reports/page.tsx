@@ -47,6 +47,7 @@ export default function ReportsPage() {
   const { t } = useLang();
   const { toast } = useToast();
   const [country, setCountry] = React.useState<'all' | 'TR' | 'AZ'>('all');
+  const [city, setCity] = React.useState<string>('all'); // Tur6 #4f: rapor şehri
   // B2B demo talep modalı (Tur6 #1d)
   const [demoOpen, setDemoOpen] = React.useState(false);
   const [demo, setDemo] = React.useState({ name: '', email: '', company: '', message: '' });
@@ -64,7 +65,16 @@ export default function ReportsPage() {
       toast({ variant: 'error', title: t('common.error'), description: res.error });
     }
   }
-  const regions = REGIONS.filter((r) => country === 'all' || r.country === country)
+  // Seçili ülkedeki şehirler (şehir seçici için)
+  const cities = React.useMemo(() => {
+    const set = new Set(REGIONS.filter((r) => country === 'all' || r.country === country).map((r) => r.city));
+    return [...set].sort((a, b) => a.localeCompare(b, 'tr'));
+  }, [country]);
+  // Ülke değişince şehir seçimini sıfırla
+  React.useEffect(() => { setCity('all'); }, [country]);
+
+  const regions = REGIONS
+    .filter((r) => (country === 'all' || r.country === country) && (city === 'all' || r.city === city))
     .sort((a, b) => b.demandIndex - a.demandIndex)
     .slice(0, 8);
 
@@ -79,12 +89,16 @@ export default function ReportsPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Select value={country} onChange={(e) => setCountry(e.target.value as typeof country)} className="w-48">
+          <Select value={country} onChange={(e) => setCountry(e.target.value as typeof country)} className="w-40">
             <option value="all">{t('reports.allCountries')}</option>
             <option value="TR">🇹🇷 {t('portfolio.country.tr')}</option>
             <option value="AZ">🇦🇿 {t('portfolio.country.az')}</option>
           </Select>
-          <Button variant="gold" size="md"><Download size={14} /> {t('reports.pdf')}</Button>
+          <Select value={city} onChange={(e) => setCity(e.target.value)} className="w-40">
+            <option value="all">{t('reports.allCities')}</option>
+            {cities.map((c) => <option key={c} value={c}>{c}</option>)}
+          </Select>
+          <Button variant="gold" size="md" onClick={() => window.print()}><Download size={14} /> {t('reports.pdf')}</Button>
         </div>
       </div>
 
