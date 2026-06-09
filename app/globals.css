@@ -119,6 +119,12 @@ html, body {
   html { font-size: 17px; }
 }
 
+/* Blog gömülü video (Tur6 #4e) — responsive 16:9 iframe + görsel */
+.prose figure { margin: 1.5rem 0; }
+.prose figure iframe,
+.prose iframe { width: 100%; aspect-ratio: 16 / 9; height: auto; border: 0; border-radius: 1rem; }
+.prose figure img { width: 100%; height: auto; border-radius: 1rem; }
+
 /* Tiptap zengin metin — editör ve render edilen açıklama */
 .tiptap-content p { margin: 0 0 0.5rem; }
 .tiptap-content p:last-child { margin-bottom: 0; }

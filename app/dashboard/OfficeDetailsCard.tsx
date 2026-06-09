@@ -7,7 +7,7 @@ import { Input, Label } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { useToast } from '@/components/ui/Toast';
 import { useLang } from '@/components/layout/LangProvider';
-import { getOfficeDetails, saveOfficeDetailsAction } from '@/lib/office-public-actions';
+import { getOfficeDetails, saveOfficeDetailsAction, updateOfficeCoverAction } from '@/lib/office-public-actions';
 
 type Doc = { name: string; url: string };
 
@@ -18,6 +18,10 @@ export function OfficeDetailsCard() {
   const [saving, setSaving] = React.useState(false);
   const [uploading, setUploading] = React.useState(false);
   const fileRef = React.useRef<HTMLInputElement>(null);
+  // Tur6 #4d: ofis kapak fotoğrafı
+  const [coverPhoto, setCoverPhoto] = React.useState<string | null>(null);
+  const [coverUploading, setCoverUploading] = React.useState(false);
+  const coverRef = React.useRef<HTMLInputElement>(null);
 
   const [taxId, setTaxId] = React.useState('');
   const [companyName, setCompanyName] = React.useState('');
@@ -38,10 +42,35 @@ export function OfficeDetailsCard() {
         setOfficeCity(d.officeCity ?? '');
         setOfficeDistrict(d.officeDistrict ?? '');
         setDocs(d.docs ?? []);
+        setCoverPhoto(d.coverPhoto ?? null);
       }
       setLoading(false);
     })();
   }, []);
+
+  async function onPickCover(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setCoverUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      const res = await fetch('/api/kyc/upload', { method: 'POST', body: fd });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.url) { toast({ variant: 'error', title: t('office.docs.uploadFailed'), description: data.error }); return; }
+      const r = await updateOfficeCoverAction(data.url);
+      if (r.ok) { setCoverPhoto(data.url); toast({ variant: 'success', title: t('office.cover.saved') }); }
+      else toast({ variant: 'error', title: t('common.error'), description: r.error });
+    } finally {
+      setCoverUploading(false);
+    }
+  }
+
+  async function removeCover() {
+    const r = await updateOfficeCoverAction(null);
+    if (r.ok) setCoverPhoto(null);
+  }
 
   async function onPickDocs(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? []);
@@ -82,6 +111,26 @@ export function OfficeDetailsCard() {
       <CardBody className="space-y-4">
         <div className="flex items-center gap-2 font-semibold"><FileCheck2 size={16} className="text-gold-300" /> {t('office.docs.title')}</div>
         <p className="text-xs text-[color:var(--fg-muted)]">{t('office.docs.hint')}</p>
+
+        {/* Tur6 #4d: kapak fotoğrafı */}
+        <div>
+          <Label>{t('office.cover.label')}</Label>
+          <div className="relative mt-1 h-32 rounded-xl overflow-hidden border bg-gradient-to-br from-navy-700 to-navy-900">
+            {coverPhoto && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={coverPhoto} alt="" className="absolute inset-0 w-full h-full object-cover" />
+            )}
+            <div className="absolute bottom-2 right-2 flex gap-2">
+              {coverPhoto && (
+                <Button variant="outline" size="sm" className="bg-black/40 text-white border-white/30" onClick={removeCover}><X size={13} /></Button>
+              )}
+              <input ref={coverRef} type="file" accept="image/*" className="hidden" onChange={onPickCover} />
+              <Button variant="gold" size="sm" onClick={() => coverRef.current?.click()} disabled={coverUploading}>
+                {coverUploading ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />} {t('office.cover.upload')}
+              </Button>
+            </div>
+          </div>
+        </div>
 
         <div className="grid sm:grid-cols-2 gap-3">
           <div><Label>{t('office.docs.companyName')}</Label><Input value={companyName} onChange={(e) => setCompanyName(e.target.value)} maxLength={200} /></div>

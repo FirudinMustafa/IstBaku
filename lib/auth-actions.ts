@@ -40,6 +40,7 @@ export interface PublicUser {
   premium: boolean;
   emailVerified: boolean;
   kycStatus: DbUser['kycStatus'];
+  privateAccess: string; // none | requested | approved | rejected (Tur6 #4c)
   avatar: string | null;
   createdAt: string;
 }
@@ -48,6 +49,7 @@ function toPublic(u: DbUser): PublicUser {
   return {
     id: u.id, name: u.name, email: u.email, role: u.role,
     premium: u.premium, emailVerified: u.emailVerified, kycStatus: u.kycStatus,
+    privateAccess: u.privateAccess ?? 'none',
     avatar: u.avatar, createdAt: u.createdAt.toISOString(),
   };
 }

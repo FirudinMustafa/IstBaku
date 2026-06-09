@@ -30,15 +30,22 @@ export default async function OfficePage({ params }: { params: Promise<{ id: str
   const profile = await getOfficeProfile(id);
   if (!profile) notFound();
 
-  const { agent, listings, reviews, ratingAvg, reviewCount } = profile;
+  const { agent, listings, reviews, ratingAvg, reviewCount, coverPhoto } = profile;
 
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 sm:py-10 space-y-8">
-      {/* Ofis başlığı */}
-      <Card>
+      {/* Tur6 #4d: Facebook tarzı kapak fotoğrafı */}
+      <div className="relative h-36 sm:h-52 rounded-2xl overflow-hidden border bg-gradient-to-br from-navy-700 to-navy-900">
+        {coverPhoto && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={coverPhoto} alt="" className="absolute inset-0 w-full h-full object-cover" />
+        )}
+      </div>
+      {/* Ofis başlığı — avatar kapağın üstüne taşan dairesel foto */}
+      <Card className="-mt-12 relative z-10">
         <CardBody className="flex flex-col sm:flex-row sm:items-center gap-4">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={agent.avatar} alt="" width={80} height={80} className="size-20 rounded-2xl object-cover bg-[color:var(--bg-elev)]" />
+          <img src={agent.avatar} alt="" width={96} height={96} className="size-24 -mt-12 sm:-mt-16 rounded-full object-cover bg-[color:var(--bg-elev)] border-4 border-[color:var(--bg-card)] shadow-lg" />
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
               <h1 className="text-2xl font-bold truncate">{agent.agency || agent.name}</h1>

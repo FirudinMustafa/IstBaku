@@ -4,7 +4,7 @@ import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { ArrowLeft, Calendar, User, Tag, Newspaper } from 'lucide-react';
 import { getBlogPostBySlug, getPublishedBlogPosts } from '@/lib/blog-actions';
-import { sanitizeHtml } from '@/lib/sanitize';
+import { sanitizeBlogHtml } from '@/lib/sanitize';
 import { Badge } from '@/components/ui/Badge';
 import { Card, CardBody } from '@/components/ui/Card';
 import { T } from '@/components/i18n/T';
@@ -146,7 +146,7 @@ export default async function BlogPostPage({ params }: Props) {
               prose-blockquote:border-gold-400/40 prose-blockquote:text-[color:var(--fg-muted)]
               prose-code:text-gold-300 prose-code:bg-[color:var(--bg-elev)] prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded
               prose-li:text-[color:var(--fg-muted)]"
-            dangerouslySetInnerHTML={{ __html: sanitizeHtml(post.content, { maxLength: 50_000 }) }}
+            dangerouslySetInnerHTML={{ __html: sanitizeBlogHtml(post.content, { maxLength: 50_000 }) }}
           />
         </div>
       </article>

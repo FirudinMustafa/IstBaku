@@ -65,6 +65,8 @@ export const users = pgTable('users', {
   emailVerified: boolean('email_verified').notNull().default(false),
   premium: boolean('premium').notNull().default(false),
   kycStatus: kycStatusEnum('kyc_status').notNull().default('none'),
+  // Gizli portföy erişimi (Tur6 #4c): none | requested | approved | rejected
+  privateAccess: varchar('private_access', { length: 16 }).notNull().default('none'),
   avatar: text('avatar'),
   bio: text('bio'),
   preferredLang: languageEnum('preferred_lang').notNull().default('tr'),
@@ -94,6 +96,7 @@ export const agents = pgTable('agents', {
   // Ofis public profili (Madde 12/13)
   about: text('about'),                                   // Hakkımızda metni
   photos: jsonb('photos').$type<string[]>().notNull().default([]), // Ofis fotoğrafları
+  coverPhoto: text('cover_photo'),                        // Ofis kapak fotoğrafı (Facebook tarzı, Tur6 #4d)
   // Ofis kaydı / KYC alanları (Madde 5/6)
   officeCountry: varchar('office_country', { length: 8 }),
   taxId: varchar('tax_id', { length: 64 }),               // Vergi kimlik no / VÖEN
@@ -307,9 +310,21 @@ export const listings = pgTable('listings', {
 // FAVORITES & SAVED SEARCHES
 // ============================================================
 
+// Favori koleksiyonları (sahibinden tarzı sekme/klasör) — Tur6 #4b
+export const favoriteCollections = pgTable('favorite_collections', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  name: varchar('name', { length: 80 }).notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => ({
+  userIdx: index('idx_fav_collections_user').on(t.userId),
+}));
+
 export const favorites = pgTable('favorites', {
   userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   listingId: uuid('listing_id').notNull().references(() => listings.id, { onDelete: 'cascade' }),
+  // Hangi koleksiyona ait (null = "Tüm favoriler"). Koleksiyon silinince null'a düşer.
+  collectionId: uuid('collection_id').references(() => favoriteCollections.id, { onDelete: 'set null' }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 }, (t) => ({
   pk: primaryKey({ columns: [t.userId, t.listingId] }),

@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus, Pencil, Save, EyeOff, Newspaper, Clock, ImagePlus, X as XIcon } from 'lucide-react';
+import { Plus, Pencil, Save, EyeOff, Newspaper, Clock, ImagePlus, Video, X as XIcon } from 'lucide-react';
 import { Card, CardBody } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input, Label, Select, Textarea } from '@/components/ui/Input';
@@ -95,6 +95,59 @@ function PublisherForm({ editingId, initialForm, onClose, onSaved }: {
     }
   }
 
+  // Tur6 #4e: içeriğe gömülü görsel
+  const contentImgRef = React.useRef<HTMLInputElement>(null);
+  const [insertingImg, setInsertingImg] = React.useState(false);
+
+  async function insertContentImage(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (contentImgRef.current) contentImgRef.current.value = '';
+    if (!file) return;
+    setInsertingImg(true);
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      const res = await fetch('/api/blog/upload', { method: 'POST', body: fd });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || t('blog.pub.toast.uploadFail'));
+      patch('content', `${form.content}\n<figure><img src="${json.url}" alt="" /></figure>\n`);
+      toast({ variant: 'success', title: t('blog.pub.toast.uploaded') });
+    } catch (err: unknown) {
+      toast({ variant: 'error', title: err instanceof Error ? err.message : t('blog.pub.toast.uploadErr') });
+    } finally {
+      setInsertingImg(false);
+    }
+  }
+
+  // YouTube/Vimeo URL → güvenli gömülü iframe (yalnızca bu sağlayıcılar)
+  function toEmbed(url: string): string | null {
+    try {
+      const u = new URL(url.trim());
+      const host = u.hostname.replace(/^www\./, '');
+      if (host === 'youtube.com' || host === 'm.youtube.com') {
+        const id = u.searchParams.get('v');
+        if (id) return `https://www.youtube-nocookie.com/embed/${encodeURIComponent(id)}`;
+      }
+      if (host === 'youtu.be') {
+        const id = u.pathname.slice(1);
+        if (id) return `https://www.youtube-nocookie.com/embed/${encodeURIComponent(id)}`;
+      }
+      if (host === 'vimeo.com') {
+        const id = u.pathname.split('/').filter(Boolean)[0];
+        if (id && /^\d+$/.test(id)) return `https://player.vimeo.com/video/${id}`;
+      }
+    } catch { /* geçersiz URL */ }
+    return null;
+  }
+
+  function insertContentVideo() {
+    const url = window.prompt(t('blog.pub.videoPrompt'));
+    if (!url) return;
+    const embed = toEmbed(url);
+    if (!embed) { toast({ variant: 'error', title: t('blog.pub.videoInvalid') }); return; }
+    patch('content', `${form.content}\n<figure><iframe src="${embed}" width="560" height="315" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></figure>\n`);
+  }
+
   async function handleSave() {
     if (!form.title.trim()) {
       toast({ variant: 'error', title: t('blog.pub.toast.titleRequired') });
@@ -131,7 +184,18 @@ function PublisherForm({ editingId, initialForm, onClose, onSaved }: {
       </div>
       <div>
         <Label>{t('blog.pub.content')}</Label>
+        {/* Tur6 #4e: metin + gömülü foto/video */}
+        <div className="flex flex-wrap gap-2 mb-2">
+          <Button type="button" variant="outline" size="sm" onClick={() => contentImgRef.current?.click()} disabled={insertingImg}>
+            <ImagePlus size={14} /> {insertingImg ? t('common.loading') : t('blog.pub.addImage')}
+          </Button>
+          <Button type="button" variant="outline" size="sm" onClick={insertContentVideo}>
+            <Video size={14} /> {t('blog.pub.addVideo')}
+          </Button>
+          <input ref={contentImgRef} type="file" accept="image/jpeg,image/png,image/webp,image/avif" className="hidden" onChange={insertContentImage} />
+        </div>
         <Textarea rows={10} value={form.content} onChange={(e) => patch('content', e.target.value)} placeholder={t('blog.pub.contentPh')} className="font-mono text-sm" />
+        <p className="mt-1 text-xs text-[color:var(--fg-muted)]">{t('blog.pub.contentHint')}</p>
       </div>
       <div>
         <Label>{t('blog.pub.cover')}</Label>

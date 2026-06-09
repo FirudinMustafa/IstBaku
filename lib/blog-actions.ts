@@ -6,7 +6,7 @@ import { eq, desc, and } from 'drizzle-orm';
 import { getCurrentUser, getCurrentAdmin } from './auth-actions';
 import { revalidatePath } from 'next/cache';
 import { slugify } from './utils';
-import { sanitizeText } from './sanitize';
+import { sanitizeText, sanitizeBlogHtml } from './sanitize';
 
 /* ------------------------------------------------------------------ */
 /* Types                                                               */
@@ -52,7 +52,8 @@ export async function createBlogPostAction(
   const safeTitle = sanitizeText(input.title, { maxLength: 300 });
   if (!safeTitle) return { ok: false, error: 'Başlık gerekli.' };
   const safeExcerpt = sanitizeText(input.excerpt, { maxLength: 1_000 }) ?? '';
-  const safeContent = sanitizeText(input.content, { maxLength: 50_000 });
+  // Tur6 #4e: zengin içerik (metin+foto+video) — güvenli HTML olarak sakla.
+  const safeContent = sanitizeBlogHtml(input.content, { maxLength: 50_000 });
   if (!safeContent) return { ok: false, error: 'İçerik gerekli.' };
 
   try {
@@ -116,7 +117,8 @@ export async function updateBlogPostAction(
   const safeTitle = sanitizeText(input.title, { maxLength: 300 });
   if (!safeTitle) return { ok: false, error: 'Başlık gerekli.' };
   const safeExcerpt = sanitizeText(input.excerpt, { maxLength: 1_000 }) ?? '';
-  const safeContent = sanitizeText(input.content, { maxLength: 50_000 });
+  // Tur6 #4e: zengin içerik (metin+foto+video) — güvenli HTML olarak sakla.
+  const safeContent = sanitizeBlogHtml(input.content, { maxLength: 50_000 });
   if (!safeContent) return { ok: false, error: 'İçerik gerekli.' };
 
   try {

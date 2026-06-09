@@ -107,6 +107,49 @@ export function sanitizeHtml(input: unknown, opts: { maxLength?: number } = {}):
   return clean.trim();
 }
 
+/**
+ * Blog içeriği için zengin ama güvenli HTML temizleyici (Tur6 #4e). Metin
+ * biçimlendirme + başlık + alıntı + LİSTE + GÖRSEL (https) + LİNK (https) +
+ * yalnızca YouTube/Vimeo gömülü VİDEO (iframe whitelist). Script/onclick vb. atılır.
+ */
+export function sanitizeBlogHtml(input: unknown, opts: { maxLength?: number } = {}): string {
+  if (input == null) return '';
+  let s = String(input);
+  const maxLen = opts.maxLength ?? 50_000;
+  if (s.length > maxLen) s = s.slice(0, maxLen);
+
+  const clean = sanitizeHtmlLib(s, {
+    allowedTags: [
+      'p', 'br', 'b', 'strong', 'i', 'em', 'u', 's', 'ul', 'ol', 'li', 'span',
+      'a', 'img', 'h2', 'h3', 'blockquote', 'figure', 'figcaption', 'hr', 'iframe',
+    ],
+    allowedAttributes: {
+      '*': ['style'],
+      a: ['href', 'target', 'rel'],
+      img: ['src', 'alt'],
+      iframe: ['src', 'width', 'height', 'allow', 'allowfullscreen', 'frameborder'],
+    },
+    allowedStyles: {
+      '*': {
+        color: [/^#(0x)?[0-9a-f]+$/i, /^rgb\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*\)$/, /^[a-z]+$/i],
+        'text-align': [/^(left|right|center)$/],
+      },
+    },
+    allowedSchemes: ['https', 'mailto'],
+    allowedSchemesByTag: { img: ['https'], iframe: ['https'] },
+    // Yalnızca güvenli video sağlayıcıları gömülebilir
+    allowedIframeHostnames: ['www.youtube.com', 'youtube.com', 'www.youtube-nocookie.com', 'player.vimeo.com'],
+    transformTags: {
+      a: (tagName, attribs) => ({
+        tagName,
+        attribs: { ...attribs, target: '_blank', rel: 'noopener noreferrer nofollow' },
+      }),
+    },
+    disallowedTagsMode: 'discard',
+  });
+  return clean.trim();
+}
+
 /** Validates an http(s) URL; returns null for everything else. */
 export function sanitizeHttpUrl(input: unknown, opts: { maxLength?: number } = {}): string | null {
   if (input == null) return null;

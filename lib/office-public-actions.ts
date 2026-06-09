@@ -23,6 +23,7 @@ export interface OfficeProfile {
   reviews: OfficeReview[];
   ratingAvg: number;
   reviewCount: number;
+  coverPhoto: string | null; // Tur6 #4d
 }
 
 /** Ofis kontrolü: users.bio '[office]' içermeli. */
@@ -84,7 +85,26 @@ export async function getOfficeProfile(userId: string): Promise<OfficeProfile | 
     reviews: officeReviews,
     ratingAvg,
     reviewCount,
+    coverPhoto: row.agent.coverPhoto ?? null,
   };
+}
+
+/** Ofis kapak fotoğrafını günceller (Tur6 #4d). url null → kaldırır. */
+export async function updateOfficeCoverAction(url: string | null): Promise<{ ok: boolean; error?: string }> {
+  const user = await getCurrentUser();
+  if (!user) return { ok: false, error: 'Giriş yapmalısın.' };
+  const [u] = await db.select({ bio: users.bio }).from(users).where(eq(users.id, user.id)).limit(1);
+  if (!u || !isOfficeBio(u.bio)) return { ok: false, error: 'Bu özellik sadece ofis hesapları içindir.' };
+  // Yalnızca güvenli blob URL'leri kabul et
+  const safe = url && /^https:\/\/[^/]+\.blob\.vercel-storage\.com\//.test(url) ? url : null;
+  if (url && !safe) return { ok: false, error: 'Geçersiz görsel.' };
+  try {
+    await db.update(agents).set({ coverPhoto: safe }).where(eq(agents.userId, user.id));
+    return { ok: true };
+  } catch (err) {
+    console.error('updateOfficeCover', err);
+    return { ok: false, error: 'Kapak güncellenemedi.' };
+  }
 }
 
 /** agents.rating + reviews_count'u onaylı yorumlardan yeniden hesaplar. */
@@ -149,6 +169,7 @@ export interface OfficeDetails {
   officeCity: string | null;
   officeDistrict: string | null;
   docs: { name: string; url: string }[];
+  coverPhoto: string | null;
 }
 
 /** Giriş yapan ofisin kayıt/KYC detaylarını döndürür (Madde 5/6). */
@@ -168,6 +189,7 @@ export async function getOfficeDetails(): Promise<OfficeDetails | null> {
     officeCity: a.officeCity ?? null,
     officeDistrict: a.officeDistrict ?? null,
     docs: (a.officeDocs ?? []) as { name: string; url: string }[],
+    coverPhoto: a.coverPhoto ?? null,
   };
 }
 

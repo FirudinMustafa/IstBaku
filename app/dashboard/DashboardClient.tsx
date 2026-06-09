@@ -19,6 +19,7 @@ import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { PaymentModal, type PendingPayment } from '@/components/payments/PaymentModal';
 import { ListingCard } from '@/components/listings/ListingCard';
+import { FavoritesPanel } from '@/components/dashboard/FavoritesPanel';
 import { ScoreRing } from '@/components/listings/ScoreRing';
 import { useNotifications } from '@/lib/notifications-store';
 import { signOutAction, type PublicUser } from '@/lib/auth-actions';
@@ -26,7 +27,6 @@ import { upgradeTierAction, deleteListingAction, deleteSavedSearchAction } from 
 import { renewListingDateAction, requestPremiumUpgradeAction } from '@/lib/listing-owner-actions';
 import { markNotificationReadAction, markAllNotificationsReadAction } from '@/lib/notification-actions';
 import { useCompare } from '@/lib/compare-store';
-import { useFavorites } from '@/lib/favorites-store';
 import { formatPrice, formatUsdCents } from '@/lib/currency';
 import { useCurrency } from '@/lib/currency-store';
 import { timeAgo, cn } from '@/lib/utils';
@@ -84,7 +84,7 @@ interface PaymentUI {
 interface Props {
   initialUser: PublicUser;
   myListings: Property[];
-  favorites: Property[];
+  favorites: (Property & { collectionId: string | null })[];
   savedSearches: SavedSearchUI[];
   notifications: NotificationUI[];
   dailyBookings: DailyBookingUI[];
@@ -202,7 +202,7 @@ export function DashboardClient({ initialUser, myListings, favorites, savedSearc
           {tab === 'listings' && <MyListings listings={myListings} prices={prices} />}
           {tab === 'daily-bookings' && <DailyBookingsTab initial={dailyBookings} />}
           {tab === 'appointments' && <MyAppointmentsClient appointments={myAppointments} />}
-          {tab === 'favorites' && <Favorites favorites={favorites} />}
+          {tab === 'favorites' && <FavoritesPanel favorites={favorites} />}
           {tab === 'compare' && <CompareTab />}
           {tab === 'matches' && <Matches />}
           {tab === 'searches' && <SavedSearches initial={savedSearches} />}
@@ -521,47 +521,6 @@ function MyListings({ listings, prices }: { listings: Property[]; prices: { rene
           </>
         )}
       </Modal>
-    </div>
-  );
-}
-
-function Favorites({ favorites }: { favorites: Property[] }) {
-  const router = useRouter();
-  const fav = useFavorites();
-  const { toast } = useToast();
-  const { t } = useLang();
-
-  if (favorites.length === 0) {
-    return (
-      <Card><CardBody className="text-center py-12">
-        <Heart size={28} className="text-danger mx-auto" />
-        <h3 className="mt-3 text-lg font-semibold">{t('dash.fav.emptyTitle')}</h3>
-        <p className="mt-1 text-sm text-[color:var(--fg-muted)]">{t('dash.fav.emptyDesc')}</p>
-        <Link href="/listings"><Button variant="gold" size="md" className="mt-5">{t('dash.fav.emptyButton')}</Button></Link>
-      </CardBody></Card>
-    );
-  }
-
-  return (
-    <div>
-      <div className="flex items-center justify-between mb-4">
-        <div className="text-sm text-[color:var(--fg-muted)]">{favorites.length} {t('dash.fav.count')}</div>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="text-danger hover:bg-danger/10"
-          onClick={async () => {
-            for (const p of favorites) await fav.toggle(p.id);
-            toast({ variant: 'info', title: t('dash.toast.favCleared') });
-            router.refresh();
-          }}
-        >
-          {t('dash.fav.clearAll')}
-        </Button>
-      </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {favorites.map((p) => <ListingCard key={p.id} property={p} compact />)}
-      </div>
     </div>
   );
 }

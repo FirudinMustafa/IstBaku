@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import { getPrivateListings } from '@/lib/db-queries';
 import { getCurrentUser } from '@/lib/auth-actions';
 import { PrivatePortfolioClient } from './PrivatePortfolioClient';
+import { PrivateAccessRequest } from './PrivateAccessRequest';
 import { T } from '@/components/i18n/T';
 
 export const dynamic = 'force-dynamic';
@@ -31,6 +32,11 @@ export default async function PrivatePortfolioPage() {
         </a>
       </div>
     );
+  }
+
+  // Tur6 #4c: KYC onaylı olsa bile gizli portföy ayrıca admin onayı ister.
+  if (user.privateAccess !== 'approved') {
+    return <PrivateAccessRequest status={user.privateAccess} />;
   }
 
   let listings: Awaited<ReturnType<typeof getPrivateListings>> = [];
