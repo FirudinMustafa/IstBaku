@@ -100,6 +100,7 @@ export const agents = pgTable('agents', {
   // Ofis kaydı / KYC alanları (Madde 5/6)
   officeCountry: varchar('office_country', { length: 8 }),
   taxId: varchar('tax_id', { length: 64 }),               // Vergi kimlik no / VÖEN
+  nationalId: varchar('national_id', { length: 32 }),     // TC Kimlik No / FIN kod (şahıs şirketi)
   companyName: text('company_name'),                      // Şirket ismi
   authorizationNo: varchar('authorization_no', { length: 64 }), // Yetki belge no
   officeAddress: text('office_address'),                  // Açık adres
@@ -244,6 +245,9 @@ export const listings = pgTable('listings', {
   adaNo: varchar('ada_no', { length: 64 }),             // Ada no
   kaks: real('kaks'),                                   // KAKS / Emsal (örn. 1.5)
   gabari: varchar('gabari', { length: 32 }),            // Gabari (yükseklik; "Serbest" olabilir)
+  // Bina (type='bina') alanları — toplam bağımsız bölüm sayısı (Madde 3). Kullanım
+  // amacı (konut/ticari/karma) bina'da `imarDurumu` kolonu yeniden kullanılarak saklanır.
+  totalUnits: integer('total_units'),                   // Toplam daire / bağımsız bölüm
   dues: integer('dues'),                                // Aidat (aylık)
   deposit: integer('deposit'),                          // Depozito (kiralık)
   images: jsonb('images').$type<string[]>().notNull().default([]),
@@ -273,6 +277,8 @@ export const listings = pgTable('listings', {
   approvalLevel: integer('approval_level').notNull().default(0),  // 0/1/2/3
   aiVerified: boolean('ai_verified').notNull().default(false),
   isPrivate: boolean('is_private').notNull().default(false),
+  // Madde 20: onayda fotoğraflara kalıcı watermark gömülünce true (idempotency).
+  watermarked: boolean('watermarked').notNull().default(false),
   // Counters
   views: integer('views').notNull().default(0),
   favoritesCount: integer('favorites_count').notNull().default(0),

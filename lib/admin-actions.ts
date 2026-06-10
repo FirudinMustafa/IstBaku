@@ -86,9 +86,35 @@ export async function approveListingAction(requestId: string, level: 1 | 2 | 3 =
       updatedAt: new Date(),
     }).where(eq(s.listings.id, listingId));
   } else {
-    // Yayın onayı — rozete dokunma.
+    // Yayın onayı — rozete dokunma. Madde 20: onaylanan ilanın fotoğraflarına
+    // kalıcı (dosyaya gömülü) watermark uygula. Idempotent: `watermarked` flag'i.
+    const [lst] = await db.select({
+      images: s.listings.images,
+      coverSrc: s.listings.coverSrc,
+      coverKind: s.listings.coverKind,
+      watermarked: s.listings.watermarked,
+    }).from(s.listings).where(eq(s.listings.id, listingId)).limit(1);
+
+    let stamped: { images: string[]; coverSrc: string | null } | null = null;
+    if (lst && !lst.watermarked && Array.isArray(lst.images) && lst.images.length > 0) {
+      try {
+        const { watermarkListingImages } = await import('./watermark');
+        const newImages = await watermarkListingImages(lst.images);
+        // Kapak fotoğrafı images içindeyse yeni (damgalı) URL'sine yönlendir.
+        let newCover = lst.coverSrc;
+        if (lst.coverKind === 'photo' && lst.coverSrc) {
+          const ci = lst.images.indexOf(lst.coverSrc);
+          if (ci >= 0) newCover = newImages[ci];
+        }
+        stamped = { images: newImages, coverSrc: newCover };
+      } catch (e) {
+        console.warn('[approve watermark]', e);
+      }
+    }
+
     await db.update(s.listings).set({
       approvalStatus: 'approved',
+      ...(stamped ? { images: stamped.images, coverSrc: stamped.coverSrc, watermarked: true } : {}),
       updatedAt: new Date(),
     }).where(eq(s.listings.id, listingId));
   }

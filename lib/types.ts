@@ -152,11 +152,13 @@ export interface Property {
   adaNo?: string;
   kaks?: number;
   gabari?: string;
+  totalUnits?: number;   // Bina (type='bina') toplam daire sayısı
   images: string[];
   video?: string;
   has360: boolean;
   aiVerified: boolean;
   istbakuApproved: boolean;
+  watermarked?: boolean;        // Madde 20: fotoğraflara kalıcı watermark gömüldü mü
   approvalLevel: 0 | 1 | 2 | 3; // 0 none, 1 ID, 2 deed, 3 site visit
   publishedAt: string;
   views: number;

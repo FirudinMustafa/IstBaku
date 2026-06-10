@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils';
 import { FocusTrap } from '@/components/ui/FocusTrap';
 import { Watermark } from './Watermark';
 
-export function PropertyGallery({ images, has360, video, listingNumber, approved }: { images: string[]; has360?: boolean; video?: string; listingNumber?: string; approved?: boolean }) {
+export function PropertyGallery({ images, has360, video, listingNumber, approved, watermarked }: { images: string[]; has360?: boolean; video?: string; listingNumber?: string; approved?: boolean; watermarked?: boolean }) {
   const [idx, setIdx] = React.useState(0);
   const [open, setOpen] = React.useState(false);
   const [tab, setTab] = React.useState<'photos' | 'video' | '360'>('photos');
@@ -145,7 +145,7 @@ export function PropertyGallery({ images, has360, video, listingNumber, approved
             priority
             className="object-cover group-hover:scale-[1.02] transition-transform"
           />
-          {approved && <Watermark variant="hero" />}
+          {approved && !watermarked && <Watermark variant="hero" />}
           {listingNumber && (
             <div className="absolute top-3 left-3">
               <Badge variant="navy" className="font-mono">#{listingNumber}</Badge>

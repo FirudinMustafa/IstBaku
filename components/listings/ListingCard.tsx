@@ -139,7 +139,7 @@ function ListingCardInner({ property: p, compact }: Props) {
         )}
 
         <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-black/10 pointer-events-none" />
-        {(p.istbakuApproved || p.tier === 'premium') && <Watermark variant="card" />}
+        {(p.istbakuApproved || p.tier === 'premium') && !p.watermarked && <Watermark variant="card" />}
 
         <div className="absolute top-3 left-3 right-3 flex items-start justify-between pointer-events-none">
           <div className="flex flex-col gap-1.5">

@@ -109,7 +109,7 @@ export default async function PropertyPage({ params }: { params: Promise<{ slug:
       </div>
 
       <div className="mt-6">
-        <PropertyGallery images={property.images} has360={property.has360} video={property.video} listingNumber={formatListingNumber(property.listingNumber)} approved={property.istbakuApproved || property.tier === 'premium'} />
+        <PropertyGallery images={property.images} has360={property.has360} video={property.video} listingNumber={formatListingNumber(property.listingNumber)} approved={property.istbakuApproved || property.tier === 'premium'} watermarked={property.watermarked} />
       </div>
 
       <div className="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -269,6 +269,20 @@ export default async function PropertyPage({ params }: { params: Promise<{ slug:
                 <DetailRow l={<T k="property.pricePerSqm" />} v={`${Math.round(property.price / Math.max(1, property.area.gross)).toLocaleString('tr-TR')} ${property.currency}/m²`} />
                 {property.adaNo && <DetailRow l={<T k="property.adaNo" />} v={property.adaNo} />}
                 {property.parcelNo && <DetailRow l={<T k="property.parcelNo" />} v={property.parcelNo} />}
+              </div>
+            </CardBody>
+          </Card>
+          )}
+
+          {/* Bina detayları (sadece type='bina') — Madde 3 */}
+          {property.type === 'bina' && (property.totalUnits != null || property.imarDurumu) && (
+          <Card>
+            <CardBody>
+              <h3 className="font-bold mb-4"><T k="wz.building.title" /></h3>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-3 text-sm font-bold">
+                {property.totalUnits != null && <DetailRow l={<T k="wz.field.totalUnits" />} v={property.totalUnits} />}
+                {property.imarDurumu && <DetailRow l={<T k="wz.field.buildingUsage" />} v={property.imarDurumu} />}
+                <DetailRow l={<T k="property.grossArea" />} v={`${property.area.gross} m²`} />
               </div>
             </CardBody>
           </Card>

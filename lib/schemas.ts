@@ -218,8 +218,9 @@ export const createListingSchema = z.object({
   deposit: z.number().int().min(0).max(1_000_000_000).optional(),
   loanEligible: z.boolean().optional(),
   groundSurvey: z.boolean().optional(),                 // Zemin etüdü (var/yok)
-  /* Arsa (type='arsa') alanları */
+  /* Arsa (type='arsa') alanları — imarDurumu bina'da kullanım amacı olarak da kullanılır (Madde 3) */
   imarDurumu: z.string().trim().max(64).optional(),
+  totalUnits: z.number().int().min(0).max(100000).optional(),  // Bina toplam daire sayısı
   paftaNo: z.string().trim().max(64).optional(),
   adaNo: z.string().trim().max(64).optional(),
   kaks: z.number().min(0).max(100).optional(),

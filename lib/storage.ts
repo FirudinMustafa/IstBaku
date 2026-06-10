@@ -114,6 +114,35 @@ export async function uploadFile(file: File, prefix = 'listings'): Promise<strin
   return `/uploads/${prefix}/${path.basename(key)}`;
 }
 
+/**
+ * Hazır bir buffer'ı (ör. sunucuda işlenmiş/watermark'lı görsel) yükler.
+ * `uploadFile` File beklediğinden, buffer tabanlı işlem için ayrı giriş noktası.
+ * Aynı MIME/boyut/magic-byte kontrollerinden geçer (Madde 20).
+ */
+export async function uploadBuffer(buffer: Buffer, declaredMime: string, prefix = 'listings'): Promise<string> {
+  const check = validateUploadBuffer(buffer, declaredMime, isPrivatePrefix(prefix));
+  if (!check.ok) throw new Error(check.error);
+
+  const ext = check.resolvedMime === 'image/png' ? 'png' : check.resolvedMime === 'image/webp' ? 'webp' : 'jpg';
+  const key = `${prefix}/${randomKeySuffix(9)}-wm.${ext}`;
+
+  if (BLOB_TOKEN) {
+    const access = isPrivatePrefix(prefix) ? 'private' : 'public';
+    const blob = await put(key, buffer, {
+      access: access as 'public',
+      token: BLOB_TOKEN,
+      contentType: check.resolvedMime,
+    });
+    return blob.url;
+  }
+
+  const uploadDir = path.join(process.cwd(), 'public', 'uploads', prefix);
+  await mkdir(uploadDir, { recursive: true });
+  const fullPath = path.join(uploadDir, path.basename(key));
+  await writeFile(fullPath, buffer);
+  return `/uploads/${prefix}/${path.basename(key)}`;
+}
+
 export async function uploadDataUrl(dataUrl: string, prefix = 'listings', filename = 'image.jpg'): Promise<string> {
   // Form Data URL'lerini File'a çevir, Blob'a yükle
   const match = dataUrl.match(/^data:([a-zA-Z0-9/+.-]+);base64,([A-Za-z0-9+/=]+)$/);

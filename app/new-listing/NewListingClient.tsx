@@ -130,6 +130,8 @@ export function NewListingClient({ countries: countryList, prices }: NewListingC
     adaNo: '',
     kaks: 0,
     gabari: '',
+    // Bina (type='bina') alanları
+    totalUnits: 0,
     ownerType: 'sahibi' as 'sahibi' | 'emlakci' | 'insaat' | 'banka',
     titleDeed: 'belirsiz' as 'kat_mulkiyeti' | 'kat_irtifaki' | 'arsa_payi' | 'cikti_belgesi' | 'belirsiz',
     occupancy: 'bos' as 'bos' | 'kiracili' | 'mulk_sahibi',
@@ -269,6 +271,23 @@ export function NewListingClient({ countries: countryList, prices }: NewListingC
     if (file.size > 60 * 1024 * 1024) {
       toast({ variant: 'error', title: t('wz.toast.videoBig'), description: t('wz.toast.videoBigDesc') });
       return;
+    }
+    // Oran tespiti (bloklamaz) — 9:16 dikey önerilir; yatay ise sadece uyarı.
+    try {
+      const probe = document.createElement('video');
+      probe.preload = 'metadata';
+      probe.muted = true;
+      probe.onloadedmetadata = () => {
+        const w = probe.videoWidth, h = probe.videoHeight;
+        if (w > 0 && h > 0 && w / h > 0.75) {
+          toast({ variant: 'info', title: t('wz.toast.videoLandscape'), description: t('wz.toast.videoLandscapeDesc') });
+        }
+        URL.revokeObjectURL(probe.src);
+      };
+      probe.onerror = () => URL.revokeObjectURL(probe.src);
+      probe.src = URL.createObjectURL(file);
+    } catch {
+      /* metadata okunamazsa sessiz geç */
     }
     const reader = new FileReader();
     reader.onload = () => setCoverVideo(String(reader.result));
@@ -476,11 +495,12 @@ export function NewListingClient({ countries: countryList, prices }: NewListingC
       deposit: form.deposit,
       loanEligible: form.loanEligible,
       groundSurvey: form.groundSurvey,
-      imarDurumu: form.type === 'arsa' ? (form.imarDurumu?.trim() || undefined) : undefined,
+      imarDurumu: (form.type === 'arsa' || form.type === 'bina') ? (form.imarDurumu?.trim() || undefined) : undefined,
       paftaNo: form.type === 'arsa' ? (form.paftaNo?.trim() || undefined) : undefined,
       adaNo: form.type === 'arsa' ? (form.adaNo?.trim() || undefined) : undefined,
       kaks: form.type === 'arsa' && form.kaks > 0 ? form.kaks : undefined,
       gabari: form.type === 'arsa' ? (form.gabari?.trim() || undefined) : undefined,
+      totalUnits: form.type === 'bina' && form.totalUnits > 0 ? form.totalUnits : undefined,
       siteName: form.inSite ? (form.siteName?.trim() || undefined) : undefined,
       coverKind: form.coverKind,
       coverPhotoIndex: Math.min(Math.max(0, form.coverPhotoIndex), Math.max(0, photos.length - 1)),
@@ -581,6 +601,7 @@ export function NewListingClient({ countries: countryList, prices }: NewListingC
       loanEligible: parsed.data.loanEligible,
       groundSurvey: parsed.data.groundSurvey,
       imarDurumu: parsed.data.imarDurumu,
+      totalUnits: parsed.data.totalUnits,
       paftaNo: parsed.data.paftaNo,
       adaNo: parsed.data.adaNo,
       kaks: parsed.data.kaks,
@@ -769,6 +790,22 @@ export function NewListingClient({ countries: countryList, prices }: NewListingC
                   <div><Label>{t('wz.field.adaNo')}</Label><Input value={form.adaNo} onChange={(e) => set({ adaNo: e.target.value })} maxLength={64} placeholder={t('wz.ph.optional')} /></div>
                   <div><Label>{t('wz.field.kaks')}</Label><Input type="number" min={0} step="0.01" value={numVal(form.kaks)} onChange={(e) => set({ kaks: numSet(e.target.value) })} placeholder={t('wz.ph.kaks')} /></div>
                   <div><Label>{t('wz.field.gabari')}</Label><Input value={form.gabari} onChange={(e) => set({ gabari: e.target.value })} maxLength={32} placeholder={t('wz.ph.gabari')} /></div>
+                </div>
+              )}
+
+              {/* Bina (type='bina') özel alanları — Madde 3 */}
+              {form.type === 'bina' && (
+                <div className="sm:col-span-2 grid sm:grid-cols-2 gap-4 rounded-xl border border-gold-400/30 bg-gold-400/5 p-4">
+                  <h3 className="sm:col-span-2 text-sm font-semibold text-gold-300">{t('wz.building.title')}</h3>
+                  <div><Label>{t('wz.field.totalUnits')}</Label><Input type="number" min={0} value={numVal(form.totalUnits)} onChange={(e) => set({ totalUnits: numSet(e.target.value) })} placeholder={t('wz.ph.totalUnits')} /></div>
+                  <div><Label>{t('wz.field.buildingUsage')}</Label>
+                    <Select value={form.imarDurumu} onChange={(e) => set({ imarDurumu: e.target.value })}>
+                      <option value="">{t('wz.usage.choose')}</option>
+                      <option value="konut">{t('wz.usage.konut')}</option>
+                      <option value="ticari">{t('wz.usage.ticari')}</option>
+                      <option value="karma">{t('wz.usage.karma')}</option>
+                    </Select>
+                  </div>
                 </div>
               )}
 
@@ -1117,6 +1154,7 @@ export function NewListingClient({ countries: countryList, prices }: NewListingC
                   <Label>{t('wz.cover.uploadVideo')}</Label>
                   <div className="rounded-lg border border-[color:var(--border)] bg-[color:var(--bg-elev)] p-3 text-[11px] text-[color:var(--fg-muted)] leading-relaxed">
                     <strong className="text-[color:var(--fg)]">{t('wz.cover.recommended')}</strong> {t('wz.cover.recommendedDesc')}
+                    <span className="block mt-1 text-gold-300">{t('wz.cover.vertical')}</span>
                   </div>
                   <input
                     ref={videoInputRef}
@@ -1127,7 +1165,7 @@ export function NewListingClient({ countries: countryList, prices }: NewListingC
                   />
                   {coverVideo ? (
                     <div className="space-y-2">
-                      <div className="aspect-video rounded-xl overflow-hidden border bg-black flex items-center justify-center">
+                      <div className="aspect-[9/16] max-w-[280px] mx-auto rounded-xl overflow-hidden border bg-black flex items-center justify-center">
                         <video src={coverVideo} muted loop autoPlay playsInline className="max-w-full max-h-full object-contain" />
                       </div>
                       <div className="flex gap-2">

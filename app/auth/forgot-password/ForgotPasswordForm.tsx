@@ -7,8 +7,10 @@ import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { forgotPasswordAction } from '@/lib/auth-actions';
 import { forgotPasswordSchema, fieldErrors } from '@/lib/schemas';
+import { useLang } from '@/components/layout/LangProvider';
 
 export function ForgotPasswordForm() {
+  const { t } = useLang();
   const [email, setEmail] = React.useState('');
   const [sent, setSent] = React.useState(false);
   const [busy, setBusy] = React.useState(false);
@@ -42,12 +44,12 @@ export function ForgotPasswordForm() {
             <Mail size={15} className="absolute left-3 top-[34px] text-[color:var(--fg-muted)] pointer-events-none z-10" aria-hidden="true" />
             <Input
               id="forgot-email"
-              label="E-posta"
+              label={t('auth.email')}
               className="pl-9"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="ornek@mail.com"
+              placeholder={t('auth.emailPh')}
               autoComplete="email"
               required
               error={errors.email}
@@ -62,7 +64,7 @@ export function ForgotPasswordForm() {
           )}
 
           <Button type="submit" variant="gold" size="lg" className="w-full" loading={busy}>
-            Sıfırlama Linki Gönder
+            {t('auth.forgot.sendBtn')}
           </Button>
         </form>
       ) : (
@@ -70,17 +72,16 @@ export function ForgotPasswordForm() {
           <div className="mx-auto size-14 rounded-full bg-success/15 text-success flex items-center justify-center">
             <CheckCircle2 size={26} aria-hidden="true" />
           </div>
-          <h2 className="text-lg font-semibold">Mail yola çıktı</h2>
+          <h2 className="text-lg font-semibold">{t('auth.forgot.sentTitle')}</h2>
           <p className="text-sm text-[color:var(--fg-muted)]">
-            Eğer <strong>{email}</strong> kayıtlıysa, kısa süre içinde sıfırlama linki içeren bir mail alacaksın.
-            Gelen kutunu (ve spam&apos;i) kontrol et — link 1 saat geçerli.
+            {t('auth.forgot.sentBody').replace('{email}', email)}
           </p>
         </div>
       )}
 
       <div className="mt-6 text-center text-sm">
         <Link href="/auth/sign-in" className="text-gold-300 hover:text-gold-400 inline-flex items-center gap-1">
-          <ArrowLeft size={13} aria-hidden="true" /> Girişe dön
+          <ArrowLeft size={13} aria-hidden="true" /> {t('auth.backToSignIn')}
         </Link>
       </div>
     </>

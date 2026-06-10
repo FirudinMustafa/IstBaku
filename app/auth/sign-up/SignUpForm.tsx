@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
   Mail, Phone, Lock, User, ChevronDown, ArrowRight, CheckCircle2, MailCheck, AlertCircle,
-  Users as UsersIcon, Briefcase, Building2,
+  Users as UsersIcon, Briefcase, Building2, Paperclip, X,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input, Label } from '@/components/ui/Input';
@@ -41,6 +41,17 @@ export function SignUpForm() {
   const [accept, setAccept] = React.useState(false);
   const [role, setRole] = React.useState<PublicSignUpRole>('user');
   const [officeCountry, setOfficeCountry] = React.useState('TR');
+  // Madde 5: ofis kaydı şirket/belge alanları
+  const [officeNationalId, setOfficeNationalId] = React.useState('');
+  const [officeTaxId, setOfficeTaxId] = React.useState('');
+  const [officeCompany, setOfficeCompany] = React.useState('');
+  const [officeAuthNo, setOfficeAuthNo] = React.useState('');
+  const [officeAddress, setOfficeAddress] = React.useState('');
+  const [officeCity, setOfficeCity] = React.useState('');
+  const [officeDistrict, setOfficeDistrict] = React.useState('');
+  const [officeDocs, setOfficeDocs] = React.useState<{ name: string; url: string }[]>([]);
+  const [docUploading, setDocUploading] = React.useState(false);
+  const docInputRef = React.useRef<HTMLInputElement>(null);
   const [pickerOpen, setPickerOpen] = React.useState(false);
   const pickerRef = React.useRef<HTMLDivElement>(null);
 
@@ -84,6 +95,13 @@ export function SignUpForm() {
       setErrors(fieldErrors(parsed));
       return;
     }
+    // Madde 5: ofis kaydında zorunlu belge/şirket alanları kontrolü.
+    if (parsed.data.role === 'office' &&
+        (!officeCompany.trim() || !officeNationalId.trim() || !officeTaxId.trim() || !officeCity.trim())) {
+      setErrors({});
+      setServerError(t('office.docs.required'));
+      return;
+    }
     setErrors({});
     setBusy(true);
     const res = await signUpAction({
@@ -96,6 +114,17 @@ export function SignUpForm() {
       role: parsed.data.role,
       // Ofis kaydında ülke (Madde 6). Diğer rollerde yok sayılır.
       country: parsed.data.role === 'office' ? officeCountry : undefined,
+      // Madde 5: ofis belge/şirket bilgileri.
+      office: parsed.data.role === 'office' ? {
+        nationalId: officeNationalId,
+        taxId: officeTaxId,
+        companyName: officeCompany,
+        authorizationNo: officeAuthNo,
+        officeAddress,
+        officeCity,
+        officeDistrict,
+        officeDocs,
+      } : undefined,
     });
     setBusy(false);
     if (!res.ok) {
@@ -105,7 +134,7 @@ export function SignUpForm() {
     setCreatedEmail(res.user.email);
     setStep('verify');
     setCode('');
-    toast({ variant: 'success', title: 'Hesap oluşturuldu', description: `${res.user.email} adresine 6 haneli doğrulama kodu gönderdik.` });
+    toast({ variant: 'success', title: t('auth.toast.created'), description: t('auth.toast.createdDesc').replace('{email}', res.user.email) });
   }
 
   async function resend() {
@@ -116,7 +145,7 @@ export function SignUpForm() {
     setResendBusy(false);
     if (r.ok) {
       setResendOk(true);
-      toast({ variant: 'success', title: 'Kod yeniden gönderildi', description: `${createdEmail} e-posta kutunu kontrol et.` });
+      toast({ variant: 'success', title: t('auth.toast.resent'), description: t('auth.toast.resentDesc').replace('{email}', createdEmail) });
     } else {
       setServerError(r.error);
     }
@@ -128,7 +157,7 @@ export function SignUpForm() {
     const parsed = verifyCodeSchema.safeParse({ email: createdEmail, code });
     if (!parsed.success) {
       const errs = fieldErrors(parsed);
-      setServerError(errs.code ?? errs.email ?? 'Lütfen 6 haneli kodu eksiksiz gir.');
+      setServerError(errs.code ?? errs.email ?? t('auth.codeIncomplete'));
       return;
     }
     setBusy(true);
@@ -138,10 +167,31 @@ export function SignUpForm() {
       setServerError(res.error);
       return;
     }
-    toast({ variant: 'success', title: 'E-posta doğrulandı', description: 'Şimdi giriş yapabilirsin.' });
+    toast({ variant: 'success', title: t('auth.toast.verified'), description: t('auth.toast.verifiedDesc') });
     setTimeout(() => {
       router.push(`/auth/sign-in?email=${encodeURIComponent(createdEmail)}`);
     }, 600);
+  }
+
+  async function uploadDoc(file: File | null) {
+    if (!file) return;
+    setDocUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      const res = await fetch('/api/auth/office-docs/upload', { method: 'POST', body: fd });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.url) {
+        setOfficeDocs((prev) => [...prev, { name: file.name, url: data.url as string }].slice(0, 12));
+      } else {
+        toast({ variant: 'error', title: t('office.docs.uploadFailed'), description: data.error });
+      }
+    } catch {
+      toast({ variant: 'error', title: t('office.docs.uploadFailed') });
+    } finally {
+      setDocUploading(false);
+      if (docInputRef.current) docInputRef.current.value = '';
+    }
   }
 
   if (step === 'verify') {
@@ -261,7 +311,7 @@ export function SignUpForm() {
             onClick={() => setPickerOpen((v) => !v)}
             aria-haspopup="listbox"
             aria-expanded={pickerOpen}
-            aria-label={`Ülke kodu: ${dial.name} (${dial.dial})`}
+            aria-label={t('auth.aria.dialCode').replace('{name}', dial.name).replace('{dial}', dial.dial)}
             className="h-10 pl-3 pr-2 rounded-xl bg-[color:var(--bg-elev)] border hover:border-[color:var(--border-strong)] inline-flex items-center gap-1.5 text-sm shrink-0"
           >
             <span aria-hidden="true">{dial.flag}</span>
@@ -284,7 +334,7 @@ export function SignUpForm() {
           </div>
 
           {pickerOpen && (
-            <div role="listbox" aria-label="Ülke kodu seç" className="absolute top-full left-0 mt-1.5 w-72 max-h-72 overflow-y-auto glass rounded-xl border shadow-2xl z-50">
+            <div role="listbox" aria-label={t('auth.aria.dialPicker')} className="absolute top-full left-0 mt-1.5 w-72 max-h-72 overflow-y-auto glass rounded-xl border shadow-2xl z-50">
               {COUNTRY_CODES.map((c) => (
                 <button
                   key={c.iso}
@@ -366,21 +416,73 @@ export function SignUpForm() {
         )}
       </div>
 
-      {/* Ofis kaydında ülke seçimi (Madde 6) — talep olunan belgeler ileride ülkeye göre değişecek */}
+      {/* Ofis kaydı (Madde 5/6) — ülke + ülkeye göre şirket/belge bilgileri */}
       {role === 'office' && (
-        <div>
-          <Label htmlFor="office-country">{t('auth.officeCountry')}</Label>
-          <select
-            id="office-country"
-            value={officeCountry}
-            onChange={(e) => setOfficeCountry(e.target.value)}
-            className="w-full h-10 px-3 rounded-xl bg-[color:var(--bg-elev)] border text-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--ring)]"
-          >
-            {COUNTRY_CODES.map((c) => (
-              <option key={c.iso} value={c.iso}>{c.flag} {c.name}</option>
-            ))}
-          </select>
-          <p className="text-[11px] text-[color:var(--fg-muted)] mt-1">{t('auth.officeCountryHint')}</p>
+        <div className="rounded-xl border border-gold-400/30 bg-gold-400/5 p-4 space-y-3">
+          <div>
+            <Label htmlFor="office-country">{t('auth.officeCountry')}</Label>
+            <select
+              id="office-country"
+              value={officeCountry}
+              onChange={(e) => setOfficeCountry(e.target.value)}
+              className="w-full h-10 px-3 rounded-xl bg-[color:var(--bg-elev)] border text-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--ring)]"
+            >
+              {COUNTRY_CODES.map((c) => (
+                <option key={c.iso} value={c.iso}>{c.flag} {c.name}</option>
+              ))}
+            </select>
+            <p className="text-[11px] text-[color:var(--fg-muted)] mt-1">{t('auth.officeCountryHint')}</p>
+          </div>
+
+          <p className="text-sm font-semibold text-gold-300">{t('office.docs.title')}</p>
+          <div className="grid sm:grid-cols-2 gap-3">
+            <Input id="office-company" label={t('office.docs.companyName')} value={officeCompany} onChange={(e) => setOfficeCompany(e.target.value)} required />
+            <Input
+              id="office-national-id"
+              label={officeCountry === 'AZ' ? t('office.id.az') : t('office.id.tr')}
+              value={officeNationalId}
+              onChange={(e) => setOfficeNationalId(e.target.value)}
+              required
+            />
+            <Input id="office-tax-id" label={t('office.docs.taxId')} value={officeTaxId} onChange={(e) => setOfficeTaxId(e.target.value)} required />
+            <Input id="office-auth-no" label={t('office.docs.authNo')} value={officeAuthNo} onChange={(e) => setOfficeAuthNo(e.target.value)} />
+            <Input id="office-city" label={t('office.docs.city')} value={officeCity} onChange={(e) => setOfficeCity(e.target.value)} required />
+            <Input id="office-district" label={t('office.docs.district')} value={officeDistrict} onChange={(e) => setOfficeDistrict(e.target.value)} />
+            <div className="sm:col-span-2">
+              <Input id="office-address" label={t('office.docs.address')} value={officeAddress} onChange={(e) => setOfficeAddress(e.target.value)} />
+            </div>
+          </div>
+
+          <div>
+            <Label>{t('office.docs.documents')}</Label>
+            <input
+              ref={docInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp,application/pdf"
+              onChange={(e) => uploadDoc(e.target.files?.[0] ?? null)}
+              className="sr-only"
+            />
+            <button
+              type="button"
+              onClick={() => docInputRef.current?.click()}
+              disabled={docUploading || officeDocs.length >= 12}
+              className="mt-1 inline-flex items-center gap-2 rounded-xl border border-[color:var(--border)] bg-[color:var(--bg-elev)] px-3 py-2 text-sm hover:border-gold-400/60 disabled:opacity-50"
+            >
+              <Paperclip size={14} /> {docUploading ? t('office.docs.uploading') : t('office.docs.upload')}
+            </button>
+            {officeDocs.length > 0 && (
+              <ul className="mt-2 space-y-1">
+                {officeDocs.map((d, i) => (
+                  <li key={`${d.url}-${i}`} className="flex items-center justify-between gap-2 rounded-lg bg-[color:var(--bg-elev)] px-2.5 py-1.5 text-xs">
+                    <span className="truncate">{d.name}</span>
+                    <button type="button" aria-label="Sil" onClick={() => setOfficeDocs((prev) => prev.filter((_, j) => j !== i))} className="text-danger shrink-0">
+                      <X size={13} />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         </div>
       )}
 
@@ -398,7 +500,7 @@ export function SignUpForm() {
             onChange={(e) => setAccept(e.target.checked)}
             className="mt-0.5 size-5 accent-gold-400 cursor-pointer shrink-0"
             aria-invalid={errors.acceptedTerms ? 'true' : undefined}
-            aria-label="Kullanım şartlarını ve KVKK aydınlatma metnini kabul ediyorum"
+            aria-label={t('auth.aria.acceptTerms')}
           />
           <span className="leading-snug">
             <Link href="/legal-guide#terms" className="text-gold-300 hover:underline">{t('auth.terms.use')}</Link> {t('auth.terms.and')}{' '}

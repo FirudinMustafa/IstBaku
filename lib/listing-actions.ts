@@ -49,6 +49,7 @@ export interface CreateListingInput {
   groundSurvey?: boolean;
   /** Arsa (type='arsa') alanları */
   imarDurumu?: string;
+  totalUnits?: number;
   paftaNo?: string;
   adaNo?: string;
   kaks?: number;
@@ -213,12 +214,15 @@ export async function createListingAction(
       deposit: input.purpose !== 'sale' && Number.isFinite(input.deposit) && (input.deposit ?? 0) > 0 ? input.deposit : null,
       loanEligible: input.purpose === 'sale' ? (input.loanEligible ?? false) : false,
       groundSurvey: input.groundSurvey ?? false,
-      // Arsa alanları (yalnız type='arsa' için anlamlı; diğer tiplerde null)
-      imarDurumu: input.type === 'arsa' ? (input.imarDurumu?.trim() || null) : null,
+      // Arsa alanları (yalnız type='arsa' için anlamlı; diğer tiplerde null).
+      // Madde 3: `imarDurumu` arsa'da imar durumu, bina'da kullanım amacı olarak kullanılır.
+      imarDurumu: (input.type === 'arsa' || input.type === 'bina') ? (input.imarDurumu?.trim() || null) : null,
       paftaNo: input.type === 'arsa' ? (input.paftaNo?.trim() || null) : null,
       adaNo: input.type === 'arsa' ? (input.adaNo?.trim() || null) : null,
       kaks: input.type === 'arsa' && Number.isFinite(input.kaks) ? input.kaks : null,
       gabari: input.type === 'arsa' ? (input.gabari?.trim() || null) : null,
+      // Bina alanı (yalnız type='bina')
+      totalUnits: input.type === 'bina' && Number.isFinite(input.totalUnits) && (input.totalUnits ?? 0) > 0 ? input.totalUnits : null,
       ownerType: input.ownerType ?? 'sahibi',
       titleDeed: input.titleDeed ?? 'belirsiz',
       status: input.occupancy ?? 'bos',

@@ -81,6 +81,17 @@ export interface SignUpInput {
   role?: 'user' | 'agent' | 'office';
   /** Ofis kaydında zorunlu — ofisin bulunduğu ülke (ISO kodu). */
   country?: string;
+  /** Ofis kaydında şirket/belge bilgileri (Madde 5). Diğer rollerde yok sayılır. */
+  office?: {
+    nationalId?: string;       // TC Kimlik No / FIN kod
+    taxId?: string;            // Vergi kimlik no / VÖEN
+    companyName?: string;
+    authorizationNo?: string;  // Yetki belge no
+    officeAddress?: string;
+    officeCity?: string;       // İl / Şəhər
+    officeDistrict?: string;   // İlçe / Rayon
+    officeDocs?: { name: string; url: string }[];
+  };
 }
 
 export async function signUpAction(
@@ -127,6 +138,29 @@ export async function signUpAction(
       ? (input.country ?? '').trim().slice(0, 8) || null
       : null;
 
+    // Madde 5: ofis kaydında şirket/belge bilgilerini temizle + doğrula.
+    const off = safeIntent === 'office' ? input.office : undefined;
+    const cleanOffice = off ? {
+      nationalId: stripCrlf(off.nationalId ?? '').trim().slice(0, 32) || null,
+      taxId: stripCrlf(off.taxId ?? '').trim().slice(0, 64) || null,
+      companyName: stripCrlf(off.companyName ?? '').trim().slice(0, 200) || null,
+      authorizationNo: stripCrlf(off.authorizationNo ?? '').trim().slice(0, 64) || null,
+      officeAddress: stripCrlf(off.officeAddress ?? '').trim().slice(0, 400) || null,
+      officeCity: stripCrlf(off.officeCity ?? '').trim().slice(0, 64) || null,
+      officeDistrict: stripCrlf(off.officeDistrict ?? '').trim().slice(0, 64) || null,
+      officeDocs: Array.isArray(off.officeDocs)
+        ? off.officeDocs
+            .filter((d) => d && typeof d.url === 'string' && /^(https?:\/\/|\/uploads\/)/.test(d.url))
+            .slice(0, 12)
+            .map((d) => ({ name: stripCrlf(d.name ?? 'belge').trim().slice(0, 120) || 'belge', url: d.url }))
+        : [],
+    } : null;
+    if (safeIntent === 'office') {
+      if (!cleanOffice?.companyName || !cleanOffice?.nationalId || !cleanOffice?.taxId || !cleanOffice?.officeCity) {
+        return { ok: false, error: 'Lütfen zorunlu ofis alanlarını doldur.' };
+      }
+    }
+
     // MH-26: rely on the DB unique index for atomic duplicate detection;
     // pre-check + insert is TOCTOU racy. The catch below translates 23505.
     let created;
@@ -157,9 +191,17 @@ export async function signUpAction(
     if (safeIntent === 'agent' || safeIntent === 'office') {
       await db.insert(agents).values({
         userId: created.id,
-        agency: safeIntent === 'office' ? name : null,
+        agency: safeIntent === 'office' ? (cleanOffice?.companyName ?? name) : null,
         officeCountry,
-        companyName: safeIntent === 'office' ? name : null,
+        // Madde 5: ofis belge/şirket alanları (KYC doğrulaması admin tarafında).
+        companyName: cleanOffice?.companyName ?? (safeIntent === 'office' ? name : null),
+        nationalId: cleanOffice?.nationalId ?? null,
+        taxId: cleanOffice?.taxId ?? null,
+        authorizationNo: cleanOffice?.authorizationNo ?? null,
+        officeAddress: cleanOffice?.officeAddress ?? null,
+        officeCity: cleanOffice?.officeCity ?? null,
+        officeDistrict: cleanOffice?.officeDistrict ?? null,
+        officeDocs: cleanOffice?.officeDocs ?? [],
       }).onConflictDoNothing();
     }
 

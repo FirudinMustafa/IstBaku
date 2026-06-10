@@ -43,7 +43,7 @@ export const AgentCard = React.forwardRef<AgentCardHandle, AgentCardProps>(funct
   const { t } = useLang();
   const [openMsg, setOpenMsg] = React.useState(false);
   const [openAppt, setOpenAppt] = React.useState(false);
-  const [msg, setMsg] = React.useState(`Merhaba, "${propertyTitle}" ilanı hâlâ müsait mi?`);
+  const [msg, setMsg] = React.useState(t('agent.defaultMsg').replace('{title}', propertyTitle));
   const [sending, setSending] = React.useState(false);
 
   async function sendMsg() {
@@ -55,21 +55,21 @@ export const AgentCard = React.forwardRef<AgentCardHandle, AgentCardProps>(funct
     });
     if (!parsed.success) {
       const errs = fieldErrors(parsed);
-      toast({ variant: 'error', title: errs.content ?? 'Mesaj geçersiz' });
+      toast({ variant: 'error', title: errs.content ?? t('agent.msgInvalid') });
       return;
     }
     setSending(true);
     const res = await sendMessageAction(parsed.data);
     setSending(false);
     if (!res.ok) {
-      toast({ variant: 'error', title: 'Mesaj gönderilemedi', description: res.error });
+      toast({ variant: 'error', title: t('agent.msgFailed'), description: res.error });
       return;
     }
     setOpenMsg(false);
     toast({
       variant: 'success',
-      title: 'Mesaj iletildi',
-      description: `${agent.name} kısa süre içinde dönüş yapacak. Konuşmayı Panelim → Mesajlar bölümünden takip edebilirsin.`,
+      title: t('agent.msgSent'),
+      description: t('agent.msgSentDesc').replace('{name}', agent.name),
     });
   }
 
@@ -219,6 +219,7 @@ function AppointmentModal({
   propertyCountry?: string | null;
 }) {
   const { toast } = useToast();
+  const { t } = useLang();
   const [bookedIso, setBookedIso] = React.useState<Set<string>>(new Set());
   const [date, setDate] = React.useState<string>(nextDates(1)[0]);
   const [time, setTime] = React.useState<string>('11:00');
@@ -254,12 +255,12 @@ function AppointmentModal({
     });
     if (!parsed.success) {
       const errs = fieldErrors(parsed);
-      const first = errs.visitorName ?? errs.visitorEmail ?? errs.visitorPhone ?? errs.date ?? errs._form ?? 'Form eksik';
-      toast({ variant: 'error', title: 'Geçersiz randevu', description: first });
+      const first = errs.visitorName ?? errs.visitorEmail ?? errs.visitorPhone ?? errs.date ?? errs._form ?? t('appt.toast.formIncomplete');
+      toast({ variant: 'error', title: t('appt.toast.invalid'), description: first });
       return;
     }
     if (isBooked(date, time)) {
-      toast({ variant: 'error', title: 'Saat dolu', description: 'Başka bir saat seçer misin?' });
+      toast({ variant: 'error', title: t('appt.toast.slotFull'), description: t('appt.toast.slotFullDesc') });
       return;
     }
     setWorking(true);
@@ -273,7 +274,7 @@ function AppointmentModal({
     });
     setWorking(false);
     if (!res.ok) {
-      toast({ variant: 'error', title: 'Randevu oluşturulamadı', description: res.error });
+      toast({ variant: 'error', title: t('appt.toast.createFailed'), description: res.error });
       if (res.error === 'Bu saat dolu.') {
         setBookedIso((cur) => new Set(cur).add(slotIso(date, time, propertyCountry)));
       }
@@ -282,32 +283,33 @@ function AppointmentModal({
     setBookedIso((cur) => new Set(cur).add(slotIso(date, time, propertyCountry)));
     toast({
       variant: 'success',
-      title: 'Randevu oluşturuldu',
-      description: `${date} · ${time} — ${agent.name} ile. Onay maili ${email} adresine gönderildi.`,
+      title: t('appt.toast.created'),
+      description: t('appt.toast.createdDesc')
+        .replace('{date}', date).replace('{time}', time)
+        .replace('{name}', agent.name).replace('{email}', email),
     });
     onClose();
   }
 
   return (
-    <Modal open={open} onClose={onClose} title="Gezinti Randevusu" size="lg">
+    <Modal open={open} onClose={onClose} title={t('appt.title')} size="lg">
       <p className="text-sm text-[color:var(--fg-muted)] mb-4">
-        <strong>{propertyTitle}</strong> ilanı için {agent.name} ile yerinde gezinti randevusu oluştur.
-        Onaylandığında {agent.name}'a, sana ve diğer kullanıcılara takvim üzerinde görünür.
+        {t('appt.intro').replace('{title}', propertyTitle).replace(/\{name\}/g, agent.name)}
       </p>
 
       <div className="grid sm:grid-cols-3 gap-3 mb-4">
         <Input
           id="appt-name"
-          label="Ad Soyad"
+          label={t('appt.name')}
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="Adınız"
+          placeholder={t('appt.namePh')}
           autoComplete="name"
           required
         />
         <Input
           id="appt-email"
-          label="E-posta"
+          label={t('appt.email')}
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
@@ -317,7 +319,7 @@ function AppointmentModal({
         />
         <Input
           id="appt-phone"
-          label="Telefon"
+          label={t('appt.phone')}
           type="tel"
           value={phone}
           onChange={(e) => setPhone(e.target.value)}
@@ -327,8 +329,8 @@ function AppointmentModal({
         />
       </div>
 
-      <Label>Tarih</Label>
-      <div role="group" aria-label="Tarih seç" className="flex gap-2 overflow-x-auto pb-2 mb-3">
+      <Label>{t('appt.dateLabel')}</Label>
+      <div role="group" aria-label={t('appt.ariaPickDate')} className="flex gap-2 overflow-x-auto pb-2 mb-3">
         {dates.map((d) => {
           const dt = new Date(d);
           const day = dt.toLocaleDateString('tr-TR', { weekday: 'short' });
@@ -352,35 +354,35 @@ function AppointmentModal({
         })}
       </div>
 
-      <Label>Saat</Label>
-      <div role="group" aria-label="Saat seç" className="grid grid-cols-4 gap-2 mb-4">
-        {TIME_SLOTS.map((t) => {
-          const taken = isBooked(date, t);
+      <Label>{t('appt.timeLabel')}</Label>
+      <div role="group" aria-label={t('appt.ariaPickTime')} className="grid grid-cols-4 gap-2 mb-4">
+        {TIME_SLOTS.map((slot) => {
+          const taken = isBooked(date, slot);
           return (
             <button
-              key={t}
+              key={slot}
               type="button"
               disabled={taken}
               aria-disabled={taken || undefined}
-              aria-pressed={time === t && !taken}
-              aria-label={taken ? `${t} dolu` : `${t} saat`}
-              onClick={() => setTime(t)}
+              aria-pressed={time === slot && !taken}
+              aria-label={taken ? t('appt.slotTaken').replace('{t}', slot) : t('appt.slotFree').replace('{t}', slot)}
+              onClick={() => setTime(slot)}
               className={`rounded-lg border px-2 py-2 text-sm transition-colors ${
-                time === t && !taken ? 'bg-gold-400 text-navy-900 border-gold-400' : 'border-[color:var(--border)]'
+                time === slot && !taken ? 'bg-gold-400 text-navy-900 border-gold-400' : 'border-[color:var(--border)]'
               } ${taken ? 'opacity-40 line-through cursor-not-allowed' : 'hover:border-gold-400/60'}`}
             >
-              {t}
+              {slot}
             </button>
           );
         })}
       </div>
 
       <p className="text-[11px] text-[color:var(--fg-faint)] mb-3">
-        Şu an üstü çizili saatler başka bir kullanıcı tarafından alındı. Karışıklık olmasın diye paylaşılan takvim canlı senkronizedir.
+        {t('appt.liveNote')}
       </p>
 
       <Button variant="gold" className="w-full" onClick={confirm} loading={working}>
-        <CalendarIcon size={14} /> {date} · {time} — Randevuyu Onayla
+        <CalendarIcon size={14} /> {date} · {time} — {t('appt.confirmBtn')}
       </Button>
     </Modal>
   );
