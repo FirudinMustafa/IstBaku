@@ -99,7 +99,7 @@ export default async function PropertyPage({ params }: { params: Promise<{ slug:
             <span>·</span>
             <span className="inline-flex items-center gap-1"><Eye size={13} /> {property.views.toLocaleString('tr-TR')} <T k="property.views" /></span>
             <span>·</span>
-            <span>{timeAgo(property.publishedAt)}</span>
+            <span suppressHydrationWarning>{timeAgo(property.publishedAt)}</span>
           </div>
         </div>
         <div className="hidden md:flex items-center gap-2">

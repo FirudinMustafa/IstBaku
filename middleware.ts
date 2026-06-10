@@ -19,6 +19,9 @@ const PROTECTED_PREFIXES = [
 // the session. Same logic for explicit "no-auth" admin sub-routes.
 const PROTECTED_EXCEPTIONS = [
   '/admin/login',
+  // Blog yazıcı başvuru sayfası herkese açık görünür; giriş gerekliliği sayfa/aksiyon
+  // içinde ele alınır (giriş yapmamışsa "giriş yap" gösterilir). M3.
+  '/publisher/apply',
 ];
 
 const SESSION_COOKIE = 'istbaku-session';

@@ -36,7 +36,12 @@ export function ApplyClient({ role, status }: { role: string; status: string }) 
 
       <Card className="mt-6">
         <CardBody className="p-6 space-y-4">
-          {role === 'blog_publisher' ? (
+          {role === 'guest' ? (
+            <div className="text-center space-y-3">
+              <p className="text-sm">{t('pub.apply.guest')}</p>
+              <Link href="/auth/sign-in"><Button variant="gold">{t('nav.signin')}</Button></Link>
+            </div>
+          ) : role === 'blog_publisher' ? (
             <div className="text-center space-y-3">
               <CheckCircle2 size={28} className="mx-auto text-success" />
               <p className="text-sm">{t('pub.apply.already')}</p>
