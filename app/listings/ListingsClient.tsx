@@ -308,8 +308,8 @@ export function ListingsClient({ initialListings = [], countries = [] }: Listing
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Bakı Səbail, Beşiktaş 3+1…"
-            aria-label="İlanlarda ara"
+            placeholder={t('filter.searchPh')}
+            aria-label={t('filter.searchAria')}
             maxLength={200}
             className="h-11 w-full pl-10 pr-9 rounded-xl bg-[color:var(--bg-elev)] border focus:outline-none focus:ring-2 focus:ring-[color:var(--ring)]"
           />

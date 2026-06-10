@@ -12,11 +12,13 @@ import { RichTextEditor } from '@/components/ui/RichTextEditor';
 import { Badge } from '@/components/ui/Badge';
 import { Modal } from '@/components/ui/Modal';
 import { useToast } from '@/components/ui/Toast';
+import { useLang } from '@/components/layout/LangProvider';
 import { updateListingAction, deleteListingAction } from '@/lib/listing-actions';
 
 export function EditListingForm({ initial }: { initial: Property }) {
   const router = useRouter();
   const { toast } = useToast();
+  const { t } = useLang();
   const [title, setTitle] = React.useState(initial.title);
   const [description, setDescription] = React.useState(initial.description);
   const [price, setPrice] = React.useState(initial.price);
@@ -77,10 +79,10 @@ export function EditListingForm({ initial }: { initial: Property }) {
 
   return (
     <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 py-6 sm:py-10 pb-24">
-      <Link href={`/property/${initial.slug}`} className="inline-flex items-center gap-1 text-sm text-[color:var(--fg-muted)] hover:text-gold-300 mb-4">
-        <ArrowLeft size={14} /> İlana dön
+      <Link href={`/property/${initial.slug}`} className="flex w-fit items-center gap-1 text-sm text-[color:var(--fg-muted)] hover:text-gold-300 mb-4">
+        <ArrowLeft size={14} /> {t('edit.back')}
       </Link>
-      <Badge variant="ai">İlan Düzenle</Badge>
+      <div><Badge variant="ai">{t('edit.badge')}</Badge></div>
       <h1 className="text-2xl sm:text-3xl font-bold tracking-tight mt-2">{initial.title}</h1>
       <p className="text-sm text-[color:var(--fg-muted)] mt-1">{initial.city} · {initial.district}</p>
 
@@ -156,7 +158,7 @@ export function EditListingForm({ initial }: { initial: Property }) {
         </div>
       </div>
 
-      <Modal open={deleteOpen} onClose={() => setDeleteOpen(false)} title="İlanı silmek istediğine emin misin?">
+      <Modal open={deleteOpen} onClose={() => setDeleteOpen(false)} title={t('edit.deleteConfirm')}>
         <div className="flex items-start gap-3 mb-4">
           <div className="size-10 rounded-full bg-danger/15 text-danger flex items-center justify-center shrink-0">
             <AlertTriangle size={18} />

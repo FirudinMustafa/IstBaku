@@ -7,8 +7,10 @@ import { Badge } from '@/components/ui/Badge';
 import { cn } from '@/lib/utils';
 import { FocusTrap } from '@/components/ui/FocusTrap';
 import { Watermark } from './Watermark';
+import { useLang } from '@/components/layout/LangProvider';
 
 export function PropertyGallery({ images, has360, video, listingNumber, approved, watermarked }: { images: string[]; has360?: boolean; video?: string; listingNumber?: string; approved?: boolean; watermarked?: boolean }) {
+  const { t } = useLang();
   const [idx, setIdx] = React.useState(0);
   const [open, setOpen] = React.useState(false);
   const [tab, setTab] = React.useState<'photos' | 'video' | '360'>('photos');
@@ -38,6 +40,16 @@ export function PropertyGallery({ images, has360, video, listingNumber, approved
       document.body.style.overflow = '';
     };
   }, [open, tab, go]);
+
+  // H3 — lightbox'ta komşu fotoları önceden yükle (geçiş kasması/flash azalır).
+  React.useEffect(() => {
+    if (!open || tab !== 'photos' || safeImages.length < 2) return;
+    [idx + 1, idx - 1].forEach((j) => {
+      const src = safeImages[(j + safeImages.length) % safeImages.length];
+      const img = new window.Image();
+      img.src = src;
+    });
+  }, [open, tab, idx, safeImages]);
 
   // Touch swipe for lightbox
   const touchStartX = React.useRef<number | null>(null);
@@ -135,7 +147,7 @@ export function PropertyGallery({ images, has360, video, listingNumber, approved
         <button
           onClick={() => { setIdx(0); setOpen(true); setTab('photos'); }}
           className="col-span-2 row-span-2 relative group bg-[color:var(--bg-card-hover)]"
-          aria-label="Galeriyi aç"
+          aria-label={t('gallery.open')}
         >
           <Image
             src={main}
@@ -198,7 +210,7 @@ export function PropertyGallery({ images, has360, video, listingNumber, approved
           <div className="flex items-center justify-between p-3 sm:p-4 safe-top">
             <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap min-w-0">
               <button onClick={() => setTab('photos')} className={cn('rounded-full px-2.5 sm:px-3 py-1 text-xs sm:text-sm', tab === 'photos' ? 'bg-gold-400 text-navy-900' : 'text-white border border-white/20')}>
-                Foto ({safeImages.length})
+                {t('gallery.photos')} ({safeImages.length})
               </button>
               {video && (
                 <button onClick={() => setTab('video')} className={cn('rounded-full px-2.5 sm:px-3 py-1 text-xs sm:text-sm', tab === 'video' ? 'bg-gold-400 text-navy-900' : 'text-white border border-white/20')}>
@@ -211,7 +223,7 @@ export function PropertyGallery({ images, has360, video, listingNumber, approved
                 </button>
               )}
             </div>
-            <button onClick={() => setOpen(false)} className="touch-target size-10 rounded-xl text-white hover:bg-white/10 flex items-center justify-center" aria-label="Kapat (ESC)">
+            <button onClick={() => setOpen(false)} className="touch-target size-10 rounded-xl text-white hover:bg-white/10 flex items-center justify-center" aria-label={t('gallery.close')}>
               <X size={22} />
             </button>
           </div>
@@ -224,11 +236,11 @@ export function PropertyGallery({ images, has360, video, listingNumber, approved
             {tab === 'photos' && (
               <>
                 {safeImages.length > 1 && (
-                  <button onClick={() => go(-1)} aria-label="Önceki" className="hidden sm:flex absolute left-4 top-1/2 -translate-y-1/2 size-12 rounded-full bg-white/10 backdrop-blur text-white hover:bg-white/20 items-center justify-center"><ChevronLeft /></button>
+                  <button onClick={() => go(-1)} aria-label={t('gallery.prev')} className="hidden sm:flex absolute left-4 top-1/2 -translate-y-1/2 size-12 rounded-full bg-white/10 backdrop-blur text-white hover:bg-white/20 items-center justify-center"><ChevronLeft /></button>
                 )}
                 <img src={safeImages[idx]} alt="" className="max-h-full max-w-full object-contain rounded-lg" />
                 {safeImages.length > 1 && (
-                  <button onClick={() => go(1)} aria-label="Sonraki" className="hidden sm:flex absolute right-4 top-1/2 -translate-y-1/2 size-12 rounded-full bg-white/10 backdrop-blur text-white hover:bg-white/20 items-center justify-center"><ChevronRight /></button>
+                  <button onClick={() => go(1)} aria-label={t('gallery.next')} className="hidden sm:flex absolute right-4 top-1/2 -translate-y-1/2 size-12 rounded-full bg-white/10 backdrop-blur text-white hover:bg-white/20 items-center justify-center"><ChevronRight /></button>
                 )}
                 <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white text-sm bg-black/60 rounded-full px-3 py-1 safe-bottom">
                   {idx + 1} / {safeImages.length}
@@ -241,7 +253,7 @@ export function PropertyGallery({ images, has360, video, listingNumber, approved
             {tab === '360' && (
               <div className="text-center text-white">
                 <div className="text-6xl mb-3" aria-hidden="true">🌐</div>
-                <p className="text-lg">360° Sanal Tur</p>
+                <p className="text-lg">{t('gallery.tour360')}</p>
                 <p className="text-sm opacity-60 mt-1">Mülk içinde interaktif gezinti — Matterport altyapısı</p>
               </div>
             )}
