@@ -2,20 +2,29 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { Newspaper, CheckCircle2, Clock } from 'lucide-react';
+import { Newspaper, CheckCircle2, Clock, Loader2 } from 'lucide-react';
 import { Card, CardBody } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Textarea } from '@/components/ui/Input';
 import { useToast } from '@/components/ui/Toast';
 import { useLang } from '@/components/layout/LangProvider';
-import { applyForPublisherAction } from '@/lib/publisher-actions';
+import { applyForPublisherAction, getMyPublisherApplication } from '@/lib/publisher-actions';
 
-export function ApplyClient({ role, status }: { role: string; status: string }) {
+export function ApplyClient() {
   const { t } = useLang();
   const { toast } = useToast();
+  const [role, setRole] = React.useState<string | null>(null); // null = yükleniyor
   const [note, setNote] = React.useState('');
   const [busy, setBusy] = React.useState(false);
-  const [done, setDone] = React.useState(status === 'pending');
+  const [done, setDone] = React.useState(false);
+
+  React.useEffect(() => {
+    let alive = true;
+    getMyPublisherApplication()
+      .then((r) => { if (!alive) return; setRole(r.role); setDone(r.status === 'pending'); })
+      .catch(() => { if (alive) setRole('guest'); });
+    return () => { alive = false; };
+  }, []);
 
   async function submit() {
     if (busy) return;
@@ -36,7 +45,9 @@ export function ApplyClient({ role, status }: { role: string; status: string }) 
 
       <Card className="mt-6">
         <CardBody className="p-6 space-y-4">
-          {role === 'guest' ? (
+          {role === null ? (
+            <div className="flex justify-center py-6"><Loader2 size={22} className="animate-spin text-gold-300" /></div>
+          ) : role === 'guest' ? (
             <div className="text-center space-y-3">
               <p className="text-sm">{t('pub.apply.guest')}</p>
               <Link href="/auth/sign-in"><Button variant="gold">{t('nav.signin')}</Button></Link>

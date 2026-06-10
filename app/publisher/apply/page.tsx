@@ -1,9 +1,9 @@
 import { ApplyClient } from './ApplyClient';
-import { getMyPublisherApplication } from '@/lib/publisher-actions';
 
 export const dynamic = 'force-dynamic';
 
-export default async function PublisherApplyPage() {
-  const me = await getMyPublisherApplication();
-  return <ApplyClient role={me.role} status={me.status} />;
+// Veri (rol/başvuru durumu) istemcide çekilir (Server Action'ı SSR'da çağırmaktan
+// kaçınılır — prod build'de hooks/#310 sorununa yol açıyordu).
+export default function PublisherApplyPage() {
+  return <ApplyClient />;
 }
