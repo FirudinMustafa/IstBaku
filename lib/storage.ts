@@ -83,35 +83,71 @@ function safeFilename(raw: string): string {
   return s;
 }
 
-export async function uploadFile(file: File, prefix = 'listings'): Promise<string> {
-  // MC-12: enforce MIME allow-list + size + magic-byte sniff before write.
-  const isKycPrefix = isPrivatePrefix(prefix);
-  const buffer = Buffer.from(await file.arrayBuffer());
-  const check = validateUploadBuffer(buffer, file.type, isKycPrefix);
-  if (!check.ok) throw new Error(check.error);
-
-  const safeName = safeFilename(file.name);
-  // Use crypto-random suffix instead of Math.random + Date.now (M-11, L-12, L-13).
-  const key = `${prefix}/${randomKeySuffix(9)}-${safeName}`;
-
+/**
+ * Blob/lokal yazma — tek nokta. `wantPrivate` ise önce private dener; bazı blob
+ * depoları private erişimi desteklemediğinden hata olursa PUBLIC'e düşer (belge
+ * yüklemenin tamamen kırılmaması için; key rastgele/tahmin edilemez). BLOB_TOKEN
+ * yoksa lokal public/uploads'a yazar (yalnız dev — Vercel'de FS salt-okunur).
+ */
+async function putBlob(key: string, buffer: Buffer, contentType: string, wantPrivate: boolean): Promise<string> {
   if (BLOB_TOKEN) {
-    // MC-11: KYC + private prefixes use access:'private'. Public listing photos
-    // stay access:'public' because they're rendered directly by <img>.
-    const access = isKycPrefix ? 'private' : 'public';
-    const blob = await put(key, buffer, {
-      access: access as 'public', // @vercel/blob types: 'public' is currently the only literal
-      token: BLOB_TOKEN,
-      contentType: check.resolvedMime,
-    });
-    return blob.url;
+    try {
+      const blob = await put(key, buffer, {
+        access: (wantPrivate ? 'private' : 'public') as 'public',
+        token: BLOB_TOKEN,
+        contentType,
+      });
+      return blob.url;
+    } catch (e) {
+      // Private desteklenmiyorsa (eski depo) public'e düş — belge yüklemesi çalışsın.
+      if (wantPrivate) {
+        const blob = await put(key, buffer, { access: 'public', token: BLOB_TOKEN, contentType });
+        return blob.url;
+      }
+      throw e;
+    }
   }
-
-  // Lokal fallback: public/uploads (dev only — private prefix still served from disk).
+  // Prod'da (Vercel) FS salt-okunur — token yoksa upload zaten çalışmaz.
+  // Sessiz EROFS yerine net, eyleme dönük hata ver.
+  if (process.env.VERCEL || process.env.NODE_ENV === 'production') {
+    throw new Error('Dosya deposu yapılandırılmamış (BLOB_READ_WRITE_TOKEN eksik). Vercel\'de Blob mağazası bağlanmalı.');
+  }
+  const prefix = key.slice(0, key.lastIndexOf('/')) || 'misc';
   const uploadDir = path.join(process.cwd(), 'public', 'uploads', prefix);
   await mkdir(uploadDir, { recursive: true });
   const fullPath = path.join(uploadDir, path.basename(key));
   await writeFile(fullPath, buffer);
   return `/uploads/${prefix}/${path.basename(key)}`;
+}
+
+export async function uploadFile(file: File, prefix = 'listings'): Promise<string> {
+  const isKycPrefix = isPrivatePrefix(prefix);
+  let buffer = Buffer.from(await file.arrayBuffer());
+  let declaredMime = file.type;
+
+  // iPhone/Mac HEIC/HEIF fotoğraflarını jpeg'e çevir (allow-list + tarayıcı uyumu).
+  const pre = sniffMime(buffer);
+  if (pre === 'image/heic') {
+    try {
+      const sharp = (await import('sharp')).default;
+      buffer = Buffer.from(await sharp(buffer).jpeg({ quality: 88 }).toBuffer());
+      declaredMime = 'image/jpeg';
+    } catch {
+      throw new Error('HEIC fotoğraf dönüştürülemedi. Lütfen JPG veya PNG yükleyin.');
+    }
+  }
+
+  // MC-12: MIME allow-list + boyut + magic-byte sniff.
+  const check = validateUploadBuffer(buffer, declaredMime, isKycPrefix);
+  if (!check.ok) throw new Error(check.error);
+
+  const safeName = safeFilename(declaredMime === 'image/jpeg' && pre === 'image/heic' ? `${file.name}.jpg` : file.name);
+  const key = `${prefix}/${randomKeySuffix(9)}-${safeName}`;
+  // NOT (MC-11 geçici gevşetme): Belge inceleme tarafı imzalı-URL altyapısına sahip
+  // değil (admin `<a href={url}>` ile açıyor) — private blob auth ister, açılamaz.
+  // Bu yüzden belgeler de PUBLIC + tahmin edilemez (72-bit rastgele) key ile saklanır;
+  // hem yükleme hem inceleme güvenilir çalışır. İmzalı-URL eklenince private'a dönülebilir.
+  return putBlob(key, buffer, check.resolvedMime, false);
 }
 
 /**
@@ -125,22 +161,7 @@ export async function uploadBuffer(buffer: Buffer, declaredMime: string, prefix 
 
   const ext = check.resolvedMime === 'image/png' ? 'png' : check.resolvedMime === 'image/webp' ? 'webp' : 'jpg';
   const key = `${prefix}/${randomKeySuffix(9)}-wm.${ext}`;
-
-  if (BLOB_TOKEN) {
-    const access = isPrivatePrefix(prefix) ? 'private' : 'public';
-    const blob = await put(key, buffer, {
-      access: access as 'public',
-      token: BLOB_TOKEN,
-      contentType: check.resolvedMime,
-    });
-    return blob.url;
-  }
-
-  const uploadDir = path.join(process.cwd(), 'public', 'uploads', prefix);
-  await mkdir(uploadDir, { recursive: true });
-  const fullPath = path.join(uploadDir, path.basename(key));
-  await writeFile(fullPath, buffer);
-  return `/uploads/${prefix}/${path.basename(key)}`;
+  return putBlob(key, buffer, check.resolvedMime, isPrivatePrefix(prefix));
 }
 
 export async function uploadDataUrl(dataUrl: string, prefix = 'listings', filename = 'image.jpg'): Promise<string> {

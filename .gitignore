@@ -16,3 +16,7 @@ next-env.d.ts
 test-results/
 e2e-out/screenshots/
 tsconfig.tsbuildinfo
+
+# uploads (local fs fallback) + e2e outputs
+public/uploads/
+e2e-out/
