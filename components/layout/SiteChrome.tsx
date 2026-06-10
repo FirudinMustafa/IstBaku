@@ -44,7 +44,7 @@ export function SiteChrome({ children }: { children: React.ReactNode }) {
       <main id="main" className="min-h-[calc(100vh-4rem)]">
         {/* Tur6 #4a: ana sayfa hariç tüm alt sayfalarda sol-üst "Geri" butonu */}
         {pathname !== '/' && (
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-3 -mb-1">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-4 pb-2">
             <BackButton fallback="/" />
           </div>
         )}

@@ -53,6 +53,48 @@ export default function ReportsPage() {
   const [demo, setDemo] = React.useState({ name: '', email: '', company: '', message: '' });
   const [demoBusy, setDemoBusy] = React.useState(false);
 
+  // K1: rapor bölümünü gerçek PDF dosyası olarak indir (html2canvas → jsPDF, sayfalara böler).
+  const reportRef = React.useRef<HTMLDivElement>(null);
+  const [pdfBusy, setPdfBusy] = React.useState(false);
+  async function downloadPdf() {
+    const el = reportRef.current;
+    if (!el || pdfBusy) return;
+    setPdfBusy(true);
+    try {
+      const [{ default: html2canvas }, { jsPDF }] = await Promise.all([import('html2canvas'), import('jspdf')]);
+      const bg = getComputedStyle(document.body).backgroundColor || '#ffffff';
+      const canvas = await html2canvas(el, { scale: 2, backgroundColor: bg, useCORS: true, logging: false });
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+      const pageW = pdf.internal.pageSize.getWidth();
+      const pageH = pdf.internal.pageSize.getHeight();
+      const margin = 10;
+      pdf.setFontSize(15);
+      pdf.text('ISTBAKU — Pazar Raporu', margin, 13);
+      const top = 18;
+      const imgW = pageW - margin * 2;
+      const pxPerMm = canvas.width / imgW;
+      let sy = 0;
+      let first = true;
+      while (sy < canvas.height) {
+        const sliceMm = (first ? pageH - top - margin : pageH - margin * 2);
+        const slicePx = Math.min(sliceMm * pxPerMm, canvas.height - sy);
+        const slice = document.createElement('canvas');
+        slice.width = canvas.width;
+        slice.height = slicePx;
+        slice.getContext('2d')!.drawImage(canvas, 0, sy, canvas.width, slicePx, 0, 0, canvas.width, slicePx);
+        pdf.addImage(slice.toDataURL('image/jpeg', 0.92), 'JPEG', margin, first ? top : margin, imgW, slicePx / pxPerMm);
+        sy += slicePx;
+        first = false;
+        if (sy < canvas.height) pdf.addPage();
+      }
+      pdf.save('istbaku-pazar-raporu.pdf');
+    } catch (e) {
+      toast({ variant: 'error', title: t('reports.pdf'), description: e instanceof Error ? e.message : undefined });
+    } finally {
+      setPdfBusy(false);
+    }
+  }
+
   async function sendDemo() {
     setDemoBusy(true);
     const res = await submitDemoRequestAction(demo);
@@ -98,11 +140,12 @@ export default function ReportsPage() {
             <option value="all">{t('reports.allCities')}</option>
             {cities.map((c) => <option key={c} value={c}>{c}</option>)}
           </Select>
-          <Button variant="gold" size="md" onClick={() => window.print()} className="shrink-0"><Download size={14} /> {t('reports.pdf')}</Button>
+          <Button variant="gold" size="md" onClick={downloadPdf} loading={pdfBusy} className="shrink-0"><Download size={14} /> {t('reports.pdf')}</Button>
         </div>
       </div>
 
-      <div className="mt-8 grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div ref={reportRef}>
+        <div className="mt-8 grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
           { l: t('reports.stat.investors'), v: '8,420', d: '+%12.6 YoY', i: Users },
           { l: t('reports.stat.foreign'), v: '%34', d: '+5.4 puan', i: Globe },
@@ -201,13 +244,15 @@ export default function ReportsPage() {
         </Card>
       </div>
 
+      </div>
+
       <div className="mt-10 rounded-3xl border border-gold-400/30 bg-gradient-to-br from-navy-700 to-navy-900 p-8 text-white">
         <div className="flex items-center gap-2 text-gold-300 text-xs font-semibold uppercase tracking-wider"><Sparkles size={12} /> {t('reports.b2b.badge')}</div>
         <h3 className="mt-3 text-2xl font-bold">{t('reports.b2b.title')}</h3>
         <p className="mt-2 text-navy-200 max-w-2xl">{t('reports.b2b.body')}</p>
         <div className="mt-5 flex flex-wrap gap-3">
           <Button variant="gold" onClick={() => setDemoOpen(true)}>{t('reports.b2b.demo')}</Button>
-          <Button variant="outline" className="bg-white/5 text-white border-white/20" onClick={() => window.print()}>{t('reports.b2b.sample')}</Button>
+          <Button variant="outline" className="bg-white/5 text-white border-white/20" onClick={downloadPdf} loading={pdfBusy}>{t('reports.b2b.sample')}</Button>
         </div>
       </div>
 
