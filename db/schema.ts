@@ -678,6 +678,23 @@ export const appSettings = pgTable('app_settings', {
 export type DbAppSetting = typeof appSettings.$inferSelect;
 
 // ============================================================
+// NEIGHBORHOODS (G1 — tam il/ilçe/mahalle veri seti; filtre + wizard datalist)
+// ============================================================
+// country (TR/AZ) → city → district → name. Seed: scripts/seed-neighborhoods.ts.
+// API /api/neighborhoods?country=&city=&district= ile sunulur.
+export const neighborhoods = pgTable('neighborhoods', {
+  id: serial('id').primaryKey(),
+  country: varchar('country', { length: 8 }).notNull(),
+  city: text('city').notNull(),
+  district: text('district').notNull(),
+  name: text('name').notNull(),
+}, (t) => ({
+  lookupIdx: index('neighborhoods_lookup_idx').on(t.country, t.city, t.district),
+}));
+
+export type DbNeighborhood = typeof neighborhoods.$inferSelect;
+
+// ============================================================
 // EXPORTED TYPES (inferred)
 // ============================================================
 

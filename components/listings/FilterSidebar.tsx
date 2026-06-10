@@ -5,7 +5,7 @@ import { Filter, Check, RotateCcw, ChevronDown } from 'lucide-react';
 import { Input, Label, Select } from '@/components/ui/Input';
 import type { FilterState, PropertyType, OwnerType } from '@/lib/types';
 import { citiesOf, districtsOf } from '@/lib/data/locations';
-import { neighborhoodsOf, neighborhoodsOfCity } from '@/lib/data/neighborhoods';
+import { useNeighborhoods } from '@/lib/use-neighborhoods';
 import { cn } from '@/lib/utils';
 import { useLang } from '@/components/layout/LangProvider';
 import { useCurrency } from '@/lib/currency-store';
@@ -68,6 +68,8 @@ export function FilterSidebar({ filters, onChange, countries: countryList, siteS
   const { currency: displayCurrency } = useCurrency();
 
   const set = (patch: Partial<FilterState>) => onChange({ ...filters, ...patch });
+  // G1: mahalle/semt önerileri — tam veri seti (API) + statik fallback.
+  const nbList = useNeighborhoods(filters.country, filters.city, filters.district);
 
   const toggle = <K extends keyof FilterState>(key: K, val: string) => {
     const cur = (filters[key] as string[] | undefined) ?? [];
@@ -171,10 +173,7 @@ export function FilterSidebar({ filters, onChange, countries: countryList, siteS
                 placeholder={t('filter.neighborhoodPh')}
               />
               <datalist id="filter-nb-list">
-                {(filters.district
-                  ? neighborhoodsOf(filters.country, filters.city, filters.district)
-                  : neighborhoodsOfCity(filters.country, filters.city)
-                ).map((n) => <option key={n} value={n} />)}
+                {nbList.map((n) => <option key={n} value={n} />)}
               </datalist>
             </>
           )}

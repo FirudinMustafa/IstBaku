@@ -22,7 +22,7 @@ import { createListingAction } from '@/lib/listing-actions';
 import { createWizardExtrasPaymentAction, applyWizardPrivateAction } from '@/lib/listing-owner-actions';
 import { PaymentModal, type PendingPayment } from '@/components/payments/PaymentModal';
 import { defaultCity, defaultDistrict } from '@/lib/data/locations';
-import { neighborhoodsOf } from '@/lib/data/neighborhoods';
+import { useNeighborhoods } from '@/lib/use-neighborhoods';
 import { cn } from '@/lib/utils';
 import type { PropertyType } from '@/lib/types';
 import { createListingSchema, fieldErrors } from '@/lib/schemas';
@@ -293,6 +293,9 @@ export function NewListingClient({ countries: countryList, prices }: NewListingC
     reader.onload = () => setCoverVideo(String(reader.result));
     reader.readAsDataURL(file);
   }
+
+  // G1: mahalle/semt önerileri — tam veri seti (API) + statik fallback.
+  const nbOptions = useNeighborhoods(form.country, form.city, form.district);
 
   // Adresten otomatik konum (geocode) — yazılan adresi koordinata çevirir.
   const [geocoding, setGeocoding] = React.useState(false);
@@ -749,7 +752,7 @@ export function NewListingClient({ countries: countryList, prices }: NewListingC
                   <Label>{t('wz.field.neighborhood')}</Label>
                   <Input list="nl-nb-list" value={form.neighborhood} onChange={(e) => set({ neighborhood: e.target.value })} placeholder={t('wz.ph.neighborhood')} />
                   <datalist id="nl-nb-list">
-                    {neighborhoodsOf(form.country, form.city, form.district).map((n) => <option key={n} value={n} />)}
+                    {nbOptions.map((n) => <option key={n} value={n} />)}
                   </datalist>
                   <p className="mt-1 text-[11px] text-[color:var(--fg-faint)]">{t('wz.hint.neighborhood')}</p>
                 </div>

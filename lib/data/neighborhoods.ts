@@ -75,6 +75,9 @@ const DATA: CountryMap = {
   TR: { 'İstanbul': TR_ISTANBUL, ...TR_OTHER },
 };
 
+// G1 seed (scripts/seed-neighborhoods.ts) AZ küratörlü verisini buradan okur.
+export const ALL_NEIGHBORHOODS: CountryMap = DATA;
+
 /**
  * Verilen ülke/şehir/ilçe için mahalle listesini döndürür. Veri yoksa boş dizi
  * (UI serbest-metin girişine düşer).
