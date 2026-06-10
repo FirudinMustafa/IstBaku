@@ -70,7 +70,7 @@ export function CountryGuides({ initial }: { initial: CountryGuide[] }) {
                     <span>·</span>
                     <span>{t('guides.langLabel')}: <strong className="uppercase">{selected.language}</strong></span>
                     <span>·</span>
-                    <span>{t('guides.updatedLabel')}: {new Date(selected.updatedAt).toLocaleDateString('tr-TR')}</span>
+                    <span>{t('guides.updatedLabel')}: {new Date(selected.updatedAt).toLocaleDateString('tr-TR', { timeZone: 'Europe/Istanbul' })}</span>
                   </div>
                 </div>
               </div>

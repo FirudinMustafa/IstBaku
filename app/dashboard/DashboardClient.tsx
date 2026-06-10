@@ -738,7 +738,7 @@ function DailyBookingsTab({ initial }: { initial: DailyBookingUI[] }) {
                     <span className="text-xs text-[color:var(--fg-muted)]">{timeAgo(b.createdAt)}</span>
                   </div>
                   <div className="mt-1.5 font-semibold">
-                    {new Date(b.checkIn).toLocaleDateString('tr-TR')} → {new Date(b.checkOut).toLocaleDateString('tr-TR')}
+                    {new Date(b.checkIn).toLocaleDateString('tr-TR', { timeZone: 'Europe/Istanbul' })} → {new Date(b.checkOut).toLocaleDateString('tr-TR', { timeZone: 'Europe/Istanbul' })}
                   </div>
                   <div className="text-xs text-[color:var(--fg-muted)] mt-0.5">
                     {b.nights} {t('dash.book.nights')} · {b.guestCount} {t('dash.book.guests')} · {formatPrice(b.totalPrice, b.currency)}
@@ -850,7 +850,7 @@ function PaymentsTab({ payments }: { payments: PaymentUI[] }) {
                     <td className="px-4 py-3">${(p.amount / 100).toFixed(2)} {p.currency}</td>
                     <td className="px-4 py-3"><Badge variant={stVariant}>{t(`enums.paymentStatus.${p.status}`)}</Badge></td>
                     <td className="px-4 py-3 text-[color:var(--fg-muted)] hidden sm:table-cell">
-                      {new Date(p.createdAt).toLocaleDateString('tr-TR', { day: '2-digit', month: 'short', year: 'numeric' })}
+                      {new Date(p.createdAt).toLocaleDateString('tr-TR', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'Europe/Istanbul' })}
                     </td>
                   </tr>
                 );

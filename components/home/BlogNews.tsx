@@ -42,6 +42,7 @@ function formatDate(iso: string | null): string {
     day: 'numeric',
     month: 'long',
     year: 'numeric',
+    timeZone: 'Europe/Istanbul', // sabit TZ → sunucu/istemci aynı (hydration #418 önler)
   });
 }
 
