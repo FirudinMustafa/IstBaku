@@ -31,6 +31,7 @@
 - **AÇIK kalanlar (bilinen):** A1 watermark — mevcut ilanlar için `scripts/backfill-watermark.ts` (prod BLOB token ile çalıştırılmalı); yeni onaylar otomatik. Belge >4.5MB için client-side upload. BLOB_READ_WRITE_TOKEN Vercel'de doğrulanmalı.
 - **2026-06-10 (commit ec40cac):** ✅ **F1/F2 admin 'yetki yok' KÖK NEDEN** — admin NORMAL girişte `adminScope=false` olduğundan tüm admin yazma aksiyonları reddediliyordu. `getAdminOrRole` helper'ı (adminScope yoksa DB rol fallback) eklendi; `requireAdmin` + cross-border/guide/office hepsi buna geçti → onay/red/fiyat/cross-border/ofis-metrik artık çalışır. ✅ **D2** 'güçlü' tier UI'dan kaldırıldı (yükseltme modalı yalnız İstBaku Onaylı; badge'ler dahil). ✅ **D5** ilan-onay mailindeki 'Seviye 2' → 'Durum: ISTBAKU Onaylı'. Build temiz.
   - **Mobil/masaüstü taşma kontrolü (canlı):** ofis kayıt formu mobil(390px)+masaüstü ✅ yatay taşma yok.
+- **2026-06-10 (commit ef23963):** ✅ **D3** adresten-bul — geocode'a Photon fallback (Nominatim Vercel'i bloklayınca); bulunamadı toast'ı yumuşatıldı (info). ✅ **D4** doğrulama hatası — 'toplam kat' yalnız gösterilen tiplerde zorunlu (arsa artık step-2'yi geçer); schema totalFloors min(0). ✅ **D7** ilan fotosu — desktop grid sahte gri placeholder'ı kaldırdı (3 foto→3 foto). Build temiz.
 
 ---
 
