@@ -85,7 +85,9 @@ export function Header() {
               <span className="hidden lg:inline-flex"><Logo size="lg" /></span>
             </span>
 
-            <nav aria-label="Ana gezinme" className="hidden lg:flex items-center gap-1 min-w-0">
+            {/* C2: yatay nav xl'de (1280px) açılır — DE/RU uzun etiketler lg'de taşıyordu;
+                1024-1280 arası hamburger kullanılır. */}
+            <nav aria-label="Ana gezinme" className="hidden xl:flex items-center gap-1 min-w-0">
               {NAV.map((item) => {
                 const active = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
                 return (
@@ -207,7 +209,7 @@ export function Header() {
               </Link>
 
               <button
-                className="lg:hidden touch-target inline-flex items-center justify-center size-9 rounded-xl border border-[color:var(--border)] bg-[color:var(--bg-elev)] active:scale-95 transition-transform"
+                className="xl:hidden touch-target inline-flex items-center justify-center size-9 rounded-xl border border-[color:var(--border)] bg-[color:var(--bg-elev)] active:scale-95 transition-transform"
                 onClick={() => setOpen((v) => !v)}
                 aria-label={open ? 'Menüyü kapat' : 'Menüyü aç'}
                 aria-expanded={open}
@@ -223,7 +225,7 @@ export function Header() {
       {/* Mobil slide-in drawer */}
       <div
         className={cn(
-          'lg:hidden fixed inset-0 z-[55] transition-opacity duration-200',
+          'xl:hidden fixed inset-0 z-[55] transition-opacity duration-200',
           open ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none',
         )}
       >

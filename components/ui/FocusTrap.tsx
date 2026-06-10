@@ -50,6 +50,12 @@ export function FocusTrap({
 }: FocusTrapProps) {
   const containerRef = React.useRef<HTMLDivElement>(null);
   const previouslyFocused = React.useRef<HTMLElement | null>(null);
+  // onEscape'i ref'te tut: inline `() => setOpen(false)` her render'da yeni referans
+  // olduğundan, effect bağımlılığına konulursa her tuş vuruşunda effect yeniden çalışıp
+  // fokusu ilk elemana geri alır (chatbot/modal input fokus kaybı bug'ı). Ref ile
+  // effect yalnız `active` değişince çalışır.
+  const onEscapeRef = React.useRef(onEscape);
+  onEscapeRef.current = onEscape;
 
   React.useEffect(() => {
     if (!active) return;
@@ -72,8 +78,8 @@ export function FocusTrap({
 
     function onKeyDown(e: KeyboardEvent) {
       if (!container) return;
-      if (e.key === 'Escape' && onEscape) {
-        onEscape();
+      if (e.key === 'Escape' && onEscapeRef.current) {
+        onEscapeRef.current();
         return;
       }
       if (e.key !== 'Tab') return;
@@ -108,7 +114,7 @@ export function FocusTrap({
         try { target.focus(); } catch { /* noop */ }
       }
     };
-  }, [active, onEscape, returnFocusRef, skipInitialFocus]);
+  }, [active, returnFocusRef, skipInitialFocus]);
 
   // Use `display: contents` by default so the wrapper does not affect layout —
   // children behave as direct children of FocusTrap's parent.
