@@ -74,23 +74,23 @@ export default async function HomePage() {
         {/* Perf (Madde 14): ağır blur-3xl lekeler yalnızca md+ — mobilde kasma azalır. */}
         <div aria-hidden className="hidden md:block pointer-events-none absolute inset-0 overflow-hidden">
           <div
-            className="absolute top-[4%] -left-40 w-[560px] h-[560px] rounded-full blur-3xl opacity-[0.24]"
+            className="absolute top-[4%] -left-40 w-[560px] h-[560px] rounded-full opacity-[0.24]"
             style={{ background: 'radial-gradient(circle, #CAAE99 0%, transparent 70%)' }}
           />
           <div
-            className="absolute top-[28%] -right-48 w-[640px] h-[640px] rounded-full blur-3xl opacity-[0.18]"
+            className="absolute top-[28%] -right-48 w-[640px] h-[640px] rounded-full opacity-[0.18]"
             style={{ background: 'radial-gradient(circle, #121F30 0%, transparent 70%)' }}
           />
           <div
-            className="absolute top-[56%] left-[20%] w-[480px] h-[480px] rounded-full blur-3xl opacity-[0.22]"
+            className="absolute top-[56%] left-[20%] w-[480px] h-[480px] rounded-full opacity-[0.22]"
             style={{ background: 'radial-gradient(circle, #CAAE99 0%, transparent 70%)' }}
           />
           <div
-            className="absolute top-[78%] -left-32 w-[420px] h-[420px] rounded-full blur-3xl opacity-[0.16]"
+            className="absolute top-[78%] -left-32 w-[420px] h-[420px] rounded-full opacity-[0.16]"
             style={{ background: 'radial-gradient(circle, #8AA0BE 0%, transparent 70%)' }}
           />
           <div
-            className="absolute bottom-[4%] -right-24 w-[460px] h-[460px] rounded-full blur-3xl opacity-[0.18]"
+            className="absolute bottom-[4%] -right-24 w-[460px] h-[460px] rounded-full opacity-[0.18]"
             style={{ background: 'radial-gradient(circle, #8AA0BE 0%, transparent 70%)' }}
           />
         </div>
