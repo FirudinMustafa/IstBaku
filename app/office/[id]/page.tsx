@@ -56,7 +56,7 @@ export default async function OfficePage({ params }: { params: Promise<{ id: str
             <div className="mt-2 flex items-center gap-4 text-sm flex-wrap">
               <span className="inline-flex items-center gap-1.5">
                 <Stars value={Math.round(ratingAvg)} /> <strong>{ratingAvg.toFixed(1)}</strong>
-                <span className="text-[color:var(--fg-muted)]">({reviewCount} <T k="office.reviews" />)</span>
+                <a href="#reviews" className="text-[color:var(--fg-muted)] hover:text-gold-300 underline-offset-2 hover:underline">({reviewCount} <T k="office.reviews" />)</a>
               </span>
               <span className="text-[color:var(--fg-muted)]">{listings.length} <T k="office.listings" /></span>
             </div>
@@ -100,7 +100,7 @@ export default async function OfficePage({ params }: { params: Promise<{ id: str
       </div>
 
       {/* Yorumlar + puanlar */}
-      <div className="grid lg:grid-cols-3 gap-6">
+      <div id="reviews" className="grid lg:grid-cols-3 gap-6 scroll-mt-24">
         <div className="lg:col-span-2 space-y-3">
           <h2 className="font-bold flex items-center gap-2"><Star size={18} className="text-gold-300" /> <T k="office.reviewsTitle" /></h2>
           {reviews.length === 0 ? (

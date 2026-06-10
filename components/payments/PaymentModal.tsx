@@ -130,7 +130,7 @@ export function PaymentModal({ open, payment, onClose, onSuccess }: Props) {
             <div className="relative">
               <Input
                 value={card}
-                onChange={(e) => setCard(e.target.value.replace(/[^\d ]/g, '').slice(0, 19))}
+                onChange={(e) => setCard(e.target.value.replace(/\D/g, '').slice(0, 16).replace(/(\d{4})(?=\d)/g, '$1 '))}
                 placeholder="1234 5678 9012 3456"
                 inputMode="numeric"
                 autoComplete="cc-number"
@@ -143,7 +143,7 @@ export function PaymentModal({ open, payment, onClose, onSuccess }: Props) {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label>{t('pay.card.expiry')}</Label>
-              <Input value={exp} onChange={(e) => setExp(e.target.value.replace(/[^\d/]/g, '').slice(0, 5))} placeholder="AA/YY" inputMode="numeric" autoComplete="cc-exp" required />
+              <Input value={exp} onChange={(e) => { const d = e.target.value.replace(/\D/g, '').slice(0, 4); setExp(d.length > 2 ? `${d.slice(0, 2)}/${d.slice(2)}` : d); }} placeholder="AA/YY" inputMode="numeric" autoComplete="cc-exp" required />
             </div>
             <div>
               <Label>{t('pay.card.cvc')}</Label>

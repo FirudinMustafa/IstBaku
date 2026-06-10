@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   Menu, X, Plus, Bell, User as UserIcon, Sparkles, ShieldCheck, MessageSquare,
   Crown, FileText, Building2, Scale, ChevronRight, Settings, LogOut, Newspaper,
@@ -31,6 +31,18 @@ const NAV = [
 export function Header() {
   const { t, lang, setLang } = useLang();
   const pathname = usePathname();
+  const router = useRouter();
+
+  // I3: aktif sayfanın linkine tekrar basınca en başa kaydır + sunucu verisini tazele
+  // (Next.js aynı route'a Link'te kaydırmaz). Farklı sayfaysa normal gezinme.
+  function navClick(e: React.MouseEvent, href: string) {
+    if (pathname === href) {
+      e.preventDefault();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      router.refresh();
+    }
+    setOpen(false);
+  }
   const [open, setOpen] = React.useState(false);
   const [scrolled, setScrolled] = React.useState(false);
   const { unread } = useNotifications();
@@ -94,6 +106,7 @@ export function Header() {
                   <Link
                     key={item.href}
                     href={item.href}
+                    onClick={(e) => navClick(e, item.href)}
                     aria-current={active ? 'page' : undefined}
                     className={cn(
                       'px-3 py-2 rounded-lg text-sm font-medium transition-colors',
@@ -301,6 +314,7 @@ export function Header() {
                 <Link
                   key={item.href}
                   href={item.href}
+                  onClick={(e) => navClick(e, item.href)}
                   className={cn(
                     'flex items-center gap-3 px-3 py-3 rounded-xl text-[15px] font-medium transition-colors',
                     active ? 'bg-gold-400/15 text-gold-300' : 'hover:bg-[color:var(--bg-card-hover)]',

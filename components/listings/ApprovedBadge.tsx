@@ -14,9 +14,9 @@ export function ApprovedBadge({ size = 14 }: { size?: number }) {
     <Tooltip content={t('badge.approved.tooltip')} side="bottom">
       <span
         aria-label={t('property.approved')}
-        className="inline-flex items-center justify-center size-6 rounded-full bg-success/20 text-success border border-success/40"
+        className="inline-flex items-center justify-center size-7 rounded-full bg-gradient-to-br from-gold-300 to-gold-500 text-navy-900 border border-gold-200/70 ring-2 ring-gold-400/30 shadow-[0_2px_8px_-1px_rgba(212,168,67,0.6)]"
       >
-        <ShieldCheck size={size} />
+        <ShieldCheck size={size} strokeWidth={2.5} />
       </span>
     </Tooltip>
   );
