@@ -2,7 +2,7 @@
 import { chromium, devices } from 'playwright';
 
 const BASE = process.env.LIVE_BASE || 'https://ist-baku.vercel.app';
-const PAGES = ['/', '/listings', '/property/i-stanbul-cekmekoy-1-1-konut', '/ai-match', '/reports', '/blog', '/hakkimizda', '/contact', '/legal-guide', '/auth/sign-up', '/auth/sign-in', '/auth/forgot-password', '/publisher/apply'];
+const PAGES = ['/', '/listings', '/property/i-stanbul-cekmekoy-1-1-konut', '/ai-match', '/reports', '/blog', '/hakkimizda', '/contact', '/legal-guide', '/auth/sign-up', '/auth/sign-in', '/auth/forgot-password', '/become-publisher'];
 
 async function run(label: string, mobile: boolean) {
   const browser = await chromium.launch();
