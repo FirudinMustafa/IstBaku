@@ -311,7 +311,7 @@ export function NewListingClient({ countries: countryList, prices }: NewListingC
         set({ lat: data.lat, lng: data.lng });
         toast({ variant: 'success', title: t('wz.toast.locFound'), description: t('wz.toast.locFoundDesc') });
       } else {
-        toast({ variant: 'error', title: t('wz.toast.locNotFound'), description: t('wz.toast.locNotFoundDesc') });
+        toast({ variant: 'info', title: t('wz.toast.locNotFound'), description: t('wz.toast.locNotFoundDesc') });
       }
     } catch {
       toast({ variant: 'error', title: t('wz.toast.error'), description: t('wz.toast.locServiceDown') });
@@ -413,7 +413,9 @@ export function NewListingClient({ countries: countryList, prices }: NewListingC
       toast({ variant: 'error', title: t('wz.toast.grossReq'), description: t('wz.toast.grossReqDesc') });
       return;
     }
-    if (step === 2 && form.totalFloors < 1) {
+    // D4: 'toplam kat' yalnız bu alanın gösterildiği tiplerde (konut/iş yeri/bina) zorunlu;
+    // arsada alan gizli olduğundan kontrol atlanır (aksi halde arsa ilanı step-2'yi geçemiyordu).
+    if (step === 2 && formShows(form.type, 'totalFloors') && form.totalFloors < 1) {
       toast({ variant: 'error', title: t('wz.toast.totalFloorsReq'), description: t('wz.toast.totalFloorsReqDesc') });
       return;
     }

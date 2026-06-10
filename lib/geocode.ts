@@ -19,21 +19,47 @@ export interface GeocodeHit {
   displayName: string;
 }
 
-/** Serbest metin adresi koordinata çevirir. Bulunamazsa null. */
+/**
+ * Serbest metin adresi koordinata çevirir. Bulunamazsa null.
+ * Nominatim bulut IP'lerini sık bloklar/rate-limit eder; başarısız olursa Photon
+ * (komoot) fallback'i denenir — böylece "Adresten bul" prod'da güvenilir çalışır.
+ */
 export async function geocodeAddress(query: string): Promise<GeocodeHit | null> {
   const q = query.trim();
   if (!q) return null;
+  return (await geocodeNominatim(q)) ?? (await geocodePhoton(q));
+}
+
+async function geocodeNominatim(q: string): Promise<GeocodeHit | null> {
   try {
     const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&q=${encodeURIComponent(q)}`;
     const res = await fetch(url, { headers: { 'User-Agent': UA }, next: { revalidate: ONE_DAY } });
     if (!res.ok) return null;
     const data = (await res.json()) as Array<{ lat: string; lon: string; display_name: string }>;
     if (!data.length) return null;
-    const hit = data[0];
-    const lat = parseFloat(hit.lat);
-    const lng = parseFloat(hit.lon);
+    const lat = parseFloat(data[0].lat);
+    const lng = parseFloat(data[0].lon);
     if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
-    return { lat, lng, displayName: hit.display_name };
+    return { lat, lng, displayName: data[0].display_name };
+  } catch {
+    return null;
+  }
+}
+
+async function geocodePhoton(q: string): Promise<GeocodeHit | null> {
+  try {
+    const url = `https://photon.komoot.io/api/?limit=1&q=${encodeURIComponent(q)}`;
+    const res = await fetch(url, { headers: { 'User-Agent': UA }, next: { revalidate: ONE_DAY } });
+    if (!res.ok) return null;
+    const data = (await res.json()) as { features?: Array<{ geometry?: { coordinates?: number[] }; properties?: Record<string, string> }> };
+    const f = data.features?.[0];
+    const coords = f?.geometry?.coordinates;
+    if (!coords || coords.length < 2) return null;
+    const [lng, lat] = coords;
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+    const p = f?.properties ?? {};
+    const displayName = [p.name, p.street, p.city, p.country].filter(Boolean).join(', ') || q;
+    return { lat, lng, displayName };
   } catch {
     return null;
   }

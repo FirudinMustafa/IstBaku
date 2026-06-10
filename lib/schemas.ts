@@ -202,7 +202,10 @@ export const createListingSchema = z.object({
   netArea: z.number().int().min(1, 'Net alan zorunlu').max(100000),
   grossArea: z.number().int().min(1, 'Brüt alan zorunlu').max(100000),
   floor: z.number().int().min(-5).max(200),
-  totalFloors: z.number().int().min(1, 'Toplam kat sayısı zorunlu').max(200),
+  // D4: arsa/iş yeri gibi tiplerde 'toplam kat' alanı gizli (form 0 gönderir) — min(1)
+  // global zorunluluğu bu tiplerde yayını bloke ediyordu. Konut tiplerinde kullanıcı
+  // alanı zaten doldurur; burada 0'a izin verilir.
+  totalFloors: z.number().int().min(0).max(200),
   buildingAge: z.number().int().min(0).max(500),
   heating: listingHeating,
   parking: listingParking,

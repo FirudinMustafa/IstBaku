@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import Image from 'next/image';
-import { ChevronLeft, ChevronRight, Maximize2, Play, X, Image as ImageIcon } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Maximize2, Play, X } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
 import { cn } from '@/lib/utils';
 import { FocusTrap } from '@/components/ui/FocusTrap';
@@ -131,7 +131,7 @@ export function PropertyGallery({ images, has360, video, listingNumber, approved
       </div>
 
       {/* DESKTOP: 4-grid */}
-      <div className="hidden md:grid relative grid-cols-4 grid-rows-2 gap-2 h-[420px] rounded-2xl overflow-hidden">
+      <div className="hidden md:grid relative grid-cols-4 grid-rows-2 gap-2 h-[420px] rounded-2xl overflow-hidden bg-[color:var(--bg-card-hover)]">
         <button
           onClick={() => { setIdx(0); setOpen(true); setTab('photos'); }}
           className="col-span-2 row-span-2 relative group bg-[color:var(--bg-card-hover)]"
@@ -157,16 +157,9 @@ export function PropertyGallery({ images, has360, video, listingNumber, approved
           </div>
         </button>
 
-        {Array.from({ length: 4 }).map((_, i) => {
-          const src = thumbs[i];
-          const isLast = i === 3 && remaining > 0;
-          if (!src) {
-            return (
-              <div key={i} className="relative bg-[color:var(--bg-card-hover)] flex items-center justify-center text-[color:var(--fg-faint)]">
-                <ImageIcon size={20} />
-              </div>
-            );
-          }
+        {/* D7: yalnız gerçek thumb'lar — eksik foto için gri placeholder (sahte "default foto") çizilmez. */}
+        {thumbs.map((src, i) => {
+          const isLast = i === thumbs.length - 1 && remaining > 0;
           return (
             <button
               key={i}
