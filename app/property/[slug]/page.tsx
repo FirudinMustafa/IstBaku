@@ -87,7 +87,6 @@ export default async function PropertyPage({ params }: { params: Promise<{ slug:
             <Badge variant="outline"><E g="purpose" v={property.purpose} /></Badge>
             <Badge variant="outline"><E g="type" v={property.type} /></Badge>
             {(property.istbakuApproved || property.tier === 'premium') && <ApprovedBadge />}
-            {property.tier === 'guclu' && <Badge variant="ai"><E g="tier" v="guclu" /></Badge>}
             {property.has360 && <Badge variant="navy"><T k="property.tour360" /></Badge>}
           </div>
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight max-w-3xl">{property.title}</h1>

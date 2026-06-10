@@ -3,7 +3,7 @@
 import { db } from '@/db/client';
 import { agents, users, listings, abuseReports, agentMonthlyMetrics } from '@/db/schema';
 import { eq, and, isNull, inArray, sql } from 'drizzle-orm';
-import { getCurrentUser, getCurrentAdmin } from './auth-actions';
+import { getCurrentUser, getAdminOrRole } from './auth-actions';
 import { evaluateOffice, type OfficeStats, type OfficeTier } from './office-metrics';
 
 /** Geçerli ay anahtarı 'YYYY-MM'. */
@@ -70,7 +70,7 @@ export async function recomputeOfficeMetricsAction(
   opts?: { adminBypass?: boolean },
 ): Promise<{ ok: true; count: number } | { ok: false; error: string }> {
   if (!opts?.adminBypass) {
-    const admin = await getCurrentAdmin();
+    const admin = await getAdminOrRole();
     if (!admin) return { ok: false, error: 'Yetkisiz.' };
   }
   try {

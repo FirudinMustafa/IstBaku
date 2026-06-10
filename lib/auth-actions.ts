@@ -636,3 +636,14 @@ export async function requireAdminRole(
     return null;
   }
 }
+
+/**
+ * Admin aksiyonları için tek nokta: önce adminScope session (getCurrentAdmin),
+ * yoksa DB rol-tabanlı doğrulama (requireAdminRole). Böylece admin NORMAL girişle
+ * gelse bile (adminScope=false) işlem "Yetki yok" vermez. Rol DB'den teyit edilir.
+ */
+export async function getAdminOrRole(
+  roles: string[] = ['admin', 'super_admin'],
+): Promise<{ id: string; name: string; email: string; role: string } | null> {
+  return (await getCurrentAdmin()) ?? (await requireAdminRole(roles));
+}

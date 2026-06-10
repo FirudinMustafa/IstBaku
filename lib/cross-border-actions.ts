@@ -3,7 +3,7 @@
 import { db } from '@/db/client';
 import { crossBorderSteps } from '@/db/schema';
 import { and, asc, eq, sql } from 'drizzle-orm';
-import { getCurrentAdmin } from './auth-actions';
+import { getAdminOrRole } from './auth-actions';
 import { sanitizeText } from './sanitize';
 
 // ------------------------------------------------------------------
@@ -107,7 +107,7 @@ function toDTO(r: typeof crossBorderSteps.$inferSelect): CrossBorderStepDTO {
 export async function listCrossBorderStepsAction(
   filter: Partial<StepFilter>,
 ): Promise<{ ok: boolean; steps?: CrossBorderStepDTO[]; error?: string }> {
-  const admin = await getCurrentAdmin();
+  const admin = await getAdminOrRole();
   if (!admin) return { ok: false, error: 'Admin yetkisi gerekli.' };
   const f = validFilter(filter);
   if (!f) return { ok: false, error: 'Geçersiz filtre.' };
@@ -147,7 +147,7 @@ function sanitizeInput(input: StepInput): { ok: true; safe: StepInput } | { ok: 
 export async function createCrossBorderStepAction(
   input: StepInput,
 ): Promise<{ ok: boolean; id?: string; error?: string }> {
-  const admin = await getCurrentAdmin();
+  const admin = await getAdminOrRole();
   if (!admin) return { ok: false, error: 'Admin yetkisi gerekli.' };
   const res = sanitizeInput(input);
   if (!res.ok) return res;
@@ -190,7 +190,7 @@ export async function updateCrossBorderStepAction(
   id: string,
   input: { icon: string; title: string; description: string; active?: boolean },
 ): Promise<{ ok: boolean; error?: string }> {
-  const admin = await getCurrentAdmin();
+  const admin = await getAdminOrRole();
   if (!admin) return { ok: false, error: 'Admin yetkisi gerekli.' };
   const title = sanitizeText(input.title, { maxLength: 200 });
   if (!title) return { ok: false, error: 'Başlık gerekli.' };
@@ -217,7 +217,7 @@ export async function updateCrossBorderStepAction(
 
 /** Admin: adımı sil. */
 export async function deleteCrossBorderStepAction(id: string): Promise<{ ok: boolean; error?: string }> {
-  const admin = await getCurrentAdmin();
+  const admin = await getAdminOrRole();
   if (!admin) return { ok: false, error: 'Admin yetkisi gerekli.' };
   try {
     await db.delete(crossBorderSteps).where(eq(crossBorderSteps.id, id));
@@ -236,7 +236,7 @@ export async function reorderCrossBorderStepAction(
   id: string,
   direction: 'up' | 'down',
 ): Promise<{ ok: boolean; error?: string }> {
-  const admin = await getCurrentAdmin();
+  const admin = await getAdminOrRole();
   if (!admin) return { ok: false, error: 'Admin yetkisi gerekli.' };
   try {
     const [current] = await db.select().from(crossBorderSteps).where(eq(crossBorderSteps.id, id)).limit(1);
@@ -428,7 +428,7 @@ export async function seedCrossBorderStepsAction(): Promise<{
   skipped?: boolean;
   error?: string;
 }> {
-  const admin = await getCurrentAdmin();
+  const admin = await getAdminOrRole();
   if (!admin) return { ok: false, error: 'Admin yetkisi gerekli.' };
 
   try {

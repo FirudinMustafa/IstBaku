@@ -147,7 +147,6 @@ function ListingCardInner({ property: p, compact }: Props) {
             {(p.istbakuApproved || p.tier === 'premium') && (
               <span className="pointer-events-auto"><ApprovedBadge size={13} /></span>
             )}
-            {p.tier === 'guclu' && <Badge variant="ai">{t('enums.tier.guclu')}</Badge>}
           </div>
           {/* Z-index above the stretched Link so clicks register on these buttons. */}
           <div className="flex flex-col gap-1.5 relative z-10 pointer-events-auto">

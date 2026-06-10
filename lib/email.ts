@@ -595,7 +595,7 @@ export function tplAppointmentAgent({
   });
 }
 
-export function tplListingApproved({ agentName, listingTitle, listingUrl, level }: { agentName: string; listingTitle: string; listingUrl: string; level: number }) {
+export function tplListingApproved({ agentName, listingTitle, listingUrl }: { agentName: string; listingTitle: string; listingUrl: string; level?: number }) {
   const firstName = escapeHtml(agentName.split(' ')[0] || 'Emlakçı');
   return emailShell({
     preheader: 'İlanın artık ISTBAKU Onaylı olarak yayında.',
@@ -607,7 +607,7 @@ export function tplListingApproved({ agentName, listingTitle, listingUrl, level 
       <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin:0 0 8px;">
         <tr>
           <td class="stack-col" style="padding:0 6px 0 0;width:50%;">
-            ${metricCard('Onay Seviyesi', `Seviye ${level}`, C.success)}
+            ${metricCard('Durum', 'ISTBAKU Onaylı', C.success)}
           </td>
           <td class="stack-col" style="padding:0 0 0 6px;width:50%;">
             ${metricCard('Etkileşim', '+%38 tıklama', C.orange)}

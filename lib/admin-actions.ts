@@ -3,7 +3,7 @@
 import { db } from '@/db/client';
 import * as s from '@/db/schema';
 import { eq, and, desc, isNull } from 'drizzle-orm';
-import { getCurrentAdmin } from './auth-actions';
+import { getCurrentAdmin, requireAdminRole } from './auth-actions';
 import {
   sendEmail, tplListingApproved, tplListingRejected,
   tplKycApproved, tplKycRejected,
@@ -17,7 +17,11 @@ type AdminCtx = NonNullable<Awaited<ReturnType<typeof getCurrentAdmin>>>;
  * Use the more specific helpers below for sensitive operations.
  */
 async function requireAdmin(): Promise<AdminCtx> {
-  const admin = await getCurrentAdmin();
+  // adminScope session'a güvenmek "Yetki yok" bug'ına yol açıyordu: admin NORMAL
+  // giriş yaptıysa adminScope=false olur ve tüm admin yazma aksiyonları reddedilirdi.
+  // DB rol-tabanlı doğrulamaya (requireAdminRole) düşerek admin/moderatör/süper admin
+  // hangi yolla giriş yaparsa yapsın işlem yapabilsin (rol DB'den teyit edilir).
+  const admin = (await getCurrentAdmin()) ?? (await requireAdminRole(['moderator', 'admin', 'super_admin']));
   if (!admin) throw new Error('Yetki yok');
   return admin;
 }

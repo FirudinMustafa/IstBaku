@@ -6,7 +6,7 @@ import Link from 'next/link';
 import {
   Home, Heart, GitCompare, Bell, Sparkles, Search,
   Eye, MapPin, ArrowUpRight, BadgeCheck, Pencil, Trash2,
-  Zap, Star, AlertTriangle, ExternalLink, CalendarDays, Check, X,
+  Zap, AlertTriangle, ExternalLink, CalendarDays, Check, X,
   CreditCard, Settings, Crown, RefreshCw, ShieldCheck, Loader2, FileText,
 } from 'lucide-react';
 import { AccountSettings } from './AccountSettings';
@@ -465,17 +465,8 @@ function MyListings({ listings, prices }: { listings: Property[]; prices: { rene
             <p className="text-sm text-[color:var(--fg-muted)] mb-4">
               <strong className="text-[color:var(--fg)]">{upgradeFor.title}</strong> {t('dash.ml.upgradeDesc')}
             </p>
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                onClick={() => doUpgrade('guclu')}
-                disabled={working || upgradeFor.tier === 'guclu' || upgradeFor.tier === 'premium'}
-                className="rounded-2xl border p-4 text-left hover:border-gold-400/60 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <Star size={18} className="text-gold-300" />
-                <div className="font-bold mt-2">{t('enums.tier.guclu')}</div>
-                <div className="text-xs text-[color:var(--fg-muted)] mt-1">{t('dash.ml.strongDesc')}</div>
-                <div className="mt-3 text-gold-300 font-bold">{usd(prices.guclu)} {t('dash.ml.per30')}</div>
-              </button>
+            {/* D2: 'Güçlü' tier kaldırıldı — yalnız İstBaku Onaylı (premium) yükseltmesi. */}
+            <div className="grid grid-cols-1 gap-3">
               <button
                 onClick={() => doUpgrade('premium')}
                 disabled={working || upgradeFor.tier === 'premium'}

@@ -3,7 +3,7 @@
 import { db } from '@/db/client';
 import { countryGuides } from '@/db/schema';
 import { eq } from 'drizzle-orm';
-import { getCurrentAdmin } from './auth-actions';
+import { getAdminOrRole } from './auth-actions';
 import { assertSuperAdmin } from './admin-actions';
 import { sanitizeText, sanitizeHttpUrl } from './sanitize';
 
@@ -22,7 +22,7 @@ export interface GuideInput {
 }
 
 export async function upsertGuideAction(input: GuideInput): Promise<{ ok: boolean; error?: string }> {
-  const admin = await getCurrentAdmin();
+  const admin = await getAdminOrRole();
   if (!admin) return { ok: false, error: 'Admin yetkisi gerekli.' };
 
   // Whitelist ISO codes (uppercase ASCII letters, exactly 2 chars).
