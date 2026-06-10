@@ -79,6 +79,7 @@ function applyFilters(list: Property[], f: FilterState, q?: string): Property[] 
   if (f.structureType?.length) out = out.filter((p) => f.structureType!.includes(p.structureType ?? 'belirtilmemis'));
   if (f.facade?.length) out = out.filter((p) => f.facade!.includes(p.facade ?? 'belirtilmemis'));
   if (f.ownerType?.length) out = out.filter((p) => f.ownerType!.includes(p.ownerType));
+  if (f.titleDeed?.length) out = out.filter((p) => f.titleDeed!.includes(p.titleDeed));
   if (f.status?.length) out = out.filter((p) => f.status!.includes(p.status));
   if (f.swappable) out = out.filter((p) => p.swappable);
   if (f.features?.length) {
@@ -132,6 +133,7 @@ function activeFilterCount(f: FilterState, q?: string): number {
   if (f.structureType?.length) n += f.structureType.length;
   if (f.facade?.length) n += f.facade.length;
   if (f.ownerType?.length) n += f.ownerType.length;
+  if (f.titleDeed?.length) n += f.titleDeed.length;
   if (f.status?.length) n += f.status.length;
   if (f.istbakuApproved) n++;
   if (f.withVideo) n++;

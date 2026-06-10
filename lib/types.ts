@@ -261,6 +261,7 @@ export interface FilterState {
   facade?: string[];             // kuzey, guney, ...
   ownerType?: OwnerType[];
   status?: string[];             // ['bos','kiracili','mulk_sahibi']
+  titleDeed?: string[];          // belge/tapu durumu (G3)
   istbakuApproved?: boolean;
   withVideo?: boolean;
   with360?: boolean;

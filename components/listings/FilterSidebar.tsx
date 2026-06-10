@@ -62,6 +62,13 @@ const OWNER_KEYS: { v: OwnerType; key: string }[] = [
 const STATUS_KEYS = [
   { v: 'bos', key: 'status.bos' }, { v: 'kiracili', key: 'status.kiracili' }, { v: 'mulk_sahibi', key: 'status.mulk_sahibi' },
 ];
+// G3 — belge/tapu durumu filtresi
+const DEED_KEYS = [
+  { v: 'kat_mulkiyeti', key: 'enums.titleDeed.kat_mulkiyeti' },
+  { v: 'kat_irtifaki', key: 'enums.titleDeed.kat_irtifaki' },
+  { v: 'arsa_payi', key: 'enums.titleDeed.arsa_payi' },
+  { v: 'cikti_belgesi', key: 'enums.titleDeed.cikti_belgesi' },
+];
 
 export function FilterSidebar({ filters, onChange, countries: countryList, siteSuggestions }: Props) {
   const { t } = useLang();
@@ -341,6 +348,15 @@ export function FilterSidebar({ filters, onChange, countries: countryList, siteS
         <div className="flex flex-wrap gap-1.5">
           {STATUS_KEYS.map((s) => (
             <Chip key={s.v} active={filters.status?.includes(s.v)} onClick={() => toggle('status', s.v)}>{t(s.key)}</Chip>
+          ))}
+        </div>
+      </Section>
+
+      {/* G3 — belge/tapu durumu */}
+      <Section title={t('filter.deed')}>
+        <div className="flex flex-wrap gap-1.5">
+          {DEED_KEYS.map((d) => (
+            <Chip key={d.v} active={filters.titleDeed?.includes(d.v)} onClick={() => toggle('titleDeed', d.v)}>{t(d.key)}</Chip>
           ))}
         </div>
       </Section>
