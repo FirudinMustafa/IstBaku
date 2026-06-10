@@ -3,7 +3,7 @@
 import { db } from '@/db/client';
 import { users, agents, reviews, listings } from '@/db/schema';
 import { and, eq, desc, isNull, sql } from 'drizzle-orm';
-import { getCurrentUser } from './auth-actions';
+import { getCurrentUser, getAdminOrRole } from './auth-actions';
 import { rowToProperty, rowsToAgent } from './db-mappers';
 import { stripCrlf } from './security';
 import type { Agent, Property } from './types';
@@ -306,8 +306,10 @@ export async function moderateReviewAction(
   reviewId: string,
   decision: 'approved' | 'rejected',
 ): Promise<{ ok: true } | { ok: false; error: string }> {
-  const user = await getCurrentUser();
-  if (!user || (user.role !== 'admin' && user.role !== 'super_admin' && user.role !== 'moderator')) {
+  // Admin /admin/login ile gelince adminScope=true olur; getCurrentUser bu durumda null
+  // döner. Bu yüzden admin-only aksiyonda getAdminOrRole kullanılır (adminScope VEYA DB rol).
+  const admin = await getAdminOrRole(['admin', 'super_admin', 'moderator']);
+  if (!admin) {
     return { ok: false, error: 'Yetkin yok.' };
   }
   try {
