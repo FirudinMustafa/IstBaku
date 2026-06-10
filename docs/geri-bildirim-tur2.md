@@ -29,6 +29,8 @@
 - **2026-06-10 (commit 84728d4):** ✅ **I4 chatbot/modal fokus** — FocusTrap onEscape ref'e alındı; **canlıda doğrulandı** (yazı tam, fokus korundu). ✅ **C2 RU/DE header** — nav lg→xl; **canlıda doğrulandı** (ru+de @1100px hamburger). "(yakında)" kaldırıldı. A1 backfill betiği eklendi.
 - **Canlı doğrulama (Playwright, objektif):** M5 ofis kayıt belge alanları ✅ (ülke+TC/FIN+belge ekle), M8 geri buton ✅, M12 ilan no ✅.
 - **AÇIK kalanlar (bilinen):** A1 watermark — mevcut ilanlar için `scripts/backfill-watermark.ts` (prod BLOB token ile çalıştırılmalı); yeni onaylar otomatik. Belge >4.5MB için client-side upload. BLOB_READ_WRITE_TOKEN Vercel'de doğrulanmalı.
+- **2026-06-10 (commit ec40cac):** ✅ **F1/F2 admin 'yetki yok' KÖK NEDEN** — admin NORMAL girişte `adminScope=false` olduğundan tüm admin yazma aksiyonları reddediliyordu. `getAdminOrRole` helper'ı (adminScope yoksa DB rol fallback) eklendi; `requireAdmin` + cross-border/guide/office hepsi buna geçti → onay/red/fiyat/cross-border/ofis-metrik artık çalışır. ✅ **D2** 'güçlü' tier UI'dan kaldırıldı (yükseltme modalı yalnız İstBaku Onaylı; badge'ler dahil). ✅ **D5** ilan-onay mailindeki 'Seviye 2' → 'Durum: ISTBAKU Onaylı'. Build temiz.
+  - **Mobil/masaüstü taşma kontrolü (canlı):** ofis kayıt formu mobil(390px)+masaüstü ✅ yatay taşma yok.
 
 ---
 
