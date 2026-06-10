@@ -1,13 +1,16 @@
 'use client';
 
 import * as React from 'react';
-import { Plus, UserX, Newspaper } from 'lucide-react';
+import { Plus, UserX, Newspaper, Check, X } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input, Label } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
 import { useToast } from '@/components/ui/Toast';
 import { useLang } from '@/components/layout/LangProvider';
-import { createPublisherAction, revokePublisherAction } from '@/lib/publisher-actions';
+import {
+  createPublisherAction, revokePublisherAction,
+  approvePublisherApplicationAction, rejectPublisherApplicationAction,
+} from '@/lib/publisher-actions';
 
 interface Publisher {
   id: string;
@@ -17,11 +20,32 @@ interface Publisher {
   status: string;
   createdAt: string;
 }
+interface PubApp { id: string; name: string; email: string; note: string; createdAt: string }
 
-export function PublishersClient({ initial }: { initial: Publisher[] }) {
+export function PublishersClient({ initial, applications = [] }: { initial: Publisher[]; applications?: PubApp[] }) {
   const { t } = useLang();
   const { toast } = useToast();
   const [publishers, setPublishers] = React.useState(initial);
+  const [apps, setApps] = React.useState<PubApp[]>(applications);
+  const [appBusy, setAppBusy] = React.useState<string | null>(null);
+
+  async function handleApprove(a: PubApp) {
+    setAppBusy(a.id);
+    const res = await approvePublisherApplicationAction(a.id);
+    setAppBusy(null);
+    if (!res.ok) { toast({ variant: 'error', title: res.error }); return; }
+    toast({ variant: 'success', title: 'Başvuru onaylandı', description: `${a.name} artık blog yazıcısı.` });
+    setApps((prev) => prev.filter((x) => x.id !== a.id));
+    setPublishers((prev) => [{ id: a.id, name: a.name, email: a.email, role: 'blog_publisher', status: 'active', createdAt: new Date().toISOString() }, ...prev]);
+  }
+  async function handleReject(a: PubApp) {
+    setAppBusy(a.id);
+    const res = await rejectPublisherApplicationAction(a.id);
+    setAppBusy(null);
+    if (!res.ok) { toast({ variant: 'error', title: res.error }); return; }
+    toast({ variant: 'success', title: 'Başvuru reddedildi' });
+    setApps((prev) => prev.filter((x) => x.id !== a.id));
+  }
   const [showForm, setShowForm] = React.useState(false);
   const [name, setName] = React.useState('');
   const [email, setEmail] = React.useState('');
@@ -71,6 +95,27 @@ export function PublishersClient({ initial }: { initial: Publisher[] }) {
           <Plus size={14} /> {t('admin.publishers.invite')}
         </Button>
       </div>
+
+      {/* M3 — bekleyen yazıcı başvuruları */}
+      {apps.length > 0 && (
+        <div className="mb-6 rounded-xl border border-gold-400/30 bg-gold-400/5 p-4">
+          <h2 className="text-sm font-semibold mb-3">Bekleyen başvurular ({apps.length})</h2>
+          <ul className="space-y-2">
+            {apps.map((a) => (
+              <li key={a.id} className="flex flex-col sm:flex-row sm:items-center gap-2 rounded-lg bg-[color:var(--bg-card)] border px-3 py-2.5">
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-medium">{a.name} <span className="text-[color:var(--fg-muted)] font-normal">· {a.email}</span></div>
+                  {a.note && <div className="text-xs text-[color:var(--fg-muted)] mt-0.5 line-clamp-2">{a.note}</div>}
+                </div>
+                <div className="flex gap-2 shrink-0">
+                  <Button variant="gold" size="sm" className="gap-1" onClick={() => handleApprove(a)} disabled={appBusy === a.id}><Check size={13} /> Onayla</Button>
+                  <Button variant="outline" size="sm" className="gap-1 text-danger border-danger/30 hover:bg-danger/10" onClick={() => handleReject(a)} disabled={appBusy === a.id}><X size={13} /> Reddet</Button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {showForm && (
         <form onSubmit={handleCreate} className="mb-6 p-4 rounded-xl border bg-[color:var(--bg-card)] space-y-3">

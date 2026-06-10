@@ -72,6 +72,12 @@ export default async function BlogPage({ searchParams }: Props) {
           <p className="mt-4 text-[color:var(--fg-muted)] text-lg text-pretty">
             <T k="blog.subtitle" />
           </p>
+          {/* M3 — blog yazıcı başvuru CTA */}
+          <div className="mt-5">
+            <a href="/publisher/apply" className="inline-flex items-center gap-1.5 rounded-full border border-gold-400/40 bg-gold-400/10 px-4 py-2 text-sm font-medium text-gold-300 hover:bg-gold-400/20 transition-colors">
+              <Newspaper size={14} /> <T k="pub.apply.title" />
+            </a>
+          </div>
         </div>
 
         {/* Category tabs */}

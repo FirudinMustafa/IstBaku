@@ -695,6 +695,24 @@ export const neighborhoods = pgTable('neighborhoods', {
 export type DbNeighborhood = typeof neighborhoods.$inferSelect;
 
 // ============================================================
+// PUBLISHER APPLICATIONS (M3 — kullanıcı başvurur → admin onaylar → blog_publisher)
+// ============================================================
+export const publisherApplications = pgTable('publisher_applications', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  note: text('note').notNull().default(''),
+  status: kycStatusEnum('status').notNull().default('pending'), // pending | approved | rejected
+  reviewedById: uuid('reviewed_by_id').references(() => users.id, { onDelete: 'set null' }),
+  reviewedAt: timestamp('reviewed_at', { withTimezone: true }),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => ({
+  userIdx: index('publisher_app_user_idx').on(t.userId),
+  statusIdx: index('publisher_app_status_idx').on(t.status),
+}));
+
+export type DbPublisherApplication = typeof publisherApplications.$inferSelect;
+
+// ============================================================
 // EXPORTED TYPES (inferred)
 // ============================================================
 

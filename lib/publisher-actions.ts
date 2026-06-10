@@ -3,8 +3,8 @@
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { db } from '@/db/client';
-import { users } from '@/db/schema';
-import { eq, desc } from 'drizzle-orm';
+import { users, publisherApplications } from '@/db/schema';
+import { eq, desc, and } from 'drizzle-orm';
 import { getCurrentUser, getCurrentAdmin } from './auth-actions';
 import { revalidatePath } from 'next/cache';
 import { sanitizeText } from './sanitize';
@@ -92,6 +92,88 @@ export async function createPublisherAction(input: {
     console.error('createPublisher error', err);
     return { ok: false, error: 'Yayıncı oluşturulamadı.' };
   }
+}
+
+// ============================================================
+// M3 — Blog yazıcı BAŞVURU akışı (kullanıcı başvurur → admin onaylar)
+// ============================================================
+
+export async function getMyPublisherApplication(): Promise<{ status: string; role: string }> {
+  const me = await getCurrentUser();
+  if (!me) return { status: 'none', role: 'guest' };
+  const [row] = await db
+    .select({ status: publisherApplications.status })
+    .from(publisherApplications)
+    .where(eq(publisherApplications.userId, me.id))
+    .orderBy(desc(publisherApplications.createdAt))
+    .limit(1);
+  return { status: (row?.status as string) ?? 'none', role: me.role };
+}
+
+export async function applyForPublisherAction(note: string): Promise<{ ok: true } | { ok: false; error: string }> {
+  const me = await getCurrentUser();
+  if (!me) return { ok: false, error: 'Giriş yapmalısın.' };
+  if (me.role === 'blog_publisher') return { ok: false, error: 'Zaten blog yazıcısısın.' };
+  const clean = sanitizeText(note ?? '', { maxLength: 1000 });
+  if (clean.trim().length < 10) return { ok: false, error: 'Lütfen kısa bir tanıtım yaz (en az 10 karakter).' };
+  const [existing] = await db
+    .select({ id: publisherApplications.id })
+    .from(publisherApplications)
+    .where(and(eq(publisherApplications.userId, me.id), eq(publisherApplications.status, 'pending')))
+    .limit(1);
+  if (existing) return { ok: false, error: 'Bekleyen bir başvurun zaten var.' };
+  await db.insert(publisherApplications).values({ userId: me.id, note: clean, status: 'pending' });
+  revalidatePath('/admin/publishers');
+  return { ok: true };
+}
+
+export async function getPublisherApplications() {
+  const user = (await getCurrentAdmin()) ?? (await getCurrentUser());
+  if (!user || !ADMIN_ROLES.has(user.role)) return [];
+  return db
+    .select({
+      id: publisherApplications.id,
+      note: publisherApplications.note,
+      createdAt: publisherApplications.createdAt,
+      name: users.name,
+      email: users.email,
+    })
+    .from(publisherApplications)
+    .innerJoin(users, eq(publisherApplications.userId, users.id))
+    .where(eq(publisherApplications.status, 'pending'))
+    .orderBy(desc(publisherApplications.createdAt));
+}
+
+export async function approvePublisherApplicationAction(appId: string): Promise<{ ok: true } | { ok: false; error: string }> {
+  const admin = (await getCurrentAdmin()) ?? (await getCurrentUser());
+  if (!admin || !ADMIN_ROLES.has(admin.role)) return { ok: false, error: 'Yetkin yok.' };
+  const [app] = await db.select().from(publisherApplications).where(eq(publisherApplications.id, appId)).limit(1);
+  if (!app || app.status !== 'pending') return { ok: false, error: 'Başvuru bulunamadı veya işlenmiş.' };
+  await db.update(users).set({ role: 'blog_publisher' }).where(eq(users.id, app.userId));
+  await db.update(publisherApplications)
+    .set({ status: 'approved', reviewedById: admin.id, reviewedAt: new Date() })
+    .where(eq(publisherApplications.id, appId));
+  const [u] = await db.select({ email: users.email, name: users.name }).from(users).where(eq(users.id, app.userId)).limit(1);
+  if (u) {
+    sendEmail({
+      to: u.email,
+      subject: 'Blog Yazıcı Başvurun Onaylandı — ISTBAKU',
+      html: `<p>Merhaba ${u.name},</p><p>Blog yazıcı başvurun onaylandı. Artık <a href="${APP_URL}/publisher">Blog Paneli</a>'nden içerik üretebilirsin.</p>`,
+      silent: true,
+    }).catch(() => {});
+  }
+  revalidatePath('/admin/publishers');
+  return { ok: true };
+}
+
+export async function rejectPublisherApplicationAction(appId: string): Promise<{ ok: true } | { ok: false; error: string }> {
+  const admin = (await getCurrentAdmin()) ?? (await getCurrentUser());
+  if (!admin || !ADMIN_ROLES.has(admin.role)) return { ok: false, error: 'Yetkin yok.' };
+  await db.update(publisherApplications)
+    .set({ status: 'rejected', reviewedById: admin.id, reviewedAt: new Date() })
+    .where(and(eq(publisherApplications.id, appId), eq(publisherApplications.status, 'pending')));
+  revalidatePath('/admin/publishers');
+  return { ok: true };
 }
 
 export async function revokePublisherAction(

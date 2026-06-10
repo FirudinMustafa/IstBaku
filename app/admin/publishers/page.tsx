@@ -3,8 +3,8 @@ import { PublishersClient } from './PublishersClient';
 export const dynamic = 'force-dynamic';
 
 export default async function AdminPublishersPage() {
-  const { getPublishers } = await import('@/lib/publisher-actions');
-  const publishers = await getPublishers();
+  const { getPublishers, getPublisherApplications } = await import('@/lib/publisher-actions');
+  const [publishers, apps] = await Promise.all([getPublishers(), getPublisherApplications()]);
   return (
     <PublishersClient
       initial={publishers.map((p) => ({
@@ -14,6 +14,13 @@ export default async function AdminPublishersPage() {
         role: p.role,
         status: p.status,
         createdAt: p.createdAt.toISOString(),
+      }))}
+      applications={apps.map((a) => ({
+        id: a.id,
+        name: a.name,
+        email: a.email,
+        note: a.note,
+        createdAt: a.createdAt.toISOString(),
       }))}
     />
   );
