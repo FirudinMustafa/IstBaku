@@ -24,6 +24,12 @@
 10. **Kasma** (H1, H2 harita, H3 foto değişimi).
 11. **Stratejik sonraki tur:** M1 gerçek veri.
 
+## İLERLEME LOGU
+- **2026-06-10 (commit 7f28cac):** Belge yükleme sağlamlık (HEIC→jpeg, private→public, net hata) — engine smoke testi geçti.
+- **2026-06-10 (commit 84728d4):** ✅ **I4 chatbot/modal fokus** — FocusTrap onEscape ref'e alındı; **canlıda doğrulandı** (yazı tam, fokus korundu). ✅ **C2 RU/DE header** — nav lg→xl; **canlıda doğrulandı** (ru+de @1100px hamburger). "(yakında)" kaldırıldı. A1 backfill betiği eklendi.
+- **Canlı doğrulama (Playwright, objektif):** M5 ofis kayıt belge alanları ✅ (ülke+TC/FIN+belge ekle), M8 geri buton ✅, M12 ilan no ✅.
+- **AÇIK kalanlar (bilinen):** A1 watermark — mevcut ilanlar için `scripts/backfill-watermark.ts` (prod BLOB token ile çalıştırılmalı); yeni onaylar otomatik. Belge >4.5MB için client-side upload. BLOB_READ_WRITE_TOKEN Vercel'de doğrulanmalı.
+
 ---
 
 > Ham liste (gruplanmış):
