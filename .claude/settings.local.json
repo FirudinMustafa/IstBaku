@@ -55,7 +55,22 @@
       "mcp__plugin_vercel_vercel__get_runtime_logs",
       "Bash(taskkill //F //IM node.exe)",
       "Bash(npx playwright *)",
-      "Bash(node scripts/_tmp_live_login.mjs)"
+      "Bash(node scripts/_tmp_live_login.mjs)",
+      "WebFetch(domain:documenter.getpostman.com)",
+      "WebFetch(domain:documenter.gw.postman.com)",
+      "Bash(grep -nE \"PAYMENT_PROVIDER_KEY|KAPITAL|NEXT_PUBLIC_APP_URL\" .env.local)",
+      "Bash(echo \"exit:$?\")",
+      "Bash(echo \" <-exit:$?\")",
+      "Bash(node -e \"const p=require\\('./package.json'\\);console.log\\(JSON.stringify\\(p.scripts,null,2\\)\\)\")",
+      "Bash(PORT=3001 npm run dev)",
+      "PowerShell($conns = Get-NetTCPConnection -LocalPort 3001 -State Listen -ErrorAction SilentlyContinue; if \\($conns\\) { $pids = $conns.OwningProcess | Sort-Object -Unique; foreach \\($p in $pids\\) { $proc = Get-Process -Id $p -ErrorAction SilentlyContinue; Write-Output \"Killing PID $p \\($\\($proc.ProcessName\\)\\) on 3001\"; Stop-Process -Id $p -Force -ErrorAction SilentlyContinue } } else { Write-Output \"Nothing listening on 3001\" }; Start-Sleep -Milliseconds 800; $still = Get-NetTCPConnection -LocalPort 3001 -State Listen -ErrorAction SilentlyContinue; if \\($still\\) { Write-Output \"STILL IN USE\" } else { Write-Output \"3001 FREE\" })",
+      "Bash(find app/api/dev -type f)",
+      "Bash(grep -n \"ENABLE_DEV_ROUTES\" .env.local)",
+      "Bash(node -e \"try{require\\('@playwright/test'\\);console.log\\('pkg @playwright/test: yes'\\)}catch\\(e\\){console.log\\('pkg: no'\\)}\")",
+      "Read(//c/Users/DELL/AppData/Local/ms-playwright/**)",
+      "PowerShell(Start-Sleep -Milliseconds 700; $c = Get-NetTCPConnection -LocalPort 3001 -State Listen -ErrorAction SilentlyContinue; if \\($c\\) { $c.OwningProcess | Sort-Object -Unique | ForEach-Object { Stop-Process -Id $_ -Force -ErrorAction SilentlyContinue; Write-Output \"killed $_\" } } else { Write-Output \"3001 already free\" }; Start-Sleep -Milliseconds 500; if \\(Get-NetTCPConnection -LocalPort 3001 -State Listen -ErrorAction SilentlyContinue\\) { Write-Output \"STILL IN USE\" } else { Write-Output \"3001 FREE\" })",
+      "Bash(grep -E \"\\\\.\\(ts|tsx|sql|md\\)$\")",
+      "Bash(grep -E \"\\\\.ts$\")"
     ]
   }
 }
