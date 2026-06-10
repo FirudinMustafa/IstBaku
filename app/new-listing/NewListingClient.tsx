@@ -182,40 +182,47 @@ export function NewListingClient({ countries: countryList, prices }: NewListingC
   // lose step-2 (or any other step's) data. sessionStorage keeps drafts
   // tab-scoped — closing the tab still discards them.
   const hydratedRef = React.useRef(false);
+  // D6: taslak localStorage'a kaydedilir; tekrar gelince SESSIZCE geri yüklemek yerine
+  // "Taslaktan devam mı / Yeni mi?" sorulur; taslak silinebilir.
+  type SavedDraft = { form?: Partial<typeof form>; photos?: string[]; coverVideo?: string; step?: number };
+  const [draftPrompt, setDraftPrompt] = React.useState(false);
+  const savedDraftRef = React.useRef<SavedDraft | null>(null);
+
   React.useEffect(() => {
     if (typeof window === 'undefined' || hydratedRef.current) return;
     hydratedRef.current = true;
     try {
-      const raw = window.sessionStorage.getItem(DRAFT_STORAGE_KEY);
+      const raw = window.localStorage.getItem(DRAFT_STORAGE_KEY);
       if (!raw) return;
-      const saved = JSON.parse(raw) as {
-        form?: Partial<typeof form>;
-        photos?: string[];
-        coverVideo?: string;
-        step?: number;
-      };
+      const saved = JSON.parse(raw) as SavedDraft;
+      const meaningful = !!saved && ((saved.step ?? 0) > 0 || !!saved.form?.city || !!saved.form?.customTitle || (saved.photos?.length ?? 0) > 0);
+      if (meaningful) { savedDraftRef.current = saved; setDraftPrompt(true); }
+    } catch { /* bozuk taslak — yok say */ }
+  }, []);
+
+  function resumeDraft() {
+    const saved = savedDraftRef.current;
+    if (saved) {
       if (saved.form) setForm((f) => ({ ...f, ...saved.form }));
       if (Array.isArray(saved.photos)) setPhotos(saved.photos);
       if (typeof saved.coverVideo === 'string') setCoverVideo(saved.coverVideo);
-      if (typeof saved.step === 'number' && saved.step >= 0 && saved.step < STEPS.length) {
-        setStep(saved.step);
-      }
-    } catch {
-      // Corrupt draft — ignore and start fresh.
+      if (typeof saved.step === 'number' && saved.step >= 0 && saved.step < STEPS.length) setStep(saved.step);
     }
-  }, []);
+    setDraftPrompt(false);
+  }
+  function discardDraft() {
+    try { window.localStorage.removeItem(DRAFT_STORAGE_KEY); } catch { /* ignore */ }
+    savedDraftRef.current = null;
+    setDraftPrompt(false);
+  }
 
   React.useEffect(() => {
-    if (typeof window === 'undefined' || !hydratedRef.current) return;
+    // Prompt açıkken kaydetme (kullanıcı seçmeden taslağı ezmemek için).
+    if (typeof window === 'undefined' || !hydratedRef.current || draftPrompt) return;
     try {
-      window.sessionStorage.setItem(
-        DRAFT_STORAGE_KEY,
-        JSON.stringify({ form, photos, coverVideo, step }),
-      );
-    } catch {
-      // Quota or disabled storage — silently degrade.
-    }
-  }, [form, photos, coverVideo, step]);
+      window.localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify({ form, photos, coverVideo, step }));
+    } catch { /* kota/devre dışı — sessiz geç */ }
+  }, [form, photos, coverVideo, step, draftPrompt]);
 
   const set = (patch: Partial<typeof form>) => setForm((f) => ({ ...f, ...patch }));
   const cityCenter = CITY_CENTERS[form.city] ?? CITY_CENTERS['İstanbul'];
@@ -632,7 +639,7 @@ export function NewListingClient({ countries: countryList, prices }: NewListingC
 
     // PF-06: clear the in-flight draft on success so a subsequent visit
     // starts with a clean wizard instead of rehydrating a now-published listing.
-    try { window.sessionStorage.removeItem(DRAFT_STORAGE_KEY); } catch { /* ignore */ }
+    try { window.localStorage.removeItem(DRAFT_STORAGE_KEY); } catch { /* ignore */ }
 
     // Ücretli eklenti seçilmişse ödeme penceresini aç; yoksa direkt yayında.
     if ((wantBadge || wantGizli) && res.id) {
@@ -680,6 +687,17 @@ export function NewListingClient({ countries: countryList, prices }: NewListingC
         <h1 className="mt-3 text-3xl sm:text-4xl font-bold tracking-tight">{t('wz.sub.header')}</h1>
         <p className="mt-3 text-[color:var(--fg-muted)]">{t('wz.sub.tagline')}</p>
       </div>
+
+      {/* D6: yarım kalan taslak — devam et / yeni başla (sil) */}
+      {draftPrompt && (
+        <div className="mt-5 rounded-2xl border border-gold-400/40 bg-gold-400/10 px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-3">
+          <span className="flex-1 text-sm font-medium">{t('wz.draft.title')}</span>
+          <div className="flex gap-2 shrink-0">
+            <Button variant="gold" size="sm" onClick={resumeDraft}>{t('wz.draft.resume')}</Button>
+            <Button variant="ghost" size="sm" onClick={discardDraft}>{t('wz.draft.new')}</Button>
+          </div>
+        </div>
+      )}
 
       <div className="mt-6 md:mt-8 flex items-center justify-between gap-1 text-xs overflow-x-auto pb-1">
         {STEPS.map((s, i) => (

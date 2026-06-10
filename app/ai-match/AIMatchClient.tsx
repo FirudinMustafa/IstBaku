@@ -80,10 +80,12 @@ export default function AIMatchClient({ availableCountries }: AIMatchClientProps
     <div className="relative">
       {/* Tur6 #2b: AI eşleme arka planına marka renk/derinlik (düz beyaz görünmesin) */}
       <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(202,174,153,0.08) 0%, transparent 30%, transparent 70%, rgba(138,160,190,0.07) 100%)' }} />
-        <div className="absolute inset-0 grid-bg opacity-[0.05]" />
-        <div className="hidden md:block absolute -top-10 -left-24 w-[420px] h-[420px] rounded-full blur-3xl opacity-[0.18]" style={{ background: 'radial-gradient(circle, #CAAE99 0%, transparent 70%)' }} />
-        <div className="hidden md:block absolute top-1/2 -right-28 w-[460px] h-[460px] rounded-full blur-3xl opacity-[0.14]" style={{ background: 'radial-gradient(circle, #8AA0BE 0%, transparent 70%)' }} />
+        <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(202,174,153,0.16) 0%, transparent 28%, transparent 62%, rgba(138,160,190,0.14) 100%)' }} />
+        <div className="absolute inset-0 grid-bg opacity-[0.08]" />
+        {/* J2: blur-3xl yerine doğal yumuşak radial (daha canlı + Safari/Mac perf) */}
+        <div className="absolute -top-10 -left-24 w-[460px] h-[460px] rounded-full opacity-[0.30]" style={{ background: 'radial-gradient(circle, #CAAE99 0%, transparent 68%)' }} />
+        <div className="absolute top-1/3 -right-28 w-[520px] h-[520px] rounded-full opacity-[0.24]" style={{ background: 'radial-gradient(circle, #8AA0BE 0%, transparent 68%)' }} />
+        <div className="absolute bottom-[6%] left-[30%] w-[380px] h-[380px] rounded-full opacity-[0.20]" style={{ background: 'radial-gradient(circle, #CAAE99 0%, transparent 70%)' }} />
       </div>
       <div className="relative z-10 mx-auto max-w-5xl w-full px-3 sm:px-4 lg:px-6 py-6 md:py-10 pb-32 md:pb-12">
       <div className="text-center max-w-2xl mx-auto">

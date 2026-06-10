@@ -67,9 +67,9 @@ export default async function HomePage() {
         <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
           <div
             className="absolute inset-0"
-            style={{ background: 'linear-gradient(180deg, rgba(202,174,153,0.07) 0%, transparent 18%, transparent 60%, rgba(138,160,190,0.06) 100%)' }}
+            style={{ background: 'linear-gradient(180deg, rgba(202,174,153,0.13) 0%, transparent 20%, transparent 58%, rgba(138,160,190,0.11) 100%)' }}
           />
-          <div className="absolute inset-0 grid-bg opacity-[0.06]" />
+          <div className="absolute inset-0 grid-bg opacity-[0.08]" />
         </div>
         {/* Perf (Madde 14): ağır blur-3xl lekeler yalnızca md+ — mobilde kasma azalır. */}
         <div aria-hidden className="hidden md:block pointer-events-none absolute inset-0 overflow-hidden">
