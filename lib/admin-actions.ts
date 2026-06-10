@@ -50,6 +50,54 @@ async function requireModeratorOrAbove(): Promise<AdminCtx> {
   return admin;
 }
 
+/**
+ * A1 — Mevcut ONAYLI ama damgasız ilanların fotoğraflarına kalıcı watermark gömer
+ * (yeni onaylar zaten otomatik). Vercel'de (BLOB token mevcut) çalışır. İlan-bazlı
+ * idempotent: her ilan tek tek işlenip `watermarked=true` yapılır → zaman aşımı olsa
+ * bile tekrar tetiklenince kaldığı yerden devam eder. Bir çağrıda en çok `limit` ilan.
+ */
+export async function backfillWatermarkAction(
+  limit = 8,
+): Promise<{ ok: true; processed: number; failed: number; remaining: number } | { ok: false; error: string }> {
+  let admin: AdminCtx;
+  try { admin = await requireAdmin(); } catch { return { ok: false, error: 'Yetki yok.' }; }
+
+  const rows = await db
+    .select({ id: s.listings.id, images: s.listings.images, coverSrc: s.listings.coverSrc, coverKind: s.listings.coverKind })
+    .from(s.listings)
+    .where(and(eq(s.listings.approvalStatus, 'approved'), eq(s.listings.watermarked, false), isNull(s.listings.deletedAt)))
+    .limit(limit + 1);
+
+  const batch = rows.slice(0, limit);
+  let processed = 0, failed = 0;
+  const { watermarkListingImages } = await import('./watermark');
+  for (const r of batch) {
+    if (!Array.isArray(r.images) || r.images.length === 0) {
+      await db.update(s.listings).set({ watermarked: true }).where(eq(s.listings.id, r.id));
+      continue;
+    }
+    try {
+      const newImages = await watermarkListingImages(r.images);
+      let newCover = r.coverSrc;
+      if (r.coverKind === 'photo' && r.coverSrc) {
+        const ci = r.images.indexOf(r.coverSrc);
+        if (ci >= 0) newCover = newImages[ci];
+      }
+      await db.update(s.listings)
+        .set({ images: newImages, coverSrc: newCover, watermarked: true, updatedAt: new Date() })
+        .where(eq(s.listings.id, r.id));
+      processed++;
+    } catch (e) { failed++; console.warn('[backfill-wm]', r.id, e); }
+  }
+  // limit+1 çektik: fazlası varsa daha işlenecek ilan kaldı demektir (tekrar tıkla).
+  const remaining = rows.length > limit ? 1 : 0;
+  await db.insert(s.auditLog).values({
+    actorId: admin.id, actorEmail: admin.email,
+    action: 'Watermark backfill', target: 'listings', meta: { processed, failed },
+  });
+  return { ok: true, processed, failed, remaining };
+}
+
 // ----- Listings approval -----
 /**
  * İlan onay kuyruğundaki TEK bir talebi onaylar (talebe-özel — Madde 4 fix).

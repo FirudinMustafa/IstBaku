@@ -13,6 +13,7 @@ import { useLang } from '@/components/layout/LangProvider';
 import { formatPrice } from '@/lib/currency';
 import { formatListingNumber } from '@/lib/listing-number';
 import { deleteListingAction } from '@/lib/listing-actions';
+import { backfillWatermarkAction } from '@/lib/admin-actions';
 import type { Currency } from '@/lib/types';
 
 interface Row {
@@ -44,6 +45,26 @@ export function ListingsAdminClient({ initial }: { initial: Row[] }) {
   const [q, setQ] = React.useState('');
   const [deleteFor, setDeleteFor] = React.useState<Row | null>(null);
   const [deleting, setDeleting] = React.useState(false);
+  const [wmBusy, setWmBusy] = React.useState(false);
+
+  // A1 — mevcut onaylı ilanlara kalıcı watermark (8'erli döngü; idempotent).
+  async function runWatermarkBackfill() {
+    if (wmBusy) return;
+    setWmBusy(true);
+    let total = 0, fail = 0;
+    try {
+      for (let i = 0; i < 30; i++) {
+        const res = await backfillWatermarkAction(8);
+        if (!res.ok) { toast({ variant: 'error', title: 'Damgalama', description: res.error }); break; }
+        total += res.processed; fail += res.failed;
+        if (!res.remaining) break;
+      }
+      toast({ variant: 'success', title: 'Watermark uygulandı', description: `${total} ilan damgalandı${fail ? `, ${fail} hata` : ''}.` });
+      router.refresh();
+    } finally {
+      setWmBusy(false);
+    }
+  }
 
   const filtered = React.useMemo(() => {
     const ql = q.trim().toLowerCase();
@@ -77,7 +98,12 @@ export function ListingsAdminClient({ initial }: { initial: Row[] }) {
     <div className="space-y-5">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <h1 className="text-xl font-bold inline-flex items-center gap-2"><Building2 size={20} className="text-gold-300" /> {t('admin.listings.title')}</h1>
-        <span className="text-sm text-[color:var(--fg-muted)]">{t('admin.listings.count').replace('{filtered}', String(filtered.length)).replace('{total}', String(rows.length))}</span>
+        <div className="flex items-center gap-3">
+          <Button variant="outline" size="sm" onClick={runWatermarkBackfill} loading={wmBusy} title="Mevcut onaylı ilanların fotoğraflarına kalıcı watermark uygular">
+            Mevcut ilanları damgala
+          </Button>
+          <span className="text-sm text-[color:var(--fg-muted)]">{t('admin.listings.count').replace('{filtered}', String(filtered.length)).replace('{total}', String(rows.length))}</span>
+        </div>
       </div>
 
       <div className="relative max-w-md">
